@@ -9,16 +9,25 @@
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
     <style>
         body { font-family: sans-serif; margin: 0; padding: 0; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; }
-        #toolbar { background: #333; color: white; padding: 10px; width: 100%; display: flex; justify-content: center; gap: 10px; position: sticky; top: 0; z-index: 10; }
-        #pdf-wrapper { position: relative; margin-top: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.2); line-height: 0; }
+        #toolbar { background: #333; color: white; padding: 10px; width: 100%; display: flex; justify-content: center; gap: 10px; position: sticky; top: 0; z-index: 100; }
+        #pdf-wrapper { position: relative; margin-top: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.2); line-height: 0; z-index: 1; }
         canvas { max-width: 100%; height: auto; }
+        
+        /* AQUI ESTÁ A CORREÇÃO: Aumentamos o z-index para 999 */
         #draggable-sig {
-            position: absolute; width: 150px; cursor: move; display: none;
-            border: 2px dashed #007bff; background: rgba(0, 123, 255, 0.1); touch-action: none;
+            position: absolute; 
+            width: 150px; 
+            cursor: move; 
+            display: none;
+            border: 2px dashed #007bff; 
+            background: rgba(0, 123, 255, 0.1); 
+            touch-action: none;
+            z-index: 999; 
         }
+        
         #sig-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 20; justify-content: center; align-items: center; flex-direction: column;
+            background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; flex-direction: column;
         }
         #sig-canvas { background: white; border-radius: 8px; width: 90%; max-width: 400px; height: 200px; }
         .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
