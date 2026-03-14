@@ -87,7 +87,7 @@ document.getElementById('file-in').onchange = async (e) => {
 };
 
 async function render() {
-    const page = await pdfDocJs.getPage(pageNum);
+    const page = await pdfjsLib.getDocument({data: pdfBytes}).promise.then(pdf => pdf.getPage(pageNum));
     const canvas = document.getElementById('pdf-render');
     const vp = page.getViewport({scale: 1.5});
     canvas.width = vp.width; canvas.height = vp.height;
