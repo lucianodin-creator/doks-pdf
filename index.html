@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF - Sênior v1.8</title>
+    <title>MeuPDF v1.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
-        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background: #222; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 100; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: sans-serif; margin: 0; background: #111; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: #222; padding: 12px; display: flex; justify-content: center; gap: 8px; z-index: 100; border-bottom: 1px solid #444; }
         .btn { padding: 12px 15px; border: none; border-radius: 4px; font-weight: bold; color: white; text-transform: uppercase; font-size: 11px; }
-        #viewer { flex: 1; overflow-y: auto; background: #111; padding: 10px; display: flex; flex-direction: column; align-items: center; position: relative; touch-action: pan-y; }
-        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 20px; line-height: 0; }
+        /* ROLAGEM LIBERADA AQUI */
+        #viewer { flex: 1; overflow-y: auto; background: #1a1a1a; padding: 15px; display: flex; flex-direction: column; align-items: center; position: relative; touch-action: pan-y; }
+        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 25px; line-height: 0; box-shadow: 0 5px 20px #000; }
         canvas { display: block; max-width: 100%; height: auto; }
-        #drag-box { position: absolute; width: 140px; height: 60px; border: 2px solid #007bff; background: rgba(0,123,255,0.2); display: none; z-index: 50; }
-        #tag { position: absolute; top: -35px; left: 0; background: #f39c12; color: #000; font-size: 10px; padding: 6px; font-weight: bold; border-radius: 4px; border: 1px solid #000; }
-        #modal { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        #canvas-container { background: white; width: 98vw; height: 70vh; position: relative; }
+        #drag-box { position: absolute; width: 140px; height: 60px; border: 2px solid #007bff; background: rgba(0,123,255,0.2); display: none; z-index: 50; touch-action: none; }
+        #tag { position: absolute; top: -38px; left: 0; background: #f39c12; color: #000; font-size: 11px; padding: 7px; font-weight: bold; border-radius: 4px; border: 1px solid #000; white-space: nowrap; }
+        #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
+        #canvas-container { background: white; width: 96vw; height: 50vh; position: relative; border: 3px solid #555; touch-action: none; }
         #sig-canvas { width: 100%; height: 100%; }
-        .m-btns { margin-top: 15px; display: flex; gap: 10px; }
+        .m-btns { margin-top: 20px; display: flex; gap: 10px; }
     </style>
 </head>
 <body>
@@ -32,10 +33,11 @@
     </header>
     <div id="viewer"></div>
     <div id="drag-box">
-        <div id="tag" onclick="toggleMode(event)">APLICAR: SÓ NESTA</div>
+        <div id="tag" onclick="toggleMode(event)">MODO: SÓ NESTA</div>
         <img id="sig-img" style="width:100%; height:100%; pointer-events:none; object-fit:contain;">
     </div>
     <div id="modal">
+        <div style="margin-bottom:10px; color:#f39c12; font-weight:bold;">ASSINE NO QUADRO BRANCO</div>
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
         <div class="m-btns">
             <button class="btn" style="background:#28a745" onclick="confirmSig()">OK</button>
@@ -54,11 +56,12 @@
             document.getElementById('modal').style.display = 'flex';
             const c = document.getElementById('sig-canvas');
             const rect = c.getBoundingClientRect();
-            // CALIBRAÇÃO DE HARDWARE: Sincroniza pixels da tela com o desenho
-            c.width = rect.width * (window.devicePixelRatio || 1);
-            c.height = rect.height * (window.devicePixelRatio || 1);
+            // Reseta resolução para precisão do toque no Chrome/Firefox
+            const dpr = window.devicePixelRatio || 1;
+            c.width = rect.width * dpr;
+            c.height = rect.height * dpr;
             const ctx = c.getContext("2d");
-            ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+            ctx.scale(dpr, dpr);
             pad = new SignaturePad(c);
         }
 
@@ -69,18 +72,18 @@
             img.src = pad.toDataURL();
             box.style.display = 'block';
             const p1 = view.querySelector('.pdf-page-wrapper');
-            if (p1) { p1.appendChild(box); box.style.left = "10px"; box.style.top = "10px"; }
+            if (p1) { p1.appendChild(box); box.style.left = "20px"; box.style.top = "20px"; }
             closeModal();
         }
 
         function toggleMode(e) {
             e.stopPropagation();
             isAll = !isAll;
-            tag.innerText = isAll ? "APLICAR: EM TODAS" : "APLICAR: SÓ NESTA";
+            tag.innerText = isAll ? "MODO: TODAS AS PÁGS" : "MODO: SÓ NESTA";
             tag.style.background = isAll ? "#28a745" : "#f39c12";
-            tag.style.color = isAll ? "white" : "black";
         }
 
+        // ARRASTE DA ASSINATURA
         box.addEventListener("touchmove", (e) => {
             const r = box.parentElement.getBoundingClientRect();
             const t = e.touches[0];
@@ -105,7 +108,7 @@
         };
 
         async function savePdf() {
-            if(!pdfData || !img.src) return alert("Erro!");
+            if(!pdfData || !img.src) return alert("Assine primeiro!");
             const doc = await PDFDocument.load(pdfData);
             const png = await doc.embedPng(img.src);
             const pages = doc.getPages();
@@ -116,9 +119,10 @@
             const rw = box.offsetWidth / w.offsetWidth;
             const rh = box.offsetHeight / w.offsetHeight;
             
-            // LOOP DE SEGURANÇA MÁXIMA
-            pages.forEach((p, index) => {
-                if (isAll || index === 0) {
+            // LÓGICA DE CLONAGEM REFORÇADA
+            for (let i = 0; i < pages.length; i++) {
+                if (isAll || i === 0) {
+                    const p = pages[i];
                     const { width, height } = p.getSize();
                     p.drawImage(png, {
                         x: width * rx,
@@ -127,12 +131,11 @@
                         height: height * rh
                     });
                 }
-            });
-
+            }
             const b = await doc.save();
             const l = document.createElement('a');
             l.href = URL.createObjectURL(new Blob([b], {type: 'application/pdf'}));
-            l.download = "Assinado_Sénior_Final.pdf"; l.click();
+            l.download = "Documento_Finalizado.pdf"; l.click();
         }
     </script>
 </body>
