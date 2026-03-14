@@ -7,21 +7,35 @@ const container = document.getElementById('pdf-main-container'), draggable = doc
 const sigPreview = document.getElementById('sig-preview'), btnDupli = document.getElementById('btn-duplicate');
 
 function openSignature() {
-    if (!container.querySelector('.page-wrapper')) return alert("Selecione um PDF primeiro!");
+    if (!container.querySelector('.page-wrapper')) return alert("Abra um PDF primeiro!");
     sigModal.style.display = 'flex';
-    setTimeout(setupCanvas, 200);
+    // Pequeno atraso para o navegador estabilizar o tamanho da tela antes de desenhar
+    setTimeout(setupCanvas, 300);
 }
 
 function setupCanvas() {
     const rect = sigCanvas.parentElement.getBoundingClientRect();
-    sigCanvas.width = rect.width; sigCanvas.height = rect.height;
+    // Ajuste de DPI para evitar que o toque saia do lugar no modo horizontal
+    const ratio = window.devicePixelRatio || 1;
+    sigCanvas.width = rect.width * ratio;
+    sigCanvas.height = rect.height * ratio;
+    sigCanvas.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+    
     if (pad) pad.off();
-    pad = new SignaturePad(sigCanvas, { penColor: 'black' });
+    pad = new SignaturePad(sigCanvas, { 
+        penColor: 'black',
+        velocityFilterWeight: 0.7 
+    });
     pad.clear();
 }
 
+// CORREÇÃO: Reposiciona o sensor de toque se girar o celular com o modal aberto
+window.addEventListener("resize", () => {
+    if (sigModal.style.display === 'flex') setupCanvas();
+});
+
 document.getElementById('btn-confirm-sig').onclick = function() {
-    if (!pad || pad.isEmpty()) return alert("Assinatura vazia!");
+    if (!pad || pad.isEmpty()) return alert("Assine primeiro!");
     sigPreview.src = pad.toDataURL();
     draggable.style.display = 'block';
     const firstPage = container.querySelector('.page-wrapper');
@@ -40,10 +54,9 @@ btnDupli.onclick = function(e) {
     shouldDuplicate = !shouldDuplicate;
     this.innerText = shouldDuplicate ? "PÁG: TODAS" : "PÁG: ÚNICA";
     this.style.background = shouldDuplicate ? "#27ae60" : "#3498db";
-    console.log("Duplicação ativa:", shouldDuplicate);
 };
 
-// ARRASTE E REDIMENSIONAMENTO
+// ARRASTE E REDIMENSIONAMENTO (Otimizado para Horizontal)
 let isResizing = false;
 draggable.addEventListener("touchstart", (e) => { isResizing = (e.target.id === 'resizer'); });
 
@@ -61,6 +74,7 @@ draggable.addEventListener("touchmove", (e) => {
     } else {
         let x = touch.clientX - rect.left - (draggable.offsetWidth / 2);
         let y = touch.clientY - rect.top - (draggable.offsetHeight / 2);
+        // Mantém dentro dos limites da folha
         draggable.style.left = Math.max(0, Math.min(x, rect.width - draggable.offsetWidth)) + "px";
         draggable.style.top = Math.max(0, Math.min(y, rect.height - draggable.offsetHeight)) + "px";
     }
@@ -79,17 +93,18 @@ document.getElementById('file-in').onchange = async (e) => {
             wrapper.className = 'page-wrapper';
             const canvas = document.createElement('canvas');
             const viewport = page.getViewport({scale: 1.0});
-            const scale = (container.clientWidth * 0.9) / viewport.width;
+            // Ajusta a largura para caber na tela do celular (horizontal ou vertical)
+            const scale = (container.clientWidth * 0.95) / viewport.width;
             const vp = page.getViewport({scale});
             canvas.width = vp.width; canvas.height = vp.height;
             await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
             wrapper.appendChild(canvas);
             container.appendChild(wrapper);
         }
-    } catch (err) { alert("Erro: " + err); }
+    } catch (err) { alert("Erro ao carregar PDF: " + err); }
 };
 
-// SALVAR - LÓGICA DE DUPLICAÇÃO REFORÇADA
+// SALVAR - LÓGICA DE DUPLICAÇÃO INDEPENDENTE DE TELA
 async function savePDF() {
     if(!pdfBytes || !sigPreview.src) return alert("Assine antes de salvar!");
     
@@ -98,25 +113,18 @@ async function savePDF() {
     const allPages = doc.getPages();
     const firstWrapper = container.querySelector('.page-wrapper');
     
-    // Pegamos a posição exata da assinatura no momento do clique em Salvar
-    const posX = parseFloat(draggable.style.left);
-    const posY = parseFloat(draggable.style.top);
-    const sigW = draggable.offsetWidth;
-    const sigH = draggable.offsetHeight;
+    // Cálculo baseado na proporção interna (não nos pixels da tela)
+    const relX = parseFloat(draggable.style.left) / firstWrapper.offsetWidth;
+    const relY = parseFloat(draggable.style.top) / firstWrapper.offsetHeight;
+    const relW = draggable.offsetWidth / firstWrapper.offsetWidth;
+    const relH = draggable.offsetHeight / firstWrapper.offsetHeight;
 
-    // Proporções em relação à folha exibida na tela
-    const relX = posX / firstWrapper.offsetWidth;
-    const relY = posY / firstWrapper.offsetHeight;
-    const relW = sigW / firstWrapper.offsetWidth;
-    const relH = sigH / firstWrapper.offsetHeight;
-
-    // Se estiver no modo TODAS, usa o array completo, senão apenas a página 1
     const pagesToApply = shouldDuplicate ? allPages : [allPages[0]];
 
     pagesToApply.forEach((page) => {
         const { width, height } = page.getSize();
         
-        // No PDF-Lib, o Y começa de baixo para cima, por isso invertemos
+        // Aplica a mesma proporção em todas as páginas, independente do tamanho delas
         page.drawImage(sigImg, {
             x: width * relX,
             y: height - (height * relY) - (height * relH),
@@ -126,8 +134,9 @@ async function savePDF() {
     });
 
     const bytes = await doc.save();
+    const blob = new Blob([bytes], {type: 'application/pdf'});
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([bytes], {type: 'application/pdf'}));
-    link.download = "PDF_Assinado.pdf"; 
+    link.href = URL.createObjectURL(blob);
+    link.download = "documento_assinado.pdf"; 
     link.click();
 }
