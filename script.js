@@ -1,94 +1,101 @@
 const { PDFDocument } = PDFLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-let pdfRaw, sigPad;
-const view = document.getElementById('view');
-const floatSig = document.getElementById('float-sig');
-const sigImg = document.getElementById('sig-img');
-const sigOpt = document.getElementById('sig-opt');
+let currentPdf, sp;
+const viewer = document.getElementById('viewer');
+const sigBox = document.getElementById('sig-box');
+const sigTag = document.getElementById('sig-tag');
+const sigRender = document.getElementById('sig-render');
 
-function initSig() {
-    if (!view.hasChildNodes()) return alert("Carregue um PDF.");
-    document.getElementById('modal').style.display = 'flex';
-    const canvas = document.getElementById('main-canvas');
+function openPad() {
+    if (!viewer.hasChildNodes()) return alert("Selecione um PDF primeiro.");
+    document.getElementById('modal-overlay').style.display = 'flex';
+    const canvas = document.getElementById('sig-canvas');
     const dpr = window.devicePixelRatio || 1;
     canvas.width = canvas.offsetWidth * dpr;
     canvas.height = canvas.offsetHeight * dpr;
     canvas.getContext("2d").scale(dpr, dpr);
-    sigPad = new SignaturePad(canvas);
+    sp = new SignaturePad(canvas, { penColor: 'black' });
 }
 
-function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function closePad() { document.getElementById('modal-overlay').style.display = 'none'; }
 
 function confirmSig() {
-    if (sigPad.isEmpty()) return alert("Assine primeiro.");
-    sigImg.src = sigPad.toDataURL();
-    floatSig.style.display = 'block';
-    const firstPage = view.querySelector('.pdf-page');
-    if (firstPage) firstPage.appendChild(floatSig);
-    closeModal();
+    if (sp.isEmpty()) return alert("Área em branco!");
+    sigRender.src = sp.toDataURL();
+    sigBox.style.display = 'block';
+    const page1 = viewer.querySelector('.page-container');
+    if (page1) {
+        page1.appendChild(sigBox);
+        sigBox.style.left = "50px";
+        sigBox.style.top = "50px";
+    }
+    closePad();
 }
 
-sigOpt.onclick = function(e) {
+sigTag.onclick = function(e) {
     e.stopPropagation();
-    const isAll = this.innerText.includes("TODAS");
-    this.innerText = isAll ? "PÁGINA: ATUAL" : "PÁGINA: TODAS";
-    this.style.background = isAll ? "#ffc107" : "#28a745";
+    const all = this.innerText.includes("TODAS");
+    this.innerText = all ? "PÁGINA: ÚNICA" : "PÁGINA: TODAS";
+    this.style.background = all ? "#ffc107" : "#28a745";
 };
 
-floatSig.addEventListener("touchmove", (e) => {
+sigBox.addEventListener("touchmove", (e) => {
     e.preventDefault();
-    const parent = floatSig.parentElement;
+    const parent = sigBox.parentElement;
     const rect = parent.getBoundingClientRect();
     const touch = e.touches[0];
-    floatSig.style.left = (touch.clientX - rect.left - 75) + "px";
-    floatSig.style.top = (touch.clientY - rect.top - 32) + "px";
+    sigBox.style.left = (touch.clientX - rect.left - 80) + "px";
+    sigBox.style.top = (touch.clientY - rect.top - 35) + "px";
 }, { passive: false });
 
-document.getElementById('pdf-upload').onchange = async (e) => {
+document.getElementById('pdf-input').onchange = async (e) => {
     const file = e.target.files[0];
-    pdfRaw = await file.arrayBuffer();
-    const pdfDoc = await pdfjsLib.getDocument({data: pdfRaw}).promise;
-    view.innerHTML = "";
+    if (!file) return;
+    currentPdf = await file.arrayBuffer();
+    const pdfDoc = await pdfjsLib.getDocument({data: currentPdf}).promise;
+    viewer.innerHTML = "";
     for (let i = 1; i <= pdfDoc.numPages; i++) {
         const page = await pdfDoc.getPage(i);
-        const wrapper = document.createElement('div');
-        wrapper.className = 'pdf-page';
+        const div = document.createElement('div');
+        div.className = 'page-container';
         const canvas = document.createElement('canvas');
-        const vp = page.getViewport({scale: view.clientWidth / page.getViewport({scale:1}).width * 0.9});
-        canvas.width = vp.width; canvas.height = vp.height;
-        await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
-        wrapper.appendChild(canvas);
-        view.appendChild(wrapper);
+        const viewport = page.getViewport({scale: (viewer.clientWidth * 0.95) / page.getViewport({scale:1}).width});
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+        div.appendChild(canvas);
+        viewer.appendChild(div);
     }
 };
 
-async function exportPDF() {
-    if(!pdfRaw || !sigImg.src) return alert("Faltam dados.");
-    const doc = await PDFDocument.load(pdfRaw);
-    const png = await doc.embedPng(sigImg.src);
+async function saveFile() {
+    if(!currentPdf || !sigRender.src) return alert("Faltam dados para salvar.");
+    const doc = await PDFDocument.load(currentPdf);
+    const pngImg = await doc.embedPng(sigRender.src);
     const pages = doc.getPages();
-    const wrapper = view.querySelector('.pdf-page');
+    const container = viewer.querySelector('.page-container');
     
-    const rx = parseFloat(floatSig.style.left) / wrapper.offsetWidth;
-    const ry = parseFloat(floatSig.style.top) / wrapper.offsetHeight;
-    const rw = floatSig.offsetWidth / wrapper.offsetWidth;
-    const rh = floatSig.offsetHeight / wrapper.offsetHeight;
+    const xRel = parseFloat(sigBox.style.left) / container.offsetWidth;
+    const yRel = parseFloat(sigBox.style.top) / container.offsetHeight;
+    const wRel = sigBox.offsetWidth / container.offsetWidth;
+    const hRel = sigBox.offsetHeight / container.offsetHeight;
 
-    const applyAll = sigOpt.innerText.includes("TODAS");
-    const limit = applyAll ? pages.length : 1;
+    const allPages = sigTag.innerText.includes("TODAS");
+    const iterations = allPages ? pages.length : 1;
 
-    for (let i = 0; i < limit; i++) {
+    for (let i = 0; i < iterations; i++) {
         const p = pages[i];
         const { width, height } = p.getSize();
-        p.drawImage(png, {
-            x: width * rx, y: height - (height * ry) - (height * rh),
-            width: width * rw, height: height * rh
+        p.drawImage(pngImg, {
+            x: width * xRel, 
+            y: height - (height * yRel) - (height * hRel),
+            width: width * wRel, 
+            height: height * hRel
         });
     }
     const bytes = await doc.save();
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([bytes], {type: 'application/pdf'}));
-    link.download = "meupdf_assinado.pdf";
+    link.download = "MeuPDF_Final.pdf";
     link.click();
 }
