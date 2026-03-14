@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF v2.2</title>
+    <title>MeuPDF v2.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background: #222; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 2px solid #333; }
+        header { background: #222; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 100; border-bottom: 2px solid #333; }
         .btn { padding: 12px 15px; border: none; border-radius: 4px; font-weight: bold; color: white; text-transform: uppercase; font-size: 11px; cursor: pointer; }
         
         #viewer { flex: 1; overflow-y: auto; background: #1a1a1a; padding: 15px; display: flex; flex-direction: column; align-items: center; position: relative; touch-action: pan-y; }
@@ -19,18 +19,16 @@
         #drag-box { position: absolute; width: 140px; height: 60px; border: 2px dashed #007bff; background: rgba(0,123,255,0.1); display: none; z-index: 50; touch-action: none; }
         #sig-img { width: 100%; height: 100%; pointer-events: none; object-fit: contain; }
 
-        /* MODAL DE ASSINATURA */
         #modal { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
         #canvas-wrap { background: white; width: 95vw; height: 65vh; position: relative; border: 2px solid #555; }
         #sig-canvas { width: 100%; height: 100%; touch-action: none; }
         
-        /* BOTÕES DE CONTROLE */
         .controls { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 150; display: none; background: rgba(0,0,0,0.85); padding: 12px; border-radius: 12px; border: 1px solid #444; }
         
-        /* OVERLAY DE PRÉVIA FINAL */
-        #preview-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #preview-frame { background: white; width: 90%; height: 70%; border-radius: 8px; overflow: hidden; }
-        #preview-frame iframe { width: 100%; height: 100%; border: none; }
+        /* OVERLAY DE PRÉVIA MELHORADO */
+        #preview-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
+        #preview-img-container { background: white; width: 95%; height: 75%; overflow-y: auto; display: flex; justify-content: center; border-radius: 4px; }
+        #preview-img-container img { max-width: 100%; height: auto; align-self: flex-start; }
     </style>
 </head>
 <body>
@@ -41,7 +39,7 @@
     </header>
 
     <div id="viewer"></div>
-    <div id="drag-box"><img id="sig-img"></div>
+    <div id="drag-box"><img id="sig-img-drag"></div>
 
     <div class="controls" id="action-btns">
         <button class="btn" style="background:#28a745" onclick="generatePreview(true)">REVISAR TODAS</button>
@@ -59,19 +57,19 @@
     </div>
 
     <div id="preview-overlay">
-        <h3 style="margin-top:0">PRÉVIA DO DOCUMENTO</h3>
-        <div id="preview-frame"><iframe id="preview-src"></iframe></div>
-        <div style="margin-top:20px; display:flex; gap:15px;">
-            <button class="btn" style="background:#28a745; padding:15px 25px;" id="download-final">CONFIRMAR E BAIXAR</button>
-            <button class="btn" style="background:#dc3545" onclick="closePreview()">REFAZER / VOLTAR</button>
+        <h3 style="margin: 10px 0; font-size: 16px;">VERIFIQUE COMO FICOU:</h3>
+        <div id="preview-img-container"><img id="preview-img-final"></div>
+        <div style="margin-top:15px; display:flex; gap:10px; width: 100%; justify-content: center;">
+            <button class="btn" style="background:#28a745; flex: 1;" id="download-final">CONFIRMAR E BAIXAR</button>
+            <button class="btn" style="background:#dc3545; flex: 1;" onclick="closePreview()">REFAZER</button>
         </div>
     </div>
 
     <script>
         const { PDFDocument } = PDFLib;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let pdfData, pad, currentBlobUrl;
-        const view = document.getElementById('viewer'), box = document.getElementById('drag-box'), img = document.getElementById('sig-img'), actionBtns = document.getElementById('action-btns');
+        let pdfData, pad, currentPdfBytes;
+        const view = document.getElementById('viewer'), box = document.getElementById('drag-box'), sigImgDrag = document.getElementById('sig-img-drag'), actionBtns = document.getElementById('action-btns');
 
         function openModal() {
             if (!view.hasChildNodes()) return alert("Abra o PDF!");
@@ -91,9 +89,7 @@
         }
 
         window.addEventListener('orientationchange', () => {
-            if(document.getElementById('modal').style.display === 'flex') {
-                setTimeout(resizeCanvas, 300);
-            }
+            if(document.getElementById('modal').style.display === 'flex') setTimeout(resizeCanvas, 300);
         });
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
@@ -101,7 +97,7 @@
 
         function confirmSig() {
             if (pad.isEmpty()) return alert("Assine primeiro!");
-            img.src = pad.toDataURL();
+            sigImgDrag.src = pad.toDataURL();
             box.style.display = 'block';
             actionBtns.style.display = 'flex';
             view.querySelector('.pdf-page-wrapper').appendChild(box);
@@ -134,7 +130,7 @@
 
         async function generatePreview(allPages) {
             const doc = await PDFDocument.load(pdfData);
-            const sigPng = await doc.embedPng(img.src);
+            const sigPng = await doc.embedPng(sigImgDrag.src);
             const pages = doc.getPages();
             const wrapper = box.parentElement;
 
@@ -154,18 +150,25 @@
                 }
             });
 
-            const b = await doc.save();
-            const blob = new Blob([b], { type: 'application/pdf' });
-            if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-            currentBlobUrl = URL.createObjectURL(blob);
+            currentPdfBytes = await doc.save();
             
-            // MOSTRA A PRÉVIA ANTES DE TUDO
-            document.getElementById('preview-src').src = currentBlobUrl;
+            // GERAR IMAGEM PARA PRÉVIA (Evita bloqueio de PDF no celular)
+            const previewPdf = await pdfjsLib.getDocument({data: currentPdfBytes}).promise;
+            const firstPage = await previewPdf.getPage(1);
+            const canvasPreview = document.createElement('canvas');
+            const viewport = firstPage.getViewport({scale: 1.5});
+            canvasPreview.width = viewport.width;
+            canvasPreview.height = viewport.height;
+            await firstPage.render({canvasContext: canvasPreview.getContext('2d'), viewport: viewport}).promise;
+            
+            document.getElementById('preview-img-final').src = canvasPreview.toDataURL();
             document.getElementById('preview-overlay').style.display = 'flex';
             
             document.getElementById('download-final').onclick = () => {
+                const blob = new Blob([currentPdfBytes], { type: 'application/pdf' });
                 const l = document.createElement('a');
-                l.href = currentBlobUrl; l.download = "PDF_Assinado.pdf"; l.click();
+                l.href = URL.createObjectURL(blob);
+                l.download = "Documento_Finalizado.pdf"; l.click();
             };
         }
     </script>
