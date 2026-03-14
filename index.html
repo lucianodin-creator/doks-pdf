@@ -3,33 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF v2.4</title>
+    <title>MeuPDF v2.5</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background: #222; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 100; border-bottom: 2px solid #333; }
+        header { background: #222; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 2px solid #333; z-index: 100; }
         .btn { padding: 12px 15px; border: none; border-radius: 4px; font-weight: bold; color: white; text-transform: uppercase; font-size: 11px; cursor: pointer; }
         
-        #viewer { flex: 1; overflow-y: auto; background: #1a1a1a; padding: 15px; display: flex; flex-direction: column; align-items: center; position: relative; touch-action: pan-y; }
+        #viewer { flex: 1; overflow-y: auto; background: #1a1a1a; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 25px; line-height: 0; box-shadow: 0 5px 25px #000; }
         
-        /* CAIXA DE ASSINATURA COM CONTROLE DE TAMANHO */
-        #drag-box { position: absolute; width: 150px; height: 70px; border: 2px dashed #007bff; background: rgba(0,123,255,0.1); display: none; z-index: 50; touch-action: none; }
-        #sig-img-drag { width: 100%; height: 100%; pointer-events: none; object-fit: contain; }
-        .resizer { position: absolute; bottom: -10px; right: -10px; width: 30px; height: 30px; background: #007bff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; border: 2px solid #fff; }
+        /* ESTILO DA ASSINATURA QUE PODE SER MOVIDA EM CADA PÁGINA */
+        .sig-box { position: absolute; width: 120px; height: 55px; border: 1px dashed #007bff; background: rgba(0,123,255,0.05); touch-action: none; z-index: 10; }
+        .sig-box img { width: 100%; height: 100%; pointer-events: none; object-fit: contain; }
+        .resizer { position: absolute; bottom: -8px; right: -8px; width: 24px; height: 24px; background: #007bff; border-radius: 50%; border: 2px solid #fff; z-index: 11; }
 
         #modal { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
-        #canvas-wrap { background: white; width: 95vw; height: 70vh; position: relative; border: 2px solid #555; }
+        #canvas-wrap { background: white; width: 98vw; height: 75vh; position: relative; }
         #sig-canvas { width: 100%; height: 100%; touch-action: none; }
         
-        .controls { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 150; display: none; background: rgba(0,0,0,0.9); padding: 12px; border-radius: 12px; border: 1px solid #444; }
-        
-        #preview-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
-        #preview-img-container { background: white; width: 95%; height: 75%; overflow-y: auto; display: flex; justify-content: center; border-radius: 4px; border: 1px solid #fff; }
-        #preview-img-container img { max-width: 100%; height: auto; align-self: flex-start; }
+        .footer-tools { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 150; background: rgba(0,0,0,0.9); padding: 10px; border-radius: 12px; border: 1px solid #444; }
     </style>
 </head>
 <body>
@@ -40,92 +36,81 @@
     </header>
 
     <div id="viewer"></div>
-    <div id="drag-box">
-        <img id="sig-img-drag">
-        <div class="resizer" id="resize-handle">⤢</div>
-    </div>
 
-    <div class="controls" id="action-btns">
-        <button class="btn" style="background:#28a745" onclick="generatePreview(true)">GERAR TODAS</button>
-        <button class="btn" style="background:#007bff" onclick="generatePreview(false)">GERAR SÓ ESTA</button>
+    <div class="footer-tools" id="final-tools" style="display:none">
+        <button class="btn" style="background:#28a745" onclick="saveFinalPdf()">FINALIZAR E BAIXAR PDF</button>
     </div>
 
     <div id="modal">
-        <div style="margin-bottom:10px; color:#f39c12; font-weight:bold;">ASSINE NO QUADRO ABAIXO (DEITADO)</div>
+        <div style="margin-bottom:10px; color:#f39c12; font-weight:bold;">ASSINE NO QUADRO ABAIXO</div>
         <div id="canvas-wrap"><canvas id="sig-canvas"></canvas></div>
         <div style="margin-top:15px; display:flex; gap:12px;">
-            <button class="btn" style="background:#28a745; width:100px;" onclick="confirmSig()">OK</button>
+            <button class="btn" style="background:#28a745; width:100px;" onclick="applySignatureToAll()">OK</button>
             <button class="btn" style="background:#dc3545" onclick="pad.clear()">LIMPAR</button>
-            <button class="btn" style="background:#6c757d" onclick="closeModal()">SAIR</button>
-        </div>
-    </div>
-
-    <div id="preview-overlay">
-        <h3 style="margin: 10px 0; color:#fff;">CONFIRME O RESULTADO:</h3>
-        <div id="preview-img-container"><img id="preview-img-final"></div>
-        <div style="margin-top:15px; display:flex; gap:10px; width: 100%;">
-            <button class="btn" style="background:#28a745; flex: 1;" id="download-final">ESTÁ ÓTIMO, BAIXAR!</button>
-            <button class="btn" style="background:#dc3545; flex: 1;" onclick="closePreview()">REFAZER POSIÇÃO</button>
+            <button class="btn" style="background:#6c757d" onclick="closeModal()">VOLTAR</button>
         </div>
     </div>
 
     <script>
         const { PDFDocument } = PDFLib;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let pdfData, pad, currentPdfBytes;
-        const view = document.getElementById('viewer'), box = document.getElementById('drag-box'), sigImgDrag = document.getElementById('sig-img-drag'), actionBtns = document.getElementById('action-btns');
+        let pdfData, pad, sigBase64;
+        const view = document.getElementById('viewer');
 
         function openModal() {
             if (!view.hasChildNodes()) return alert("Abra o PDF!");
             document.getElementById('modal').style.display = 'flex';
-            resizeCanvas();
-        }
-
-        function resizeCanvas() {
             const c = document.getElementById('sig-canvas');
-            const wrap = c.parentElement;
             const dpr = window.devicePixelRatio || 1;
-            c.width = wrap.clientWidth * dpr;
-            c.height = wrap.clientHeight * dpr;
+            c.width = c.parentElement.clientWidth * dpr;
+            c.height = c.parentElement.clientHeight * dpr;
             c.getContext("2d").scale(dpr, dpr);
-            if (pad) pad.clear();
             pad = new SignaturePad(c);
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
-        function closePreview() { document.getElementById('preview-overlay').style.display = 'none'; }
 
-        function confirmSig() {
+        function applySignatureToAll() {
             if (pad.isEmpty()) return alert("Assine primeiro!");
-            sigImgDrag.src = pad.toDataURL();
-            box.style.display = 'block';
-            actionBtns.style.display = 'flex';
-            view.querySelector('.pdf-page-wrapper').appendChild(box);
-            box.style.left = "30px"; box.style.top = "30px";
+            sigBase64 = pad.toDataURL();
+            const pages = document.querySelectorAll('.pdf-page-wrapper');
+            pages.forEach(page => {
+                // Remove assinaturas antigas se existirem
+                const old = page.querySelector('.sig-box');
+                if(old) old.remove();
+
+                const box = document.createElement('div');
+                box.className = 'sig-box';
+                box.style.left = "50px"; box.style.top = "50px";
+                box.innerHTML = `<img src="${sigBase64}"><div class="resizer"></div>`;
+                
+                // Lógica de Arrastar Individual
+                box.addEventListener("touchmove", (e) => {
+                    if(e.target.classList.contains('resizer')) return;
+                    const r = page.getBoundingClientRect();
+                    const t = e.touches[0];
+                    box.style.left = (t.clientX - r.left - (box.offsetWidth/2)) + "px";
+                    box.style.top = (t.clientY - r.top - (box.offsetHeight/2)) + "px";
+                });
+
+                // Lógica de Redimensionar Individual
+                const resizer = box.querySelector('.resizer');
+                resizer.addEventListener("touchmove", (e) => {
+                    e.stopPropagation();
+                    const t = e.touches[0];
+                    const r = box.getBoundingClientRect();
+                    const newW = t.clientX - r.left;
+                    if (newW > 40 && newW < 300) {
+                        box.style.width = newW + "px";
+                        box.style.height = (newW * 0.45) + "px";
+                    }
+                });
+
+                page.appendChild(box);
+            });
+            document.getElementById('final-tools').style.display = 'flex';
             closeModal();
         }
-
-        // ARRASTAR
-        box.addEventListener("touchmove", (e) => {
-            if (e.target.id === 'resize-handle') return;
-            const r = box.parentElement.getBoundingClientRect();
-            const t = e.touches[0];
-            box.style.left = (t.clientX - r.left - (box.offsetWidth/2)) + "px";
-            box.style.top = (t.clientY - r.top - (box.offsetHeight/2)) + "px";
-        });
-
-        // REDIMENSIONAR (Botão azul no canto da assinatura)
-        document.getElementById('resize-handle').addEventListener("touchmove", (e) => {
-            e.stopPropagation();
-            const t = e.touches[0];
-            const r = box.getBoundingClientRect();
-            const newW = t.clientX - r.left;
-            const newH = newW * 0.46; // Mantém a proporção
-            if (newW > 50 && newW < 300) {
-                box.style.width = newW + "px";
-                box.style.height = newH + "px";
-            }
-        });
 
         document.getElementById('pdf-in').onchange = async (e) => {
             const f = e.target.files[0]; if (!f) return;
@@ -143,20 +128,22 @@
             }
         };
 
-        async function generatePreview(allPages) {
+        async function saveFinalPdf() {
             const doc = await PDFDocument.load(pdfData);
-            const sigPng = await doc.embedPng(sigImgDrag.src);
-            const pages = doc.getPages();
-            const wrapper = box.parentElement;
+            const sigPng = await doc.embedPng(sigBase64);
+            const pdfPages = doc.getPages();
+            const htmlPages = document.querySelectorAll('.pdf-page-wrapper');
 
-            const rx = parseFloat(box.style.left) / wrapper.offsetWidth;
-            const ry = parseFloat(box.style.top) / wrapper.offsetHeight;
-            const rw = box.offsetWidth / wrapper.offsetWidth;
-            const rh = box.offsetHeight / wrapper.offsetHeight;
-
-            pages.forEach((p, i) => {
-                if (allPages || i === 0) {
+            htmlPages.forEach((htmlPage, i) => {
+                const box = htmlPage.querySelector('.sig-box');
+                if (box) {
+                    const p = pdfPages[i];
                     const { width, height } = p.getSize();
+                    const rx = parseFloat(box.style.left) / htmlPage.offsetWidth;
+                    const ry = parseFloat(box.style.top) / htmlPage.offsetHeight;
+                    const rw = box.offsetWidth / htmlPage.offsetWidth;
+                    const rh = box.offsetHeight / htmlPage.offsetHeight;
+
                     p.drawImage(sigPng, {
                         x: width * rx,
                         y: height - (height * ry) - (height * rh),
@@ -165,23 +152,12 @@
                 }
             });
 
-            currentPdfBytes = await doc.save();
-            const previewPdf = await pdfjsLib.getDocument({data: currentPdfBytes}).promise;
-            const firstPage = await previewPdf.getPage(1);
-            const canvasPreview = document.createElement('canvas');
-            const viewport = firstPage.getViewport({scale: 1.2});
-            canvasPreview.width = viewport.width; canvasPreview.height = viewport.height;
-            await firstPage.render({canvasContext: canvasPreview.getContext('2d'), viewport: viewport}).promise;
-            
-            document.getElementById('preview-img-final').src = canvasPreview.toDataURL();
-            document.getElementById('preview-overlay').style.display = 'flex';
-            
-            document.getElementById('download-final').onclick = () => {
-                const blob = new Blob([currentPdfBytes], { type: 'application/pdf' });
-                const l = document.createElement('a');
-                l.href = URL.createObjectURL(blob);
-                l.download = "Documento_Finalizado.pdf"; l.click();
-            };
+            const bytes = await doc.save();
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = "Documento_Assinado_Final.pdf";
+            link.click();
         }
     </script>
 </body>
