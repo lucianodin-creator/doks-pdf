@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF - Sênior v1.7</title>
+    <title>MeuPDF - Sênior v1.8</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; margin: 0; background: #111; color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background: #222; padding: 12px; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #333; }
-        .btn { padding: 12px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; text-transform: uppercase; font-size: 11px; }
-        #viewer { flex: 1; overflow-y: auto; background: #1a1a1a; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 30px; box-shadow: 0 5px 25px rgba(0,0,0,0.9); line-height: 0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: #222; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 100; }
+        .btn { padding: 12px 15px; border: none; border-radius: 4px; font-weight: bold; color: white; text-transform: uppercase; font-size: 11px; }
+        #viewer { flex: 1; overflow-y: auto; background: #111; padding: 10px; display: flex; flex-direction: column; align-items: center; position: relative; touch-action: pan-y; }
+        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 20px; line-height: 0; }
         canvas { display: block; max-width: 100%; height: auto; }
-        #drag-box { position: absolute; width: 140px; height: 60px; border: 2px solid #007bff; background: rgba(0,123,255,0.15); display: none; z-index: 100; touch-action: none; }
-        #tag { position: absolute; top: -35px; left: 0; background: #f39c12; color: black; font-size: 11px; padding: 6px 10px; font-weight: bold; border-radius: 4px; border: 1px solid #000; white-space: nowrap; }
-        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
-        #canvas-container { background: white; width: 95vw; height: 55vh; border: 4px solid #444; }
-        #sig-canvas { width: 100%; height: 100%; touch-action: none; }
-        .m-btns { margin-top: 25px; display: flex; gap: 15px; }
+        #drag-box { position: absolute; width: 140px; height: 60px; border: 2px solid #007bff; background: rgba(0,123,255,0.2); display: none; z-index: 50; }
+        #tag { position: absolute; top: -35px; left: 0; background: #f39c12; color: #000; font-size: 10px; padding: 6px; font-weight: bold; border-radius: 4px; border: 1px solid #000; }
+        #modal { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #canvas-container { background: white; width: 98vw; height: 70vh; position: relative; }
+        #sig-canvas { width: 100%; height: 100%; }
+        .m-btns { margin-top: 15px; display: flex; gap: 10px; }
     </style>
 </head>
 <body>
@@ -32,7 +32,7 @@
     </header>
     <div id="viewer"></div>
     <div id="drag-box">
-        <div id="tag">APLICAR: SÓ NESTA</div>
+        <div id="tag" onclick="toggleMode(event)">APLICAR: SÓ NESTA</div>
         <img id="sig-img" style="width:100%; height:100%; pointer-events:none; object-fit:contain;">
     </div>
     <div id="modal">
@@ -54,34 +54,39 @@
             document.getElementById('modal').style.display = 'flex';
             const c = document.getElementById('sig-canvas');
             const rect = c.getBoundingClientRect();
-            c.width = rect.width; c.height = rect.height;
-            pad = new SignaturePad(c, { velocityFilterWeight: 0.7, minWidth: 1.5, maxWidth: 3.5 });
+            // CALIBRAÇÃO DE HARDWARE: Sincroniza pixels da tela com o desenho
+            c.width = rect.width * (window.devicePixelRatio || 1);
+            c.height = rect.height * (window.devicePixelRatio || 1);
+            const ctx = c.getContext("2d");
+            ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+            pad = new SignaturePad(c);
         }
+
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        
         function confirmSig() {
             if (pad.isEmpty()) return alert("Assine!");
             img.src = pad.toDataURL();
             box.style.display = 'block';
             const p1 = view.querySelector('.pdf-page-wrapper');
-            if (p1) { p1.appendChild(box); box.style.left = "20px"; box.style.top = "20px"; }
+            if (p1) { p1.appendChild(box); box.style.left = "10px"; box.style.top = "10px"; }
             closeModal();
         }
 
-        tag.onclick = (e) => {
+        function toggleMode(e) {
             e.stopPropagation();
             isAll = !isAll;
             tag.innerText = isAll ? "APLICAR: EM TODAS" : "APLICAR: SÓ NESTA";
             tag.style.background = isAll ? "#28a745" : "#f39c12";
             tag.style.color = isAll ? "white" : "black";
-        };
+        }
 
         box.addEventListener("touchmove", (e) => {
-            e.preventDefault();
             const r = box.parentElement.getBoundingClientRect();
             const t = e.touches[0];
             box.style.left = (t.clientX - r.left - 70) + "px";
             box.style.top = (t.clientY - r.top - 30) + "px";
-        }, { passive: false });
+        });
 
         document.getElementById('pdf-in').onchange = async (e) => {
             const f = e.target.files[0]; if (!f) return;
@@ -111,22 +116,23 @@
             const rw = box.offsetWidth / w.offsetWidth;
             const rh = box.offsetHeight / w.offsetHeight;
             
-            // LOOP FORÇADO - GARANTIA DE CLONAGEM
-            for (let i = 0; i < pages.length; i++) {
-                if (!isAll && i > 0) break;
-                const p = pages[i];
-                const { width, height } = p.getSize();
-                p.drawImage(png, {
-                    x: width * rx,
-                    y: height - (height * ry) - (height * rh),
-                    width: width * rw,
-                    height: height * rh
-                });
-            }
+            // LOOP DE SEGURANÇA MÁXIMA
+            pages.forEach((p, index) => {
+                if (isAll || index === 0) {
+                    const { width, height } = p.getSize();
+                    p.drawImage(png, {
+                        x: width * rx,
+                        y: height - (height * ry) - (height * rh),
+                        width: width * rw,
+                        height: height * rh
+                    });
+                }
+            });
+
             const b = await doc.save();
             const l = document.createElement('a');
             l.href = URL.createObjectURL(new Blob([b], {type: 'application/pdf'}));
-            l.download = "Final_Assinado_v1.7.pdf"; l.click();
+            l.download = "Assinado_Sénior_Final.pdf"; l.click();
         }
     </script>
 </body>
