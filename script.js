@@ -38,26 +38,22 @@ document.getElementById('btn-confirm-sig').onclick = function() {
 
 function closeModal() { sigModal.style.display = 'none'; }
 
-// Controle do Botão Duplicar
 btnDupli.onclick = function(e) {
     e.stopPropagation();
     shouldDuplicate = !shouldDuplicate;
-    this.innerText = shouldDuplicate ? "PÁG: TODAS (ON)" : "PÁG: ÚNICA (OFF)";
+    this.innerText = shouldDuplicate ? "PÁG: TODAS (ATIVO)" : "PÁG: ÚNICA (INATIVO)";
     this.style.background = shouldDuplicate ? "#27ae60" : "#3498db";
-    console.log("Status da duplicação:", shouldDuplicate);
 };
 
 // Arraste e Redimensionamento
 let isResizing = false;
 draggable.addEventListener("touchstart", (e) => { isResizing = (e.target.id === 'resizer'); });
-
 draggable.addEventListener("touchmove", (e) => {
     e.preventDefault();
     const parentPage = draggable.parentElement;
     if (!parentPage || parentPage === container) return;
     const rect = parentPage.getBoundingClientRect();
     const touch = e.touches[0];
-
     if (isResizing) {
         const dRect = draggable.getBoundingClientRect();
         draggable.style.width = Math.max(40, touch.clientX - dRect.left) + "px";
@@ -93,40 +89,45 @@ document.getElementById('file-in').onchange = async (e) => {
     } catch (err) { alert("Erro ao carregar: " + err); }
 };
 
-// SALVAR - LÓGICA DE DUPLICAÇÃO CORRIGIDA
+// SALVAR - MÉTODO DE INJEÇÃO SEQUENCIAL (ANTI-FALHA)
 async function savePDF() {
-    if(!pdfBytes || !sigPreview.src) return alert("Falta a assinatura!");
+    if(!pdfBytes || !sigPreview.src) return alert("Assine antes de salvar!");
     
-    const doc = await PDFDocument.load(pdfBytes);
-    const sigImg = await doc.embedPng(sigPreview.src);
-    const allPages = doc.getPages();
-    const firstWrapper = container.querySelector('.page-wrapper');
-    
-    // Proporções baseadas na primeira folha
-    const relX = parseFloat(draggable.style.left) / firstWrapper.offsetWidth;
-    const relY = parseFloat(draggable.style.top) / firstWrapper.offsetHeight;
-    const relW = draggable.offsetWidth / firstWrapper.offsetWidth;
-    const relH = draggable.offsetHeight / firstWrapper.offsetHeight;
-
-    // Decisão final: uma ou todas?
-    const totalPages = allPages.length;
-    const loopCount = shouldDuplicate ? totalPages : 1;
-
-    for (let i = 0; i < loopCount; i++) {
-        const page = allPages[i];
-        const { width, height } = page.getSize();
+    try {
+        const doc = await PDFDocument.load(pdfBytes);
+        const sigImg = await doc.embedPng(sigPreview.src);
+        const allPages = doc.getPages();
+        const firstWrapper = container.querySelector('.page-wrapper');
         
-        page.drawImage(sigImg, {
-            x: width * relX,
-            y: height - (height * relY) - (height * relH),
-            width: width * relW,
-            height: height * relH
-        });
-    }
+        const relX = parseFloat(draggable.style.left) / firstWrapper.offsetWidth;
+        const relY = parseFloat(draggable.style.top) / firstWrapper.offsetHeight;
+        const relW = draggable.offsetWidth / firstWrapper.offsetWidth;
+        const relH = draggable.offsetHeight / firstWrapper.offsetHeight;
 
-    const bytes = await doc.save();
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([bytes], {type: 'application/pdf'}));
-    link.download = "PDF_Assinado.pdf"; 
-    link.click();
+        // Se o botão estiver verde (shouldDuplicate), ele assina todas. 
+        // Caso contrário, apenas a primeira (index 0).
+        const targetPages = shouldDuplicate ? allPages : [allPages[0]];
+
+        // Loop sequencial garantido
+        for (const page of targetPages) {
+            const { width, height } = page.getSize();
+            await page.drawImage(sigImg, {
+                x: width * relX,
+                y: height - (height * relY) - (height * relH),
+                width: width * relW,
+                height: height * relH
+            });
+        }
+
+        const bytes = await doc.save();
+        const blob = new Blob([bytes], {type: 'application/pdf'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = "contrato_assinado.pdf"; 
+        link.click();
+        
+        console.log("Processo de duplicação finalizado.");
+    } catch (e) {
+        alert("Erro ao processar: " + e.message);
+    }
 }
