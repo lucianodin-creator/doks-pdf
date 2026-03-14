@@ -20,14 +20,10 @@ function setupCanvas() {
     pad.clear();
 }
 
-// CONFIRMAR ASSINATURA
 document.getElementById('btn-confirm-sig').onclick = function() {
     if (!pad || pad.isEmpty()) return alert("Assinatura vazia!");
-    
     sigPreview.src = pad.toDataURL();
     draggable.style.display = 'block';
-    
-    // ANCORAGEM: Move a assinatura para dentro da primeira folha carregada
     const firstPage = container.querySelector('.page-wrapper');
     if (firstPage) {
         firstPage.appendChild(draggable);
@@ -44,6 +40,7 @@ btnDupli.onclick = function(e) {
     shouldDuplicate = !shouldDuplicate;
     this.innerText = shouldDuplicate ? "PÁG: TODAS" : "PÁG: ÚNICA";
     this.style.background = shouldDuplicate ? "#27ae60" : "#3498db";
+    console.log("Duplicação ativa:", shouldDuplicate);
 };
 
 // ARRASTE E REDIMENSIONAMENTO
@@ -54,7 +51,6 @@ draggable.addEventListener("touchmove", (e) => {
     e.preventDefault();
     const parentPage = draggable.parentElement;
     if (!parentPage || parentPage === container) return;
-    
     const rect = parentPage.getBoundingClientRect();
     const touch = e.touches[0];
 
@@ -70,7 +66,6 @@ draggable.addEventListener("touchmove", (e) => {
     }
 }, { passive: false });
 
-// CARREGAR PDF
 document.getElementById('file-in').onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -78,7 +73,6 @@ document.getElementById('file-in').onchange = async (e) => {
         pdfBytes = await file.arrayBuffer();
         pdfDocJs = await pdfjsLib.getDocument({data: pdfBytes}).promise;
         container.innerHTML = "";
-        
         for (let i = 1; i <= pdfDocJs.numPages; i++) {
             const page = await pdfDocJs.getPage(i);
             const wrapper = document.createElement('div');
@@ -87,7 +81,6 @@ document.getElementById('file-in').onchange = async (e) => {
             const viewport = page.getViewport({scale: 1.0});
             const scale = (container.clientWidth * 0.9) / viewport.width;
             const vp = page.getViewport({scale});
-            
             canvas.width = vp.width; canvas.height = vp.height;
             await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
             wrapper.appendChild(canvas);
@@ -96,7 +89,7 @@ document.getElementById('file-in').onchange = async (e) => {
     } catch (err) { alert("Erro: " + err); }
 };
 
-// SALVAR COM DUPLICAÇÃO CORRIGIDA
+// SALVAR - LÓGICA DE DUPLICAÇÃO REFORÇADA
 async function savePDF() {
     if(!pdfBytes || !sigPreview.src) return alert("Assine antes de salvar!");
     
@@ -105,16 +98,25 @@ async function savePDF() {
     const allPages = doc.getPages();
     const firstWrapper = container.querySelector('.page-wrapper');
     
-    // Posição percentual exata
-    const relX = parseInt(draggable.style.left) / firstWrapper.offsetWidth;
-    const relY = parseInt(draggable.style.top) / firstWrapper.offsetHeight;
-    const relW = draggable.offsetWidth / firstWrapper.offsetWidth;
-    const relH = draggable.offsetHeight / firstWrapper.offsetHeight;
+    // Pegamos a posição exata da assinatura no momento do clique em Salvar
+    const posX = parseFloat(draggable.style.left);
+    const posY = parseFloat(draggable.style.top);
+    const sigW = draggable.offsetWidth;
+    const sigH = draggable.offsetHeight;
 
-    const pagesToSign = shouldDuplicate ? allPages : [allPages[0]];
+    // Proporções em relação à folha exibida na tela
+    const relX = posX / firstWrapper.offsetWidth;
+    const relY = posY / firstWrapper.offsetHeight;
+    const relW = sigW / firstWrapper.offsetWidth;
+    const relH = sigH / firstWrapper.offsetHeight;
 
-    pagesToSign.forEach(page => {
+    // Se estiver no modo TODAS, usa o array completo, senão apenas a página 1
+    const pagesToApply = shouldDuplicate ? allPages : [allPages[0]];
+
+    pagesToApply.forEach((page) => {
         const { width, height } = page.getSize();
+        
+        // No PDF-Lib, o Y começa de baixo para cima, por isso invertemos
         page.drawImage(sigImg, {
             x: width * relX,
             y: height - (height * relY) - (height * relH),
@@ -126,5 +128,6 @@ async function savePDF() {
     const bytes = await doc.save();
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([bytes], {type: 'application/pdf'}));
-    link.download = "assinado_final.pdf"; link.click();
+    link.download = "PDF_Assinado.pdf"; 
+    link.click();
 }
