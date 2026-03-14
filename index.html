@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF v2.9</title>
+    <title>MeuPDF v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -11,8 +11,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #0b0b0b; color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         header { background: #1a1a1a; padding: 12px; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #333; }
-        .btn { padding: 12px 18px; border: none; border-radius: 6px; font-weight: bold; color: white; text-transform: uppercase; font-size: 12px; cursor: pointer; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); opacity: 0.8; }
+        .btn { padding: 12px 18px; border: none; border-radius: 6px; font-weight: bold; color: white; text-transform: uppercase; font-size: 12px; cursor: pointer; }
         
         #viewer { flex: 1; overflow-y: auto; background: #121212; padding: 20px; display: flex; flex-direction: column; align-items: center; touch-action: pan-y; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 30px; line-height: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -21,20 +20,21 @@
         .sig-box img { width: 100%; height: 100%; pointer-events: none; object-fit: contain; }
         .resizer { position: absolute; bottom: -15px; right: -15px; width: 35px; height: 35px; background: #007bff; border-radius: 50%; border: 3px solid #fff; z-index: 20; }
 
-        #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
+        #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
         #canvas-wrap { 
             background: white; 
-            width: 90vw; 
+            width: 94vw; 
             max-width: 650px;
             aspect-ratio: 2 / 1; 
             position: relative; 
-            border: 6px solid #f39c12; 
-            border-radius: 8px;
-            overflow: hidden;
+            border: 4px solid #f39c12; 
+            border-radius: 4px;
+            /* O segredo: impede que o navegador roube o toque nas bordas */
+            touch-action: none; 
         }
         #sig-canvas { width: 100%; height: 100%; touch-action: none; }
         
-        .footer-tools { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; z-index: 150; background: #1a1a1a; padding: 15px; border-radius: 15px; border: 1px solid #444; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .footer-tools { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; z-index: 150; background: #1a1a1a; padding: 15px; border-radius: 15px; border: 1px solid #444; }
     </style>
 </head>
 <body>
@@ -51,7 +51,7 @@
     </div>
 
     <div id="modal">
-        <div style="margin-bottom:12px; color:#f39c12; font-weight:bold; font-size:14px;">ASSINE NO QUADRO (COR AZUL ATIVADA)</div>
+        <div style="margin-bottom:12px; color:#f39c12; font-weight:bold; font-size:14px;">ASSINATURA PROTEGIDA - NÃO APAGA NAS BORDAS</div>
         <div id="canvas-wrap"><canvas id="sig-canvas"></canvas></div>
         <div style="margin-top:20px; display:flex; gap:15px;">
             <button class="btn" style="background:#2ecc71; min-width:100px;" onclick="applySignatureToAll()">OK</button>
@@ -61,7 +61,7 @@
     </div>
 
     <script>
-        const { PDFDocument, rgb } = PDFLib;
+        const { PDFDocument } = PDFLib;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         let pdfData, pad, sigBase64;
 
@@ -77,16 +77,20 @@
             const dpr = window.devicePixelRatio || 1;
             c.width = wrap.offsetWidth * dpr;
             c.height = wrap.offsetHeight * dpr;
-            c.getContext("2d").setTransform(1,0,0,1,0,0);
-            c.getContext("2d").scale(dpr, dpr);
+            const ctx = c.getContext("2d");
+            ctx.setTransform(1,0,0,1,0,0);
+            ctx.scale(dpr, dpr);
+            
             if (pad) pad.off();
-            // Cor azul caneta configurada
-            pad = new SignaturePad(c, { penColor: "rgb(0, 50, 150)", minWidth: 1.8, maxWidth: 4.2 });
+            // penColor azul caneta real
+            pad = new SignaturePad(c, { 
+                penColor: "rgb(0, 50, 150)", 
+                minWidth: 1.5, 
+                maxWidth: 4.0,
+                // Mantém o traço mesmo se o toque sair da área e voltar
+                velocityFilterWeight: 0.6
+            });
         }
-
-        window.addEventListener('resize', () => {
-            if(document.getElementById('modal').style.display === 'flex') setupCanvas();
-        });
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
@@ -105,8 +109,11 @@
                     if(e.target.classList.contains('resizer')) return;
                     const r = page.getBoundingClientRect();
                     const t = e.touches[0];
-                    box.style.left = (t.clientX - r.left - (box.offsetWidth/2)) + "px";
-                    box.style.top = (t.clientY - r.top - (box.offsetHeight/2)) + "px";
+                    // Proteção de borda no movimento
+                    let x = t.clientX - r.left - (box.offsetWidth/2);
+                    let y = t.clientY - r.top - (box.offsetHeight/2);
+                    box.style.left = x + "px";
+                    box.style.top = y + "px";
                 });
 
                 box.querySelector('.resizer').addEventListener("touchmove", (e) => {
@@ -161,7 +168,7 @@
             const bytes = await doc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = `Contrato_Luciano_${new Date().getTime()}.pdf`;
+            link.download = `Contrato_Final.pdf`;
             link.click();
         }
     </script>
