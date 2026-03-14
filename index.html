@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF - Sênior v1.5</title>
+    <title>MeuPDF - Sênior v1.6</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; margin: 0; background: #121212; color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background: #1f1f1f; padding: 12px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
-        .btn { padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; text-transform: uppercase; font-size: 11px; }
-        #viewer { flex: 1; overflow-y: auto; background: #262626; padding: 15px; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); line-height: 0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        body { font-family: sans-serif; margin: 0; background: #111; color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: #222; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 2px solid #333; }
+        .btn { padding: 12px 15px; border: none; border-radius: 4px; font-weight: bold; color: white; text-transform: uppercase; font-size: 11px; }
+        #viewer { flex: 1; overflow-y: auto; background: #1a1a1a; padding: 15px; display: flex; flex-direction: column; align-items: center; position: relative; }
+        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.8); line-height: 0; }
         canvas { display: block; max-width: 100%; height: auto; }
-        #drag-box { position: absolute; width: 140px; height: 60px; border: 2px solid #007bff; background: rgba(0,123,255,0.1); display: none; z-index: 100; touch-action: none; }
-        #tag { position: absolute; top: -28px; left: 0; background: #f39c12; color: black; font-size: 10px; padding: 4px 8px; font-weight: bold; border-radius: 3px; cursor: pointer; }
+        #drag-box { position: absolute; width: 130px; height: 55px; border: 2px solid #007bff; background: rgba(0,123,255,0.1); display: none; z-index: 100; touch-action: none; }
+        #tag { position: absolute; top: -30px; left: 0; background: #f39c12; color: black; font-size: 10px; padding: 5px 8px; font-weight: bold; border-radius: 4px; border: 1px solid #000; }
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
-        #canvas-container { background: white; width: 95%; height: 60%; position: relative; border-radius: 4px; }
+        #canvas-container { background: white; width: 95vw; height: 60vh; position: relative; border: 5px solid #444; }
         #sig-canvas { width: 100%; height: 100%; touch-action: none; }
-        .m-btns { margin-top: 15px; display: flex; gap: 10px; }
+        .m-btns { margin-top: 20px; display: flex; gap: 12px; }
     </style>
 </head>
 <body>
@@ -32,7 +32,7 @@
     </header>
     <div id="viewer"></div>
     <div id="drag-box">
-        <div id="tag">APLICAR: SÓ ESTA</div>
+        <div id="tag" onclick="toggleMode(event)">MODO: SÓ ESTA</div>
         <img id="sig-img" style="width:100%; height:100%; pointer-events:none; object-fit:contain;">
     </div>
     <div id="modal">
@@ -46,16 +46,17 @@
     <script>
         const { PDFDocument } = PDFLib;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let pdfData, pad;
+        let pdfData, pad, currentMode = "SINGLE";
         const view = document.getElementById('viewer'), box = document.getElementById('drag-box'), tag = document.getElementById('tag'), img = document.getElementById('sig-img');
 
         function openModal() {
             if (!view.hasChildNodes()) return alert("Abra o PDF!");
             document.getElementById('modal').style.display = 'flex';
             const c = document.getElementById('sig-canvas');
-            // Reset do canvas para evitar offset
-            c.width = c.offsetWidth; c.height = c.offsetHeight;
-            pad = new SignaturePad(c);
+            // Força o tamanho real do canvas para evitar desvio do toque
+            const rect = c.parentElement.getBoundingClientRect();
+            c.width = rect.width; c.height = rect.height;
+            pad = new SignaturePad(c, { throttle: 0, minWidth: 1, maxWidth: 3 });
         }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
         function confirmSig() {
@@ -63,20 +64,21 @@
             img.src = pad.toDataURL();
             box.style.display = 'block';
             const p1 = view.querySelector('.pdf-page-wrapper');
-            if (p1) { p1.appendChild(box); box.style.left = "10px"; box.style.top = "10px"; }
+            if (p1) { p1.appendChild(box); box.style.left = "20px"; box.style.top = "20px"; }
             closeModal();
         }
-        tag.onclick = () => {
-            const all = tag.innerText.includes("TODAS");
-            tag.innerText = all ? "APLICAR: SÓ ESTA" : "APLICAR: TODAS";
-            tag.style.background = all ? "#f39c12" : "#28a745";
-        };
+        function toggleMode(e) {
+            e.stopPropagation();
+            currentMode = (currentMode === "SINGLE") ? "ALL" : "SINGLE";
+            tag.innerText = (currentMode === "SINGLE") ? "MODO: SÓ ESTA" : "MODO: TODAS";
+            tag.style.background = (currentMode === "SINGLE") ? "#f39c12" : "#28a745";
+        }
         box.addEventListener("touchmove", (e) => {
             e.preventDefault();
             const r = box.parentElement.getBoundingClientRect();
             const t = e.touches[0];
-            box.style.left = (t.clientX - r.left - 70) + "px";
-            box.style.top = (t.clientY - r.top - 30) + "px";
+            box.style.left = (t.clientX - r.left - 65) + "px";
+            box.style.top = (t.clientY - r.top - 27) + "px";
         }, { passive: false });
 
         document.getElementById('pdf-in').onchange = async (e) => {
@@ -96,20 +98,20 @@
         };
 
         async function savePdf() {
-            if(!pdfData || !img.src) return alert("Erro!");
+            if(!pdfData || !img.src) return alert("Erro de dados!");
             const doc = await PDFDocument.load(pdfData);
             const png = await doc.embedPng(img.src);
             const pages = doc.getPages();
             const w = view.querySelector('.pdf-page-wrapper');
+            
+            // Proporções exatas
             const rx = parseFloat(box.style.left) / w.offsetWidth;
             const ry = parseFloat(box.style.top) / w.offsetHeight;
             const rw = box.offsetWidth / w.offsetWidth;
             const rh = box.offsetHeight / w.offsetHeight;
             
-            const applyAll = tag.innerText.includes("TODAS");
-            // FORÇANDO O LOOP EM TODAS AS PÁGINAS SE MARCADO
-            for (let i = 0; i < pages.length; i++) {
-                if (!applyAll && i > 0) break; 
+            const limit = (currentMode === "ALL") ? pages.length : 1;
+            for (let i = 0; i < limit; i++) {
                 const p = pages[i];
                 const { width, height } = p.getSize();
                 p.drawImage(png, {
@@ -122,7 +124,7 @@
             const b = await doc.save();
             const l = document.createElement('a');
             l.href = URL.createObjectURL(new Blob([b], {type: 'application/pdf'}));
-            l.download = "Assinado_Sénior.pdf"; l.click();
+            l.download = "MeuPDF_Finalizado.pdf"; l.click();
         }
     </script>
 </body>
