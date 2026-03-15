@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Assinador v5.17</title>
+    <title>Assinador v5.18</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -11,20 +11,24 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #000; color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #444; min-height: 65px; align-items: center; }
-        .btn { height: 45px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; text-transform: uppercase; flex: 1; max-width: 150px; display: flex; align-items: center; justify-content: center; }
+        .btn { height: 45px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; text-transform: uppercase; flex: 1; max-width: 140px; display: flex; align-items: center; justify-content: center; }
         #viewer { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; align-items: center; background: #222; }
-        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
         
-        /* Caixa de Assinatura com Botão de Giro */
-        .sig-box { position: absolute; width: 160px; height: 80px; border: 2px dashed #3498db; background: rgba(52,152,219,0.1); touch-action: none; transition: transform 0.2s; }
+        /* Caixa de Assinatura com Alças */
+        .sig-box { position: absolute; width: 180px; height: 90px; border: 2px dashed #3498db; background: rgba(52,152,219,0.15); touch-action: none; z-index: 50; }
         .sig-box img { width: 100%; height: 100%; pointer-events: none; }
-        .resizer { position: absolute; bottom: 0; right: 0; width: 30px; height: 30px; background: #3498db; clip-path: polygon(100% 0, 0% 100%, 100% 100%); z-index: 5; }
-        .rotator { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: #f39c12; color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 10; border: 1px solid #fff; }
+        
+        /* Setas de Redimensionamento */
+        .handle { position: absolute; width: 35px; height: 35px; background: #3498db; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 60; }
+        .br { bottom: -15px; right: -15px; cursor: nwse-resize; } /* Seta Sudeste */
+        .bl { bottom: -15px; left: -15px; cursor: nesw-resize; } /* Seta Sudoeste */
+        .rotator-btn { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); background: #f39c12; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 2px solid white; z-index: 70; }
 
         #screen-sign { position: fixed; inset: 0; background: #1a1a1a; z-index: 9999; display: none; flex-direction: column; }
-        #canvas-container { flex: 1; width: 98vw; margin: 5px auto; background: #fff; border-radius: 8px; }
+        #canvas-container { flex: 1; width: 96vw; margin: 10px auto; background: #fff; border-radius: 10px; border: 3px solid #333; }
         canvas#sig-canvas { width: 100%; height: 100%; display: block; }
-        #final-tools { position: fixed; bottom: 0; left: 0; right: 0; display: none; flex-direction: row; gap: 5px; background: rgba(0,0,0,0.95); padding: 12px; z-index: 100; }
+        #final-tools { position: fixed; bottom: 0; left: 0; right: 0; display: none; flex-direction: row; gap: 8px; background: rgba(17,17,17,0.95); padding: 15px; border-top: 1px solid #444; z-index: 100; }
     </style>
 </head>
 <body>
@@ -45,7 +49,7 @@
 
     <div id="screen-sign">
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
-        <div style="padding:15px; display:flex; gap:10px; background:#111;">
+        <div style="padding:20px; display:flex; gap:12px; background:#111;">
             <button class="btn" style="background:#27ae60" onclick="applySignature()">OK</button>
             <button class="btn" style="background:#e74c3c" onclick="pad.clear()">LIMPAR</button>
             <button class="btn" style="background:#7f8c8d" onclick="hideSignScreen()">SAIR</button>
@@ -54,7 +58,7 @@
 
     <script>
         const { PDFDocument, degrees } = PDFLib;
-        let pdfData, pad, sigBase64, currentRotation = 0;
+        let pdfData, pad, sigBase64;
 
         function showSignScreen() {
             document.getElementById('screen-sign').style.display = 'flex';
@@ -76,25 +80,42 @@
             
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const box = document.createElement('div');
-                box.className = 'sig-box'; box.style.left = "20px"; box.style.top = "50px";
-                box.innerHTML = `<div class="rotator" onclick="rotateBox(this)">GIRAR 90°</div><img src="${sigBase64}"><div class="resizer"></div>`;
+                box.className = 'sig-box'; box.style.left = "40px"; box.style.top = "80px";
+                box.innerHTML = `
+                    <div class="rotator-btn" onclick="rotateBox(this)">GIRAR 90° ↻</div>
+                    <img src="${sigBase64}">
+                    <div class="handle br">↘</div>
+                    <div class="handle bl">↙</div>
+                `;
                 
-                let rotation = 0;
                 box.dataset.rotation = 0;
 
+                // Arrastar posição
                 box.addEventListener("touchmove", (e) => {
-                    if (e.target.className.includes('resizer') || e.target.className.includes('rotator')) return;
+                    if (e.target.className.includes('handle') || e.target.className.includes('rotator')) return;
+                    e.preventDefault();
                     const r = page.getBoundingClientRect();
                     box.style.left = (e.touches[0].clientX - r.left - (box.offsetWidth/2)) + "px";
                     box.style.top = (e.touches[0].clientY - r.top - (box.offsetHeight/2)) + "px";
-                });
+                }, {passive: false});
 
-                box.querySelector('.resizer').addEventListener("touchmove", (e) => {
-                    e.stopPropagation();
+                // Redimensionar pela Direita (↘)
+                box.querySelector('.br').addEventListener("touchmove", (e) => {
+                    e.preventDefault(); e.stopPropagation();
                     const r = box.getBoundingClientRect();
-                    box.style.width = (e.touches[0].clientX - r.left) + "px";
-                    box.style.height = (e.touches[0].clientY - r.top) + "px";
-                });
+                    box.style.width = (e.touches[0].clientX - r.left + 15) + "px";
+                    box.style.height = (e.touches[0].clientY - r.top + 15) + "px";
+                }, {passive: false});
+
+                // Redimensionar pela Esquerda (↙)
+                box.querySelector('.bl').addEventListener("touchmove", (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    const r = box.getBoundingClientRect();
+                    const deltaX = r.right - e.touches[0].clientX;
+                    box.style.width = (deltaX + 15) + "px";
+                    box.style.height = (e.touches[0].clientY - r.top + 15) + "px";
+                    box.style.left = (e.touches[0].clientX - page.getBoundingClientRect().left - 15) + "px";
+                }, {passive: false});
 
                 page.appendChild(box);
             });
@@ -110,7 +131,8 @@
         }
 
         document.getElementById('pdf-in').onchange = async (e) => {
-            pdfData = await e.target.files[0].arrayBuffer();
+            const file = e.target.files[0];
+            pdfData = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
             const view = document.getElementById('viewer'); view.innerHTML = "";
             for (let i = 1; i <= pdf.numPages; i++) {
@@ -128,26 +150,24 @@
             const doc = await PDFDocument.load(pdfData);
             const sigImg = await doc.embedJpg(pad.toDataURL("image/jpeg", qual));
             const pages = doc.getPages();
-            
             document.querySelectorAll('.pdf-page-wrapper').forEach((htmlP, i) => {
                 const box = htmlP.querySelector('.sig-box');
                 if (box && pages[i]) {
                     const p = pages[i]; const { width, height } = p.getSize();
                     const rot = parseInt(box.dataset.rotation) || 0;
-                    
                     p.drawImage(sigImg, {
                         x: width * (parseFloat(box.style.left) / htmlP.offsetWidth),
                         y: height - (height * (parseFloat(box.style.top) / htmlP.offsetHeight)) - (height * (box.offsetHeight / htmlP.offsetHeight)),
                         width: width * (box.offsetWidth / htmlP.offsetWidth),
                         height: height * (box.offsetHeight / htmlP.offsetHeight),
-                        rotate: degrees(-rot) // Aplica a rotação no PDF
+                        rotate: degrees(-rot)
                     });
                 }
             });
             const bytes = await doc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = `contrato_${nome}.pdf`;
+            link.download = `pdf_${nome}.pdf`;
             link.click();
         }
     </script>
