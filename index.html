@@ -3,144 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.67 - Multi-Páginas</title>
+    <title>Assinador v5.68 - Estável</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #111; color: #fff; overflow-x: hidden; }
-        header { background: #000; padding: 15px; display: flex; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid #333; }
-        .btn { padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; color: #fff; cursor: pointer; font-size: 12px; }
-        #viewer { padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        canvas { background: #fff; margin-bottom: 20px; max-width: 95%; box-shadow: 0 5px 15px #000; }
-        .page-box { position: relative; display: inline-block; }
-        #sign-zone { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; }
-        #pad-box { flex: 1; margin: 10px; background: #fff; border-radius: 8px; }
-        #sig-canvas { width: 100% !important; height: 100% !important; }
-        .sig-item { position: absolute; z-index: 100; width: 150px; border: 2px dashed #3498db; background: rgba(52,152,219,0.2); touch-action: none; }
-        .sig-item img { width: 100%; pointer-events: none; }
-        #footer-tool { position: fixed; bottom: 0; width: 100%; padding: 15px; background: #000; display: none; justify-content: center; border-top: 2px solid #333; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; overflow-x: hidden; }
+        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 1000; }
+        .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; flex: 1; max-width: 140px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; font-size: 11px; }
+        #viewer { min-height: 100vh; padding: 15px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; }
+        .page-wrapper { position: relative; background: white; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        canvas { max-width: 100%; height: auto; }
+        
+        #sign-overlay { position: fixed; inset: 0; background: #000; z-index: 99999; display: none; flex-direction: column; }
+        #canvas-wrap { flex: 1; margin: 10px; background: #fff; border-radius: 4px; position: relative; }
+        #sig-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+        
+        .floating-sig { position: absolute; z-index: 500; width: 140px; border: 2px dashed #3498db; background: rgba(52,152,219,0.2); touch-action: none; }
+        .floating-sig img { width: 100%; pointer-events: none; }
+        #save-bar { position: fixed; bottom: 0; width: 100%; padding: 15px; background: #000; display: none; justify-content: center; border-top: 2px solid #333; z-index: 2000; }
     </style>
 </head>
 <body>
     <header>
-        <button class="btn" style="background:#3498db" onclick="document.getElementById('f').click()">1. ABRIR PDF</button>
+        <button class="btn" style="background:#3498db" onclick="document.getElementById('file-in').click()">1. ABRIR PDF</button>
         <button class="btn" style="background:#f39c12" onclick="openPad()">2. ASSINAR</button>
-        <input type="file" id="f" style="display:none" accept="application/pdf">
+        <input type="file" id="file-in" style="display:none" accept="application/pdf">
     </header>
 
-    <div id="viewer">Aguardando PDF...</div>
+    <div id="viewer">Aguardando arquivo...</div>
 
-    <div id="footer-tool">
-        <button class="btn" style="background:#2ecc71; width: 80%;" onclick="saveAllPages()">SALVAR EM TODAS AS PÁGINAS</button>
+    <div id="save-bar">
+        <button class="btn" style="background:#2ecc71; max-width: 300px; width: 90%;" onclick="processFinalPDF()">GERAR PDF (TODAS AS PÁGINAS)</button>
     </div>
 
-    <div id="sign-zone">
-        <div id="pad-box"><canvas id="sig-canvas"></canvas></div>
-        <div style="padding:15px; display:flex; gap:10px;">
-            <button class="btn" style="background:#2ecc71; flex:1" onclick="applySig()">OK</button>
-            <button class="btn" style="background:#e74c3c; flex:1" onclick="spad.clear()">LIMPAR</button>
-            <button class="btn" style="background:#666; flex:1" onclick="closePad()">VOLTAR</button>
+    <div id="sign-overlay">
+        <div id="canvas-wrap"><canvas id="sig-canvas"></canvas></div>
+        <div style="padding:10px; display:flex; gap:10px; background:#111;">
+            <button class="btn" style="background:#2ecc71" onclick="confirmSig()">OK</button>
+            <button class="btn" style="background:#e74c3c" onclick="pad.clear()">LIMPAR</button>
+            <button class="btn" style="background:#7f8c8d" onclick="closePad()">VOLTAR</button>
         </div>
     </div>
 
     <script>
-        let pdfBytes, spad, sigData, pdfDoc;
+        let currentPdfBytes, pad, lastSigURL;
         const viewer = document.getElementById('viewer');
 
-        document.getElementById('f').onchange = async (e) => {
+        document.getElementById('file-in').onchange = async (e) => {
             const file = e.target.files[0];
-            if(!file) return;
-            pdfBytes = await file.arrayBuffer();
-            renderPDF();
+            if (!file) return;
+            viewer.innerHTML = "Lendo arquivo...";
+            currentPdfBytes = await file.arrayBuffer();
+            render();
         };
 
-        async function renderPDF() {
-            viewer.innerHTML = "Lendo páginas...";
-            const pdf = await pdfjsLib.getDocument({data: pdfBytes}).promise;
-            viewer.innerHTML = "";
-            for(let i=1; i<=pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const box = document.createElement('div');
-                box.className = 'page-box';
-                box.id = 'page-' + i;
-                const cv = document.createElement('canvas');
-                const vp = page.getViewport({scale: (window.innerWidth * 0.95) / page.getViewport({scale:1}).width});
-                cv.width = vp.width; cv.height = vp.height;
-                await page.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
-                box.appendChild(cv);
-                viewer.appendChild(box);
-            }
+        async function render() {
+            try {
+                const pdf = await pdfjsLib.getDocument({data: currentPdfBytes}).promise;
+                viewer.innerHTML = "";
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const wrap = document.createElement('div');
+                    wrap.className = 'page-wrapper';
+                    wrap.id = 'p-' + i;
+                    const canvas = document.createElement('canvas');
+                    const vp = page.getViewport({scale: (window.innerWidth * 0.9) / page.getViewport({scale:1}).width});
+                    canvas.width = vp.width; canvas.height = vp.height;
+                    await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+                    wrap.appendChild(canvas);
+                    viewer.appendChild(wrap);
+                }
+            } catch (err) { viewer.innerHTML = "Erro ao carregar. Tente novamente."; }
         }
 
         function openPad() {
-            document.getElementById('sign-zone').style.display = 'flex';
-            const scv = document.getElementById('sig-canvas');
-            if(!spad) spad = new SignaturePad(scv, {penColor: 'navy'});
+            document.getElementById('sign-overlay').style.display = 'flex';
+            const cv = document.getElementById('sig-canvas');
+            if (!pad) pad = new SignaturePad(cv, { penColor: "rgb(0,0,128)" });
             const r = window.devicePixelRatio || 1;
-            scv.width = scv.offsetWidth * r; scv.height = scv.offsetHeight * r;
-            scv.getContext("2d").scale(r, r);
-            spad.clear();
+            cv.width = cv.offsetWidth * r; cv.height = cv.offsetHeight * r;
+            cv.getContext("2d").scale(r, r);
+            pad.clear();
         }
 
-        function closePad() { document.getElementById('sign-zone').style.display = 'none'; }
+        function closePad() { document.getElementById('sign-overlay').style.display = 'none'; }
 
-        function applySig() {
-            if(spad.isEmpty()) return;
-            sigData = spad.toDataURL();
+        function confirmSig() {
+            if (pad.isEmpty()) return;
+            lastSigURL = pad.toDataURL();
             closePad();
-            const first = document.querySelector('.page-box');
-            if(!first) return;
+            
+            const firstPage = document.querySelector('.page-wrapper');
+            if (!firstPage) return;
 
             const div = document.createElement('div');
-            div.id = 'sig-floating';
-            div.className = 'sig-item';
-            div.style.left = "50px"; div.style.top = "50px";
-            div.innerHTML = `<img src="${sigData}">`;
+            div.id = 'drag-sig';
+            div.className = 'floating-sig';
+            div.style.left = "20px"; div.style.top = "20px";
+            div.innerHTML = `<img src="${lastSigURL}">`;
 
             div.addEventListener('touchmove', (e) => {
                 e.preventDefault();
-                let t = e.touches[0];
-                let rect = first.getBoundingClientRect();
-                div.style.left = (t.pageX - rect.left - 75) + "px";
-                div.style.top = (t.pageY - rect.top - 40) + "px";
+                const t = e.touches[0];
+                const r = firstPage.getBoundingClientRect();
+                div.style.left = (t.pageX - r.left - 70) + "px";
+                div.style.top = (t.pageY - r.top - 35) + "px";
             });
-            first.appendChild(div);
-            document.getElementById('footer-tool').style.display = 'flex';
+
+            firstPage.appendChild(div);
+            document.getElementById('save-bar').style.display = 'flex';
         }
 
-        async function saveAllPages() {
-            const doc = await PDFLib.PDFDocument.load(pdfBytes);
-            const img = await doc.embedPng(sigData);
+        async function processFinalPDF() {
+            const doc = await PDFLib.PDFDocument.load(currentPdfBytes);
+            const sigImg = await doc.embedPng(lastSigURL);
             const pages = doc.getPages();
-            const floating = document.getElementById('sig-floating');
-            const wrapper = floating.parentElement;
             
-            const wRect = wrapper.getBoundingClientRect();
+            const floating = document.getElementById('drag-sig');
+            const parent = floating.parentElement;
+            const pRect = parent.getBoundingClientRect();
             const sRect = floating.getBoundingClientRect();
-            
-            // Proporção de posicionamento
-            const xPercent = (sRect.left - wRect.left) / wRect.width;
-            const yPercent = (sRect.top - wRect.top) / wRect.height;
-            const wPercent = sRect.width / wRect.width;
+
+            const xPct = (sRect.left - pRect.left) / pRect.width;
+            const yPct = (sRect.top - pRect.top) / pRect.height;
+            const wPct = sRect.width / pRect.width;
 
             pages.forEach(page => {
                 const { width, height } = page.getSize();
-                const drawW = width * wPercent;
+                const drawW = width * wPct;
                 const drawH = drawW * (sRect.height / sRect.width);
-                const drawX = width * xPercent;
-                const drawY = height - (height * yPercent) - drawH;
-
-                page.drawImage(img, {
-                    x: drawX, y: drawY,
+                page.drawImage(sigImg, {
+                    x: width * xPct,
+                    y: height - (height * yPct) - drawH,
                     width: drawW, height: drawH
                 });
             });
 
             const bytes = await doc.save();
+            const blob = new Blob([bytes], { type: "application/pdf" });
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(new Blob([bytes], {type: 'application/pdf'}));
-            link.download = "FINAL_ASSINADO.pdf";
+            link.href = URL.createObjectURL(blob);
+            link.download = "DOCUMENTO_ASSINADO.pdf";
             link.click();
         }
     </script>
