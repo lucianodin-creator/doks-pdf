@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Assinador v5.27</title>
+    <title>Assinador v5.28</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -21,28 +21,33 @@
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 50px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; }
         
         .sig-box { 
-            position: absolute; width: 160px; height: 80px; border: 2px solid #3498db; 
-            background: rgba(52,152,219,0.1); z-index: 1000; 
+            position: absolute; width: 180px; height: 90px; border: 2px solid #3498db; 
+            background: rgba(52,152,219,0.05); z-index: 1000; 
             touch-action: none !important; 
         }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: fill; }
         
-        .move-handle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #3498db; font-size: 32px; opacity: 0.4; pointer-events: none; }
+        .move-handle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #3498db; font-size: 32px; opacity: 0.3; pointer-events: none; }
 
-        .handle { 
-            position: absolute; width: 50px; height: 50px; 
-            background: #2980b9; color: white; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 24px; border: 3px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        /* Controles Baseados no Desenho do Usuário */
+        .edge-handle {
+            position: absolute; background: #2980b9; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
             z-index: 1100; touch-action: none !important;
         }
-        /* Posicionamento estratégico para redimensionamento independente */
-        .tl { top: -60px; left: -60px; } /* Controla ambos lentamente */
-        .tr { top: -60px; right: -60px; } /* Foca na Largura */
-        .bl { bottom: -60px; left: -60px; } /* Foca na Altura */
-        .br { bottom: -60px; right: -60px; } /* Controla ambos livremente */
+        
+        /* Laterais (Largura) */
+        .h-side { width: 30px; height: 50px; top: 50%; transform: translateY(-50%); border-radius: 6px; }
+        .right-h { right: -35px; }
+        .left-h { left: -35px; }
 
-        .rotator-btn { position: absolute; top: -125px; left: 50%; transform: translateX(-50%); background: #f39c12; padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: bold; border: 2px solid white; z-index: 1200; white-space: nowrap; touch-action: none; }
+        /* Topo/Base (Altura) */
+        .v-side { width: 50px; height: 30px; left: 50%; transform: translateX(-50%); border-radius: 6px; }
+        .top-v { top: -35px; }
+        .bottom-v { bottom: -35px; }
+
+        .rotator-btn { position: absolute; top: -85px; right: -60px; background: #f39c12; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid white; z-index: 1200; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.9); padding: 15px; border-top: 1px solid #444; z-index: 3000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
@@ -105,24 +110,26 @@
                 box.className = 'sig-box';
                 box.style.left = "40px"; box.style.top = "80px";
                 box.innerHTML = `
-                    <div class="rotator-btn" onclick="rotateBox(this)">GIRAR 90° ↻</div>
+                    <div class="rotator-btn" onclick="rotateBox(this)">↻</div>
                     <div class="move-handle">✥</div>
                     <img src="${sigBase64}">
-                    <div class="handle tl">↕</div><div class="handle tr">↔</div>
-                    <div class="handle bl">↕</div><div class="handle br">↔</div>
+                    <div class="edge-handle h-side left-h">↔</div>
+                    <div class="edge-handle h-side right-h">↔</div>
+                    <div class="edge-handle v-side top-v">↕</div>
+                    <div class="edge-handle v-side bottom-v">↕</div>
                 `;
                 box.dataset.rotation = 0;
 
+                // MOVER
                 const onPointerMove = (e) => {
-                    if (e.target.className.includes('handle')) return;
+                    if (e.target.className.includes('edge-handle')) return;
                     e.preventDefault(); e.stopPropagation();
                     const r = page.getBoundingClientRect();
                     box.style.left = (e.clientX - r.left - (box.offsetWidth/2)) + "px";
                     box.style.top = (e.clientY - r.top - (box.offsetHeight/2)) + "px";
                 };
-
                 box.addEventListener("pointerdown", (e) => {
-                    if (e.target.className.includes('handle')) return;
+                    if (e.target.className.includes('edge-handle')) return;
                     box.setPointerCapture(e.pointerId);
                     box.addEventListener("pointermove", onPointerMove);
                 });
@@ -131,24 +138,30 @@
                     box.removeEventListener("pointermove", onPointerMove);
                 });
 
-                // REDIMENSIONAMENTO INDEPENDENTE
-                box.querySelectorAll('.handle').forEach(h => {
+                // REDIMENSIONAR INDEPENDENTE (LADOS)
+                box.querySelectorAll('.edge-handle').forEach(h => {
                     let startX, startY, startW, startH, startL, startT;
-                    const speed = 0.6; 
+                    const speed = 0.7;
 
                     const onResize = (re) => {
                         re.preventDefault(); re.stopPropagation();
                         const dx = (re.clientX - startX) * speed;
                         const dy = (re.clientY - startY) * speed;
-                        
-                        // Lógica Independente baseada no canto selecionado
-                        if (h.className.includes('tr')) { // LARGURA
-                            box.style.width = Math.max(40, startW + dx) + "px";
-                        } else if (h.className.includes('bl')) { // ALTURA
-                            box.style.height = Math.max(30, startH + dy) + "px";
-                        } else if (h.className.includes('br') || h.className.includes('tl')) { // AMBOS
-                            box.style.width = Math.max(40, startW + dx) + "px";
-                            box.style.height = Math.max(30, startH + dy) + "px";
+
+                        if (h.className.includes('h-side')) { // LARGURA
+                            if (h.className.includes('right-h')) {
+                                box.style.width = Math.max(40, startW + dx) + "px";
+                            } else {
+                                box.style.width = Math.max(40, startW - dx) + "px";
+                                box.style.left = (startL + dx) + "px";
+                            }
+                        } else { // ALTURA
+                            if (h.className.includes('bottom-v')) {
+                                box.style.height = Math.max(30, startH + dy) + "px";
+                            } else {
+                                box.style.height = Math.max(30, startH - dy) + "px";
+                                box.style.top = (startT + dy) + "px";
+                            }
                         }
                     };
 
@@ -157,6 +170,7 @@
                         h.setPointerCapture(he.pointerId);
                         startX = he.clientX; startY = he.clientY;
                         startW = box.offsetWidth; startH = box.offsetHeight;
+                        startL = parseFloat(box.style.left); startT = parseFloat(box.style.top);
                         h.addEventListener("pointermove", onResize);
                     });
                     h.addEventListener("pointerup", (he) => {
