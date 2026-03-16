@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.43 - Fix Posicionamento</title>
+    <title>Assinador v5.44 - Bloco Base Completo</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -11,36 +11,51 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
         header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; }
-        .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         #viewer { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; width: 100%; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 80px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; display: inline-block; }
         .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; cursor: move; border: 1.5px dashed rgba(52,152,219,0.8); background: rgba(52,152,219,0.1); }
         .sig-box { position: relative; width: 100%; height: 100%; }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: contain; }
         
-        /* Centralização Absoluta para Firefox */
-        .edge-handle { position: absolute; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid #fff; z-index: 2000; font-weight: bold; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        /* Centralização Firefox */
+        .edge-handle { position: absolute; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid #fff; z-index: 2000; font-weight: bold; border-radius: 8px; }
         .h-side { width: 40px; height: 60px; top: 50%; margin-top: -30px; background: #27ae60; }
         .right-h { right: -45px; } .left-h { left: -45px; }
         .v-side { width: 60px; height: 40px; left: 50%; margin-left: -30px; background: #e74c3c; }
         .top-v { top: -45px; } .bottom-v { bottom: -45px; }
-        
         .rotator-btn { position: absolute; top: -85px; right: -25px; background: #f39c12; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid white; z-index: 2100; }
         
+        /* TELA DE AVISO DE GIRO */
+        #rotate-notice { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .rotate-icon { font-size: 70px; margin-bottom: 20px; animation: rotateAnim 2s infinite; }
+        @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
+
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.95); padding: 15px; border-top: 1px solid #444; z-index: 5000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
         #canvas-container { flex: 1; width: 95vw; margin: 10px auto; background: #fff; border-radius: 12px; }
-        canvas#sig-canvas { width: 100%; height: 100%; display: block; }
+        canvas#sig-canvas { width: 100%; height: 100%; display: block; touch-action: none; }
     </style>
 </head>
 <body>
     <header>
         <input type="file" id="pdf-in" style="display:none" accept="application/pdf">
         <button class="btn" style="background:#3498db" onclick="document.getElementById('pdf-in').click()">1. ABRIR PDF</button>
-        <button id="btn-sign" class="btn" style="background:#f39c12" onclick="showSignScreen()">2. ASSINAR</button>
+        <button id="btn-sign" class="btn" style="background:#f39c12" onclick="checkOrientation()">2. ASSINAR</button>
     </header>
+
     <div id="viewer"></div>
-    <div id="final-tools"><button class="btn" style="background:#2ecc71; max-width: 200px;" onclick="saveFinal()">SALVAR PDF</button></div>
+
+    <div id="rotate-notice">
+        <div class="rotate-icon">🔄</div>
+        <h2>Gire o celular</h2>
+        <p>Use a tela na horizontal para assinar melhor.</p>
+    </div>
+
+    <div id="final-tools">
+        <button class="btn" style="background:#2ecc71; max-width: 220px;" onclick="saveFinal()">SALVAR PDF ASSINADO</button>
+    </div>
+
     <div id="screen-sign">
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
         <div style="padding:15px; display:flex; gap:10px; background:#111; justify-content:center;">
@@ -54,13 +69,31 @@
         const { PDFDocument, degrees } = PDFLib;
         let pdfData, pad, sigBase64;
 
+        // Função de Orientação Restaurada
+        function checkOrientation() {
+            const isMobile = window.innerWidth < 1024;
+            const isPortrait = window.innerHeight > window.innerWidth;
+            if (isMobile && isPortrait) {
+                document.getElementById('rotate-notice').style.display = 'flex';
+                window.addEventListener('resize', autoOpen);
+            } else { showSignScreen(); }
+        }
+        function autoOpen() {
+            if (window.innerWidth > window.innerHeight) {
+                document.getElementById('rotate-notice').style.display = 'none';
+                window.removeEventListener('resize', autoOpen);
+                showSignScreen();
+            }
+        }
+
         function showSignScreen() {
             document.getElementById('screen-sign').style.display = 'flex';
             const canvas = document.getElementById('sig-canvas');
             if (!pad) pad = new SignaturePad(canvas, { penColor: "rgb(0, 0, 80)" });
             setTimeout(() => {
-                canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
-                pad.clear();
+                const r = window.devicePixelRatio || 1;
+                canvas.width = canvas.offsetWidth * r; canvas.height = canvas.offsetHeight * r;
+                canvas.getContext("2d").scale(r, r); pad.clear();
             }, 300);
         }
         function hideSignScreen() { document.getElementById('screen-sign').style.display = 'none'; }
@@ -90,7 +123,6 @@
                 
                 container.dataset.rotation = 0;
                 
-                // Arrastar
                 container.onpointerdown = (e) => {
                     if (e.target.classList.contains('edge-handle') || e.target.classList.contains('rotator-btn')) return;
                     let offsetX = e.clientX - container.offsetLeft;
@@ -103,19 +135,18 @@
                     container.onpointerup = () => { container.onpointermove = null; container.releasePointerCapture(e.pointerId); };
                 };
 
-                // Redimensionar
                 container.querySelectorAll('.edge-handle').forEach(h => {
                     h.onpointerdown = (e) => {
                         e.stopPropagation();
-                        let startW = container.offsetWidth; let startH = container.offsetHeight;
-                        let startX = e.clientX; let startY = e.clientY;
-                        let startL = container.offsetLeft; let startT = container.offsetTop;
+                        let sW = container.offsetWidth; let sH = container.offsetHeight;
+                        let sX = e.clientX; let sY = e.clientY;
+                        let sL = container.offsetLeft; let sT = container.offsetTop;
                         h.setPointerCapture(e.pointerId);
                         h.onpointermove = (ev) => {
-                            if (h.classList.contains('right-h')) container.style.width = (startW + (ev.clientX - startX)) + "px";
-                            if (h.classList.contains('left-h')) { container.style.width = (startW - (ev.clientX - startX)) + "px"; container.style.left = (startL + (ev.clientX - startX)) + "px"; }
-                            if (h.classList.contains('bottom-v')) container.style.height = (startH + (ev.clientY - startY)) + "px";
-                            if (h.classList.contains('top-v')) { container.style.height = (startH - (ev.clientY - startY)) + "px"; container.style.top = (startT + (ev.clientY - startY)) + "px"; }
+                            if (h.classList.contains('right-h')) container.style.width = (sW + (ev.clientX - sX)) + "px";
+                            if (h.classList.contains('left-h')) { container.style.width = (sW - (ev.clientX - sX)) + "px"; container.style.left = (sL + (ev.clientX - sX)) + "px"; }
+                            if (h.classList.contains('bottom-v')) container.style.height = (sH + (ev.clientY - sY)) + "px";
+                            if (h.classList.contains('top-v')) { container.style.height = (sH - (ev.clientY - sY)) + "px"; container.style.top = (sT + (ev.clientY - sY)) + "px"; }
                         };
                         h.onpointerup = () => { h.onpointermove = null; h.releasePointerCapture(e.pointerId); };
                     };
@@ -151,26 +182,20 @@
             const doc = await PDFDocument.load(pdfData);
             const sigImg = await doc.embedPng(sigBase64);
             const pages = doc.getPages();
-            
             document.querySelectorAll('.pdf-page-wrapper').forEach((wrapper, i) => {
                 const container = wrapper.querySelector('.sig-container');
                 if (container && pages[i]) {
                     const page = pages[i];
                     const { width, height } = page.getSize();
-                    const scaleX = width / wrapper.clientWidth;
-                    const scaleY = height / wrapper.clientHeight;
-                    
-                    const pW = container.offsetWidth * scaleX;
-                    const pH = container.offsetHeight * scaleY;
-                    const pX = container.offsetLeft * scaleX;
-                    // Correção matemática v5.43: Altura total - Topo - Altura do Objeto
-                    const pY = height - (container.offsetTop * scaleY) - pH;
-                    
+                    const sX = width / wrapper.clientWidth;
+                    const sY = height / wrapper.clientHeight;
+                    const pW = container.offsetWidth * sX;
+                    const pH = container.offsetHeight * sY;
+                    const pX = container.offsetLeft * sX;
+                    const pY = height - (container.offsetTop * sY) - pH;
                     page.drawImage(sigImg, {
-                        x: pX + (pW / 2),
-                        y: pY + (pH / 2),
-                        width: pW,
-                        height: pH,
+                        x: pX + (pW / 2), y: pY + (pH / 2),
+                        width: pW, height: pH,
                         rotate: degrees(-(parseInt(container.dataset.rotation) || 0)),
                         xAnchor: 'center', yAnchor: 'center'
                     });
@@ -179,7 +204,7 @@
             const bytes = await doc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = "assinado_corrigido.pdf";
+            link.download = "assinado_v544.pdf";
             link.click();
         }
     </script>
