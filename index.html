@@ -3,35 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assinador v5.36 - Orientação Restaurada</title>
+    <title>Assinador v5.40 - Compressão Real</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
+        /* CSS do Bloco Base Mantido */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
         header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; }
         .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
-        
         #viewer { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; width: 100%; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 150px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; }
-        
         .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; }
         .sig-box { position: relative; width: 100%; height: 100%; border: 2px solid #3498db; background: rgba(52,152,219,0.15); display: flex; align-items: center; justify-content: center; }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: fill; }
-
         .edge-handle { position: absolute; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 2000; font-weight: bold; border-radius: 8px; }
         .h-side { width: 45px; height: 65px; top: 50%; transform: translateY(-50%); background: #27ae60; }
         .right-h { right: -50px; } .left-h { left: -50px; }
         .v-side { width: 65px; height: 45px; left: 50%; transform: translateX(-50%); background: #e74c3c; }
         .top-v { top: -50px; } .bottom-v { bottom: -50px; }
         .rotator-btn { position: absolute; top: -100px; right: -30px; background: #f39c12; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid white; z-index: 2100; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
-
-        /* TELA DE AVISO DE GIRO */
         #rotate-notice { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         .rotate-icon { font-size: 70px; margin-bottom: 20px; animation: rotateAnim 2s infinite; }
         @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
-
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.9); padding: 15px; border-top: 1px solid #444; z-index: 5000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
         #canvas-container { flex: 1; width: 95vw; margin: 10px auto; background: #fff; border-radius: 12px; }
@@ -51,13 +46,13 @@
     <div id="rotate-notice">
         <div class="rotate-icon">🔄</div>
         <h2>Gire o celular</h2>
-        <p>Para uma assinatura melhor, use o aparelho na horizontal.</p>
+        <p>Ajuste mantido no Bloco Base.</p>
     </div>
 
     <div id="final-tools">
-        <button class="btn" style="background:#2ecc71" onclick="saveFinal(0.9, 'alta')">ALTA</button>
-        <button class="btn" style="background:#f1c40f; color:#000" onclick="saveFinal(0.5, 'media')">MÉDIA</button>
-        <button class="btn" style="background:#e74c3c" onclick="saveFinal(0.1, 'leve')">LEVE</button>
+        <button class="btn" style="background:#2ecc71" onclick="saveFinal(0.6, 'alta')">ALTA (Original)</button>
+        <button class="btn" style="background:#f1c40f; color:#000" onclick="saveFinal(0.3, 'media')">MÉDIA</button>
+        <button class="btn" style="background:#e74c3c" onclick="saveFinal(0.1, 'leve')">LEVE (Compacto)</button>
     </div>
 
     <div id="screen-sign">
@@ -73,19 +68,15 @@
         const { PDFDocument, degrees } = PDFLib;
         let pdfData, pad, sigBase64;
 
-        // Lógica de Orientação
+        // Funções de Orientação e Assinatura mantidas exatamente como no Bloco Base
         function checkOrientation() {
             const isMobile = window.innerWidth < 1024;
             const isPortrait = window.innerHeight > window.innerWidth;
-
             if (isMobile && isPortrait) {
                 document.getElementById('rotate-notice').style.display = 'flex';
                 window.addEventListener('resize', autoOpenAfterRotate);
-            } else {
-                showSignScreen();
-            }
+            } else { showSignScreen(); }
         }
-
         function autoOpenAfterRotate() {
             if (window.innerWidth > window.innerHeight) {
                 document.getElementById('rotate-notice').style.display = 'none';
@@ -93,7 +84,6 @@
                 showSignScreen();
             }
         }
-
         function showSignScreen() {
             document.getElementById('screen-sign').style.display = 'flex';
             const canvas = document.getElementById('sig-canvas');
@@ -106,7 +96,6 @@
                 pad.clear();
             }, 300);
         }
-
         function hideSignScreen() { 
             document.getElementById('screen-sign').style.display = 'none'; 
             document.getElementById('rotate-notice').style.display = 'none';
@@ -126,16 +115,7 @@
                 const container = document.createElement('div');
                 container.className = 'sig-container';
                 container.style.left = "30px"; container.style.top = "50px";
-                container.innerHTML = `
-                    <div class="sig-box">
-                        <div class="rotator-btn" onclick="rotateBox(this)">↻</div>
-                        <img src="${sigBase64}">
-                        <div class="edge-handle h-side left-h">↔</div>
-                        <div class="edge-handle h-side right-h">↔</div>
-                        <div class="edge-handle v-side top-v">↕</div>
-                        <div class="edge-handle v-side bottom-v">↕</div>
-                    </div>
-                `;
+                container.innerHTML = `<div class="sig-box"><div class="rotator-btn" onclick="rotateBox(this)">↻</div><img src="${sigBase64}"><div class="edge-handle h-side left-h">↔</div><div class="edge-handle h-side right-h">↔</div><div class="edge-handle v-side top-v">↕</div><div class="edge-handle v-side bottom-v">↕</div></div>`;
                 container.dataset.rotation = 0;
 
                 const moveLogic = (e) => {
@@ -160,32 +140,20 @@
                     const resizeLogic = (re) => {
                         const dx = (re.clientX - sX); const dy = (re.clientY - sY);
                         if (h.className.includes('h-side')) {
-                            if (h.className.includes('right-h')) {
-                                container.style.width = Math.max(15, sW + dx) + "px";
-                            } else {
-                                const nW = Math.max(15, sW - dx); container.style.width = nW + "px";
-                                if (nW > 15) container.style.left = (sL + dx) + "px";
-                            }
+                            if (h.className.includes('right-h')) { container.style.width = Math.max(15, sW + dx) + "px"; }
+                            else { const nW = Math.max(15, sW - dx); container.style.width = nW + "px"; if (nW > 15) container.style.left = (sL + dx) + "px"; }
                         } else {
-                            if (h.className.includes('bottom-v')) {
-                                container.style.height = Math.max(10, sH + dy) + "px";
-                            } else {
-                                const nH = Math.max(10, sH - dy); container.style.height = nH + "px";
-                                if (nH > 10) container.style.top = (sT + dy) + "px";
-                            }
+                            if (h.className.includes('bottom-v')) { container.style.height = Math.max(10, sH + dy) + "px"; }
+                            else { const nH = Math.max(10, sH - dy); container.style.height = nH + "px"; if (nH > 10) container.style.top = (sT + dy) + "px"; }
                         }
                     };
                     h.addEventListener("pointerdown", (he) => {
                         h.setPointerCapture(he.pointerId);
-                        sX = he.clientX; sY = he.clientY;
-                        sW = container.offsetWidth; sH = container.offsetHeight;
+                        sX = he.clientX; sY = he.clientY; sW = container.offsetWidth; sH = container.offsetHeight;
                         sL = parseFloat(container.style.left); sT = parseFloat(container.style.top);
                         h.addEventListener("pointermove", resizeLogic);
                     });
-                    h.addEventListener("pointerup", (he) => {
-                        h.releasePointerCapture(he.pointerId);
-                        h.removeEventListener("pointermove", resizeLogic);
-                    });
+                    h.addEventListener("pointerup", (he) => { h.releasePointerCapture(he.pointerId); h.removeEventListener("pointermove", resizeLogic); });
                 });
                 page.appendChild(container);
             });
@@ -214,9 +182,13 @@
             }
         };
 
+        // NOVA FUNÇÃO DE SALVAMENTO COM COMPRESSÃO
         async function saveFinal(qual, nome) {
             const doc = await PDFDocument.load(pdfData);
+            
+            // Comprime a imagem da assinatura ANTES de embutir
             const sigImg = await doc.embedJpg(pad.toDataURL("image/jpeg", qual));
+            
             const pages = doc.getPages();
             document.querySelectorAll('.pdf-page-wrapper').forEach((htmlP, i) => {
                 const container = htmlP.querySelector('.sig-container');
@@ -230,9 +202,17 @@
                     p.drawImage(sigImg, { x: pdfX + (pdfW / 2), y: pdfY + (pdfH / 2), width: pdfW, height: pdfH, rotate: degrees(-rot), xAnchor: 'center', yAnchor: 'center' });
                 }
             });
-            const bytes = await doc.save();
-            const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = `assinado_${nome}.pdf`; link.click();
+
+            // COMPRESSÃO FINAL: Remove metadados e usa compressão de objetos
+            const bytes = await doc.save({ 
+                useObjectStreams: qual < 0.5, 
+                addDefaultMetadata: false 
+            });
+
+            const link = document.createElement('a'); 
+            link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+            link.download = `assinado_${nome}.pdf`; 
+            link.click();
         }
     </script>
 </body>
