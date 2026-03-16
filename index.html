@@ -2,8 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Assinador v5.31 - Modo Livre</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assinador v5.32</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -13,37 +13,38 @@
             font-family: sans-serif; margin: 0; background: #000; color: #fff; 
             min-height: 100vh; display: flex; flex-direction: column;
         }
-        header { background: #111; padding: 12px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 2000; }
-        .btn { height: 46px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; text-transform: uppercase; flex: 1; max-width: 130px; display: flex; align-items: center; justify-content: center; }
+        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; }
+        .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         
-        #viewer { flex: 1; padding: 10px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; }
-        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 100px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; }
+        #viewer { flex: 1; padding: 15px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; }
+        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 120px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; }
         
         .sig-box { 
-            position: absolute; width: 180px; height: 90px; border: 2px solid #3498db; 
-            background: rgba(52,152,219,0.1); z-index: 1000; touch-action: none;
+            position: absolute; width: 150px; height: 75px; border: 2px solid #3498db; 
+            background: rgba(52,152,219,0.15); z-index: 1000; touch-action: none;
         }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: fill; }
         
-        .move-handle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #3498db; font-size: 40px; opacity: 0.4; pointer-events: none; }
-
         .edge-handle {
             position: absolute; color: white; display: flex; align-items: center; justify-content: center;
-            font-size: 26px; border: 3px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.6);
-            z-index: 1100; font-weight: bold; touch-action: none;
+            font-size: 24px; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 2000; font-weight: bold; touch-action: none;
         }
         
-        .h-side { width: 65px; height: 85px; top: 50%; transform: translateY(-50%); border-radius: 12px; background: #27ae60; }
-        .right-h { right: -75px; }
-        .left-h { left: -75px; }
+        /* Botões Laterais - Verdes */
+        .h-side { width: 60px; height: 80px; top: 50%; transform: translateY(-50%); border-radius: 12px; background: #27ae60; }
+        .right-h { right: -70px; }
+        .left-h { left: -70px; }
 
-        .v-side { width: 85px; height: 65px; left: 50%; transform: translateX(-50%); border-radius: 12px; background: #e74c3c; }
-        .top-v { top: -75px; }
-        .bottom-v { bottom: -75px; }
+        /* Botões Topo/Base - Vermelhos */
+        .v-side { width: 80px; height: 60px; left: 50%; transform: translateX(-50%); border-radius: 12px; background: #e74c3c; }
+        .top-v { top: -70px; }
+        .bottom-v { bottom: -70px; }
 
-        .rotator-btn { position: absolute; top: -140px; right: -80px; background: #f39c12; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 3px solid white; z-index: 1200; box-shadow: 0 5px 15px rgba(0,0,0,0.5); touch-action: none; }
+        /* Botão de Giro - Laranja */
+        .rotator-btn { position: absolute; top: -140px; right: -70px; background: #f39c12; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 3px solid white; z-index: 2100; box-shadow: 0 4px 12px rgba(0,0,0,0.4); touch-action: none; }
 
-        #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.95); padding: 15px; border-top: 1px solid #444; z-index: 3000; }
+        #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.9); padding: 15px; border-top: 1px solid #444; z-index: 5000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
         #canvas-container { flex: 1; width: 95vw; margin: 10px auto; background: #fff; border-radius: 12px; }
         canvas#sig-canvas { width: 100%; height: 100%; display: block; touch-action: none; }
@@ -102,10 +103,9 @@
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const box = document.createElement('div');
                 box.className = 'sig-box';
-                box.style.left = "50px"; box.style.top = "100px";
+                box.style.left = "40px"; box.style.top = "60px";
                 box.innerHTML = `
                     <div class="rotator-btn" onclick="rotateBox(this)">↻</div>
-                    <div class="move-handle">✥</div>
                     <img src="${sigBase64}">
                     <div class="edge-handle h-side left-h">↔</div>
                     <div class="edge-handle h-side right-h">↔</div>
@@ -114,8 +114,8 @@
                 `;
                 box.dataset.rotation = 0;
 
-                const onPointerMove = (e) => {
-                    if (e.target.className.includes('edge-handle')) return;
+                const moveLogic = (e) => {
+                    if (e.target.className.includes('edge-handle') || e.target.className.includes('rotator')) return;
                     e.preventDefault();
                     const r = page.getBoundingClientRect();
                     box.style.left = (e.clientX - r.left - (box.offsetWidth/2)) + "px";
@@ -123,22 +123,21 @@
                 };
 
                 box.addEventListener("pointerdown", (e) => {
-                    if (e.target.className.includes('edge-handle')) return;
+                    if (e.target.className.includes('edge-handle') || e.target.className.includes('rotator')) return;
                     box.setPointerCapture(e.pointerId);
-                    box.addEventListener("pointermove", onPointerMove);
+                    box.addEventListener("pointermove", moveLogic);
                 });
                 box.addEventListener("pointerup", (e) => {
                     box.releasePointerCapture(e.pointerId);
-                    box.removeEventListener("pointermove", onPointerMove);
+                    box.removeEventListener("pointermove", moveLogic);
                 });
 
                 box.querySelectorAll('.edge-handle').forEach(h => {
                     let sX, sY, sW, sH, sL, sT;
-                    const onResize = (re) => {
+                    const resizeLogic = (re) => {
                         re.preventDefault();
                         const dx = (re.clientX - sX);
                         const dy = (re.clientY - sY);
-
                         if (h.className.includes('h-side')) {
                             if (h.className.includes('right-h')) {
                                 box.style.width = Math.max(10, sW + dx) + "px";
@@ -157,18 +156,16 @@
                             }
                         }
                     };
-
                     h.addEventListener("pointerdown", (he) => {
-                        he.preventDefault();
-                        h.setPointerCapture(he.pointerId);
+                        he.preventDefault(); h.setPointerCapture(he.pointerId);
                         sX = he.clientX; sY = he.clientY;
                         sW = box.offsetWidth; sH = box.offsetHeight;
                         sL = parseFloat(box.style.left); sT = parseFloat(box.style.top);
-                        h.addEventListener("pointermove", onResize);
+                        h.addEventListener("pointermove", resizeLogic);
                     });
                     h.addEventListener("pointerup", (he) => {
                         h.releasePointerCapture(he.pointerId);
-                        h.removeEventListener("pointermove", onResize);
+                        h.removeEventListener("pointermove", resizeLogic);
                     });
                 });
                 page.appendChild(box);
