@@ -3,80 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.57 - Fix de Rotação</title>
+    <title>Assinador v5.58 - Prioridade de Tela</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #000; color: #fff; }
-        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; }
+        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 1000; }
         .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         #viewer { padding: 20px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; min-height: 100vh; }
-        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 40px; display: inline-block; box-shadow: 0 0 20px rgba(0,0,0,0.5); line-height: 0; }
-        .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; border: 2px dashed #3498db; background: rgba(52,152,219,0.3); }
-        .sig-box { width: 100%; height: 100%; pointer-events: none; }
-        .sig-box img { width: 100%; height: 100%; object-fit: contain; }
-        .handle { position: absolute; width: 44px; height: 44px; background: #27ae60; border: 2px solid #fff; border-radius: 50%; right: -22px; bottom: -22px; z-index: 2000; pointer-events: auto; }
-        .rot-btn { position: absolute; width: 44px; height: 44px; background: #f39c12; border: 2px solid #fff; border-radius: 50%; left: -22px; top: -22px; z-index: 2000; pointer-events: auto; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        #rotate-notice { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; justify-content: center; padding: 15px; background: rgba(0,0,0,0.95); z-index: 5000; }
-        #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
-        #canvas-container { flex: 1; width: 95vw; margin: 10px auto; background: #fff; border-radius: 12px; }
+        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 40px; display: inline-block; }
+        
+        /* CAMADA SUPREMA PARA ASSINATURA */
+        #screen-sign { position: fixed; inset: 0; background: #000; z-index: 99999 !important; display: none; flex-direction: column; }
+        #canvas-container { flex: 1; width: 98vw; margin: 5px auto; background: #fff; border-radius: 8px; overflow: hidden; }
         canvas { width: 100%; height: 100%; touch-action: none; }
+        
+        .sig-container { position: absolute; z-index: 500; width: 150px; height: 75px; touch-action: none; border: 2px dashed #3498db; background: rgba(52,152,219,0.3); }
+        .handle { position: absolute; width: 44px; height: 44px; background: #27ae60; border: 2px solid #fff; border-radius: 50%; right: -22px; bottom: -22px; z-index: 600; }
+        .rot-btn { position: absolute; width: 44px; height: 44px; background: #f39c12; border: 2px solid #fff; border-radius: 50%; left: -22px; top: -22px; z-index: 600; display: flex; align-items: center; justify-content: center; }
+        #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; justify-content: center; padding: 15px; background: rgba(0,0,0,0.9); z-index: 2000; }
     </style>
 </head>
 <body>
     <header>
         <button class="btn" style="background:#3498db" onclick="document.getElementById('pdf-in').click()">1. ABRIR PDF</button>
-        <button class="btn" style="background:#f39c12" onclick="startSign()">2. ASSINAR</button>
+        <button class="btn" style="background:#f39c12" onclick="forceSignScreen()">2. ASSINAR</button>
         <input type="file" id="pdf-in" style="display:none" accept="application/pdf">
     </header>
 
     <div id="viewer"></div>
-    <div id="rotate-notice"><h2>Gira o aparelho</h2><p>Mantém na horizontal.</p></div>
     <div id="final-tools"><button class="btn" style="background:#2ecc71; max-width: 280px;" onclick="saveFinal()">GERAR PDF</button></div>
 
     <div id="screen-sign">
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
-        <div style="padding:15px; display:flex; gap:10px; background:#111; justify-content:center;">
-            <button class="btn" style="background:#27ae60" onclick="applySignature()">OK</button>
+        <div style="padding:10px; display:flex; gap:10px; background:#111; justify-content:center;">
+            <button class="btn" style="background:#27ae60; font-size:14px;" onclick="applySignature()">OK (CONCLUIR)</button>
             <button class="btn" style="background:#e74c3c" onclick="pad.clear()">LIMPAR</button>
-            <button class="btn" style="background:#7f8c8d" onclick="hideSignScreen()">SAIR</button>
+            <button class="btn" style="background:#7f8c8d" onclick="hideSignScreen()">FECHAR</button>
         </div>
     </div>
 
     <script>
         const { PDFDocument, degrees } = PDFLib;
-        let pdfData, pad, sigBase64, currentScroll = 0;
+        let pdfData, pad, sigBase64;
 
-        window.addEventListener('resize', () => {
-            if (pdfData) {
-                currentScroll = window.scrollY;
-                renderPDF().then(() => {
-                    window.scrollTo(0, currentScroll);
-                });
-            }
-            if (window.innerWidth > window.innerHeight) {
-                document.getElementById('rotate-notice').style.display = 'none';
-            }
-        });
+        // Tenta manter o PDF vivo ao girar
+        window.addEventListener('resize', () => { if (pdfData) renderPDF(); });
 
-        function startSign() {
-            if (window.innerHeight > window.innerWidth) {
-                document.getElementById('rotate-notice').style.display = 'flex';
-            } else { showSignScreen(); }
-        }
-
-        function showSignScreen() {
-            document.getElementById('screen-sign').style.display = 'flex';
+        function forceSignScreen() {
+            const screen = document.getElementById('screen-sign');
+            screen.style.display = 'flex';
             const canvas = document.getElementById('sig-canvas');
             if (!pad) pad = new SignaturePad(canvas, { penColor: "rgb(0, 0, 80)" });
+            
             setTimeout(() => {
                 const r = window.devicePixelRatio || 1;
-                canvas.width = canvas.offsetWidth * r; canvas.height = canvas.offsetHeight * r;
-                canvas.getContext("2d").scale(r, r); pad.clear();
-            }, 300);
+                canvas.width = canvas.offsetWidth * r;
+                canvas.height = canvas.offsetHeight * r;
+                canvas.getContext("2d").scale(r, r);
+                pad.clear();
+            }, 200);
         }
 
         function hideSignScreen() { document.getElementById('screen-sign').style.display = 'none'; }
@@ -85,20 +73,16 @@
             if (pad.isEmpty()) return;
             sigBase64 = pad.toDataURL("image/png");
             hideSignScreen();
-            drawSigOnScreen();
-            document.getElementById('final-tools').style.display = 'flex';
-        }
-
-        function drawSigOnScreen() {
+            
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const container = document.createElement('div');
                 container.className = 'sig-container';
-                container.style.left = "30px"; container.style.top = "30px";
+                container.style.left = "20px"; container.style.top = "20px";
                 container.dataset.rotation = 0;
-                container.innerHTML = `<div class="rot-btn" onclick="rotateBox(this)">↻</div><div class="sig-box"><img src="${sigBase64}"></div><div class="handle"></div>`;
+                container.innerHTML = `<div class="rot-btn" onclick="rotateBox(this)">↻</div><div style="width:100%;height:100%;pointer-events:none;"><img src="${sigBase64}" style="width:100%;height:100%;object-fit:contain;"></div><div class="handle"></div>`;
                 
                 container.onpointerdown = (e) => {
-                    if (e.target.className.includes('handle') || e.target.className.includes('rot-btn')) return;
+                    if (e.target.classList.contains('handle') || e.target.classList.contains('rot-btn')) return;
                     let oX = e.clientX - container.offsetLeft, oY = e.clientY - container.offsetTop;
                     container.setPointerCapture(e.pointerId);
                     container.onpointermove = (ev) => { 
@@ -121,6 +105,7 @@
                 };
                 page.appendChild(container);
             });
+            document.getElementById('final-tools').style.display = 'flex';
         }
 
         function rotateBox(el) {
@@ -137,13 +122,13 @@
 
         async function renderPDF() {
             const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-            const view = document.getElementById('viewer'); 
+            const view = document.getElementById('viewer');
             view.innerHTML = "";
             for (let i = 1; i <= pdf.numPages; i++) {
                 const p = await pdf.getPage(i);
                 const w = document.createElement('div'); w.className = 'pdf-page-wrapper';
                 const c = document.createElement('canvas');
-                const vp = p.getViewport({scale: (view.clientWidth * 0.9) / p.getViewport({scale:1}).width});
+                const vp = p.getViewport({scale: (view.clientWidth * 0.95) / p.getViewport({scale:1}).width});
                 c.width = vp.width; c.height = vp.height;
                 await p.render({canvasContext: c.getContext('2d'), viewport: vp}).promise;
                 w.appendChild(c); view.appendChild(w);
@@ -176,7 +161,7 @@
             const bytes = await doc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = "PDF_ASSINADO.pdf";
+            link.download = "FINALIZADO.pdf";
             link.click();
         }
     </script>
