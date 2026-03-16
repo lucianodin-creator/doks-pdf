@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Assinador v5.26</title>
+    <title>Assinador v5.27</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -21,27 +21,28 @@
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 50px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; }
         
         .sig-box { 
-            position: absolute; width: 160px; border: 2px solid #3498db; 
+            position: absolute; width: 160px; height: 80px; border: 2px solid #3498db; 
             background: rgba(52,152,219,0.1); z-index: 1000; 
             touch-action: none !important; 
         }
-        .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; }
+        .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: fill; }
         
-        .move-handle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #3498db; font-size: 32px; opacity: 0.6; pointer-events: none; }
+        .move-handle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #3498db; font-size: 32px; opacity: 0.4; pointer-events: none; }
 
         .handle { 
             position: absolute; width: 50px; height: 50px; 
             background: #2980b9; color: white; border-radius: 50%; 
             display: flex; align-items: center; justify-content: center; 
-            font-size: 22px; border: 3px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            font-size: 24px; border: 3px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             z-index: 1100; touch-action: none !important;
         }
-        .tl { top: -60px; left: -60px; }
-        .tr { top: -60px; right: -60px; }
-        .bl { bottom: -60px; left: -60px; }
-        .br { bottom: -60px; right: -60px; }
+        /* Posicionamento estratégico para redimensionamento independente */
+        .tl { top: -60px; left: -60px; } /* Controla ambos lentamente */
+        .tr { top: -60px; right: -60px; } /* Foca na Largura */
+        .bl { bottom: -60px; left: -60px; } /* Foca na Altura */
+        .br { bottom: -60px; right: -60px; } /* Controla ambos livremente */
 
-        .rotator-btn { position: absolute; top: -120px; left: 50%; transform: translateX(-50%); background: #f39c12; padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: bold; border: 2px solid white; z-index: 1200; white-space: nowrap; touch-action: none; }
+        .rotator-btn { position: absolute; top: -125px; left: 50%; transform: translateX(-50%); background: #f39c12; padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: bold; border: 2px solid white; z-index: 1200; white-space: nowrap; touch-action: none; }
 
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.9); padding: 15px; border-top: 1px solid #444; z-index: 3000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
@@ -76,7 +77,7 @@
 
     <script>
         const { PDFDocument, degrees } = PDFLib;
-        let pdfData, pad, sigBase64, originalAspectRatio;
+        let pdfData, pad, sigBase64;
 
         function showSignScreen() {
             document.getElementById('screen-sign').style.display = 'flex';
@@ -95,22 +96,20 @@
             hideSignScreen();
             document.getElementById('btn-redo').style.display = 'flex';
             document.getElementById('btn-sign').style.display = 'none';
-            const img = new Image(); img.src = sigBase64;
-            img.onload = () => { originalAspectRatio = img.width / img.height; createSigBoxes(); };
+            createSigBoxes();
         }
 
         function createSigBoxes() {
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const box = document.createElement('div');
                 box.className = 'sig-box';
-                box.style.height = (160 / originalAspectRatio) + "px";
                 box.style.left = "40px"; box.style.top = "80px";
                 box.innerHTML = `
                     <div class="rotator-btn" onclick="rotateBox(this)">GIRAR 90° ↻</div>
                     <div class="move-handle">✥</div>
                     <img src="${sigBase64}">
-                    <div class="handle tl">↖</div><div class="handle tr">↗</div>
-                    <div class="handle bl">↙</div><div class="handle br">↘</div>
+                    <div class="handle tl">↕</div><div class="handle tr">↔</div>
+                    <div class="handle bl">↕</div><div class="handle br">↔</div>
                 `;
                 box.dataset.rotation = 0;
 
@@ -132,36 +131,32 @@
                     box.removeEventListener("pointermove", onPointerMove);
                 });
 
-                // REDIMENSIONAMENTO SUAVE (Multiplicador de Velocidade)
+                // REDIMENSIONAMENTO INDEPENDENTE
                 box.querySelectorAll('.handle').forEach(h => {
-                    let startX, startW, startL;
-                    const speedFactor = 0.5; // Reduz a velocidade pela metade para precisão
+                    let startX, startY, startW, startH, startL, startT;
+                    const speed = 0.6; 
 
                     const onResize = (re) => {
                         re.preventDefault(); re.stopPropagation();
-                        const deltaX = (re.clientX - startX) * speedFactor;
-                        const pR = page.getBoundingClientRect();
+                        const dx = (re.clientX - startX) * speed;
+                        const dy = (re.clientY - startY) * speed;
                         
-                        let newW;
-                        if (h.className.includes('tr') || h.className.includes('br')) {
-                            newW = startW + deltaX;
-                        } else {
-                            newW = startW - deltaX;
-                            box.style.left = (startL + deltaX) + "px";
-                        }
-
-                        if (newW > 40) {
-                            box.style.width = newW + "px";
-                            box.style.height = (newW / originalAspectRatio) + "px";
+                        // Lógica Independente baseada no canto selecionado
+                        if (h.className.includes('tr')) { // LARGURA
+                            box.style.width = Math.max(40, startW + dx) + "px";
+                        } else if (h.className.includes('bl')) { // ALTURA
+                            box.style.height = Math.max(30, startH + dy) + "px";
+                        } else if (h.className.includes('br') || h.className.includes('tl')) { // AMBOS
+                            box.style.width = Math.max(40, startW + dx) + "px";
+                            box.style.height = Math.max(30, startH + dy) + "px";
                         }
                     };
 
                     h.addEventListener("pointerdown", (he) => {
                         he.preventDefault(); he.stopPropagation();
                         h.setPointerCapture(he.pointerId);
-                        startX = he.clientX;
-                        startW = box.offsetWidth;
-                        startL = parseFloat(box.style.left);
+                        startX = he.clientX; startY = he.clientY;
+                        startW = box.offsetWidth; startH = box.offsetHeight;
                         h.addEventListener("pointermove", onResize);
                     });
                     h.addEventListener("pointerup", (he) => {
