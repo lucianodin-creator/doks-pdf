@@ -3,46 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assinador v5.32</title>
+    <title>Assinador v5.33 - Orientação Inteligente</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: sans-serif; margin: 0; background: #000; color: #fff; 
-            min-height: 100vh; display: flex; flex-direction: column;
-        }
+        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
         header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; }
         .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         
         #viewer { flex: 1; padding: 15px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 120px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; }
         
-        .sig-box { 
-            position: absolute; width: 150px; height: 75px; border: 2px solid #3498db; 
-            background: rgba(52,152,219,0.15); z-index: 1000; touch-action: none;
-        }
+        /* Estilo da Assinatura e Controles v5.32 mantidos */
+        .sig-box { position: absolute; width: 150px; height: 75px; border: 2px solid #3498db; background: rgba(52,152,219,0.15); z-index: 1000; touch-action: none; }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: fill; }
-        
-        .edge-handle {
-            position: absolute; color: white; display: flex; align-items: center; justify-content: center;
-            font-size: 24px; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            z-index: 2000; font-weight: bold; touch-action: none;
-        }
-        
-        /* Botões Laterais - Verdes */
-        .h-side { width: 60px; height: 80px; top: 50%; transform: translateY(-50%); border-radius: 12px; background: #27ae60; }
-        .right-h { right: -70px; }
-        .left-h { left: -70px; }
-
-        /* Botões Topo/Base - Vermelhos */
-        .v-side { width: 80px; height: 60px; left: 50%; transform: translateX(-50%); border-radius: 12px; background: #e74c3c; }
-        .top-v { top: -70px; }
-        .bottom-v { bottom: -70px; }
-
-        /* Botão de Giro - Laranja */
+        .edge-handle { position: absolute; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 2000; font-weight: bold; touch-action: none; border-radius: 12px; }
+        .h-side { width: 60px; height: 80px; top: 50%; transform: translateY(-50%); background: #27ae60; }
+        .right-h { right: -70px; } .left-h { left: -70px; }
+        .v-side { width: 80px; height: 60px; left: 50%; transform: translateX(-50%); background: #e74c3c; }
+        .top-v { top: -70px; } .bottom-v { bottom: -70px; }
         .rotator-btn { position: absolute; top: -140px; right: -70px; background: #f39c12; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 3px solid white; z-index: 2100; box-shadow: 0 4px 12px rgba(0,0,0,0.4); touch-action: none; }
+
+        /* TELA DE AVISO DE GIRO */
+        #rotate-notice { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .rotate-icon { font-size: 80px; margin-bottom: 20px; animation: rotateAnim 2s infinite; }
+        @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
 
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.9); padding: 15px; border-top: 1px solid #444; z-index: 5000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
@@ -54,11 +41,17 @@
     <header>
         <input type="file" id="pdf-in" style="display:none" accept="application/pdf">
         <button class="btn" style="background:#3498db" onclick="document.getElementById('pdf-in').click()">1. ABRIR PDF</button>
-        <button id="btn-sign" class="btn" style="background:#f39c12" onclick="showSignScreen()">2. ASSINAR</button>
-        <button id="btn-redo" class="btn" style="background:#e67e22; display:none;" onclick="showSignScreen()">REFAZER</button>
+        <button id="btn-sign" class="btn" style="background:#f39c12" onclick="checkOrientationBeforeSign()">2. ASSINAR</button>
+        <button id="btn-redo" class="btn" style="background:#e67e22; display:none;" onclick="checkOrientationBeforeSign()">REFAZER</button>
     </header>
 
     <div id="viewer"></div>
+
+    <div id="rotate-notice">
+        <div class="rotate-icon">🔄</div>
+        <h2>Gire o celular</h2>
+        <p>Para assinar com mais espaço e qualidade, utilize o celular deitado (horizontal).</p>
+    </div>
 
     <div id="final-tools">
         <button class="btn" style="background:#2ecc71" onclick="saveFinal(0.9, 'alta')">ALTA</button>
@@ -79,16 +72,38 @@
         const { PDFDocument, degrees } = PDFLib;
         let pdfData, pad, sigBase64;
 
+        // Função para checar orientação
+        function checkOrientationBeforeSign() {
+            if (window.innerHeight > window.innerWidth) {
+                document.getElementById('rotate-notice').style.display = 'flex';
+                window.addEventListener('resize', autoOpenSign);
+            } else {
+                showSignScreen();
+            }
+        }
+
+        function autoOpenSign() {
+            if (window.innerWidth > window.innerHeight) {
+                document.getElementById('rotate-notice').style.display = 'none';
+                window.removeEventListener('resize', autoOpenSign);
+                showSignScreen();
+            }
+        }
+
         function showSignScreen() {
             document.getElementById('screen-sign').style.display = 'flex';
             const canvas = document.getElementById('sig-canvas');
             if (!pad) pad = new SignaturePad(canvas, { penColor: "rgb(0, 0, 80)" });
-            const ratio = window.devicePixelRatio || 1;
-            canvas.width = canvas.offsetWidth * ratio; canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext("2d").scale(ratio, ratio);
+            setTimeout(() => {
+                const ratio = window.devicePixelRatio || 1;
+                canvas.width = canvas.offsetWidth * ratio;
+                canvas.height = canvas.offsetHeight * ratio;
+                canvas.getContext("2d").scale(ratio, ratio);
+                pad.clear();
+            }, 300);
         }
 
-        function hideSignScreen() { document.getElementById('screen-sign').style.display = 'none'; }
+        function hideSignScreen() { document.getElementById('screen-sign').style.display = 'none'; document.getElementById('rotate-notice').style.display = 'none'; }
 
         function applySignature() {
             if (!pad || pad.isEmpty()) return;
