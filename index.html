@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.47 - Fixação Real</title>
+    <title>Assinador v5.48 - Assinatura Real no Local</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -14,7 +14,9 @@
         .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         #viewer { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; width: 100%; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 50px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; display: inline-block; }
-        .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; cursor: move; border: 2px dashed #3498db; background: rgba(52,152,219,0.2); }
+        
+        /* MOLDURA COM A ASSINATURA REAL */
+        .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; cursor: move; border: 1.5px dashed #3498db; background: rgba(52,152,219,0.1); }
         .sig-box { position: relative; width: 100%; height: 100%; }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: contain; }
         
@@ -41,7 +43,7 @@
 
     <div id="viewer"></div>
     <div id="rotate-notice"><h2>Gire o celular</h2><p>Horizontal para assinar.</p></div>
-    <div id="final-tools"><button class="btn" style="background:#2ecc71; max-width: 280px;" onclick="saveFinal()">SALVAR PDF NO LOCAL MARCADO</button></div>
+    <div id="final-tools"><button class="btn" style="background:#2ecc71; max-width: 280px;" onclick="saveFinal()">SALVAR PDF ASSINADO</button></div>
 
     <div id="screen-sign">
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
@@ -87,13 +89,13 @@
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const container = document.createElement('div');
                 container.className = 'sig-container';
-                container.style.left = "30px"; container.style.top = "30px";
+                container.style.left = "40px"; container.style.top = "40px";
                 container.dataset.rotation = 0;
                 container.innerHTML = `<div class="sig-box"><div class="rotator-btn" onclick="rotateBox(this)">↻</div><img src="${sigBase64}"><div class="edge-handle h-side left-h">↔</div><div class="edge-handle h-side right-h">↔</div><div class="edge-handle v-side top-v">↕</div><div class="edge-handle v-side bottom-v">↕</div></div>`;
                 
                 container.onpointerdown = (e) => {
                     if (e.target.classList.contains('edge-handle') || e.target.classList.contains('rotator-btn')) return;
-                    let oX = e.clientX - container.offsetLeft; let oY = e.clientY - container.offsetTop;
+                    let oX = e.clientX - container.offsetLeft, oY = e.clientY - container.offsetTop;
                     container.setPointerCapture(e.pointerId);
                     container.onpointermove = (ev) => { container.style.left = (ev.clientX - oX)+"px"; container.style.top = (ev.clientY - oY)+"px"; };
                     container.onpointerup = () => { container.onpointermove = null; container.releasePointerCapture(e.pointerId); };
@@ -150,10 +152,9 @@
                     const page = pages[i];
                     const { width, height } = page.getSize();
                     const rect = wrapper.getBoundingClientRect();
-                    const scX = width / rect.width;
-                    const scY = height / rect.height;
-                    const fW = container.offsetWidth * scX, fH = container.offsetHeight * scY, fX = container.offsetLeft * scX;
-                    const fY = height - (container.offsetTop * scY) - fH;
+                    const scX = width / rect.width, scY = height / rect.height;
+                    const fW = container.offsetWidth * scX, fH = container.offsetHeight * scY, fX = (container.getBoundingClientRect().left - rect.left) * scX;
+                    const fY = height - ((container.getBoundingClientRect().top - rect.top) * scY) - fH;
                     page.drawImage(sigImg, {
                         x: fX + (fW / 2), y: fY + (fH / 2),
                         width: fW, height: fH,
@@ -165,7 +166,7 @@
             const bytes = await doc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = "assinado_posicao_fixa.pdf";
+            link.download = "assinado_visual.pdf";
             link.click();
         }
     </script>
