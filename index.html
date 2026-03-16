@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.49 - Limpeza Total</title>
+    <title>Assinador v5.50 - Estabilidade Total</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; overflow-x: hidden; }
-        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; }
+        body { font-family: sans-serif; margin: 0; background: #111; color: #fff; }
+        header { background: #000; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; }
         .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         #viewer { padding: 20px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; min-height: 100vh; }
-        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 40px; line-height: 0; display: inline-block; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 40px; display: inline-block; box-shadow: 0 0 20px rgba(0,0,0,0.5); line-height: 0; }
         
-        .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; cursor: move; border: 2px dashed #3498db; }
+        .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; border: 2px dashed #3498db; background: rgba(52,152,219,0.1); }
         .sig-box { position: relative; width: 100%; height: 100%; }
         .sig-box img { width: 100%; height: 100%; pointer-events: none; object-fit: contain; }
         
@@ -26,7 +26,6 @@
         .top-v { top: -50px; } .bottom-v { bottom: -50px; }
         .rotator-btn { position: absolute; top: -90px; right: -30px; background: #f39c12; width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         
-        #rotate-notice { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; justify-content: center; padding: 15px; background: rgba(0,0,0,0.9); z-index: 5000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
         #canvas-container { flex: 1; width: 95vw; margin: 10px auto; background: #fff; border-radius: 12px; }
@@ -36,13 +35,12 @@
 <body>
     <header>
         <button class="btn" style="background:#3498db" onclick="document.getElementById('pdf-in').click()">1. ABRIR PDF</button>
-        <button class="btn" style="background:#f39c12" onclick="checkOrientation()">2. ASSINAR</button>
+        <button class="btn" style="background:#f39c12" onclick="showSignScreen()">2. ASSINAR</button>
         <input type="file" id="pdf-in" style="display:none" accept="application/pdf">
     </header>
 
     <div id="viewer"></div>
-    <div id="rotate-notice"><h2>Gire o celular</h2><p>Horizontal para assinar.</p></div>
-    <div id="final-tools"><button class="btn" style="background:#2ecc71; max-width: 280px;" onclick="saveFinal()">SALVAR PDF LIMPO</button></div>
+    <div id="final-tools"><button class="btn" style="background:#2ecc71; max-width: 280px;" onclick="saveFinal()">SALVAR PDF FINAL</button></div>
 
     <div id="screen-sign">
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
@@ -57,14 +55,6 @@
         const { PDFDocument, degrees } = PDFLib;
         let pdfData, pad, sigBase64;
 
-        function checkOrientation() {
-            if (window.innerHeight > window.innerWidth && window.innerWidth < 1024) {
-                document.getElementById('rotate-notice').style.display = 'flex';
-                window.addEventListener('resize', autoOpen);
-            } else { showSignScreen(); }
-        }
-        function autoOpen() { if (window.innerWidth > window.innerHeight) { document.getElementById('rotate-notice').style.display = 'none'; showSignScreen(); window.removeEventListener('resize', autoOpen); } }
-        
         function showSignScreen() {
             document.getElementById('screen-sign').style.display = 'flex';
             const canvas = document.getElementById('sig-canvas');
@@ -88,7 +78,7 @@
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const container = document.createElement('div');
                 container.className = 'sig-container';
-                container.style.left = "20%"; container.style.top = "20%";
+                container.style.left = "50px"; container.style.top = "50px";
                 container.dataset.rotation = 0;
                 container.innerHTML = `<div class="sig-box"><div class="rotator-btn" onclick="rotateBox(this)">↻</div><img src="${sigBase64}"><div class="edge-handle h-side left-h">↔</div><div class="edge-handle h-side right-h">↔</div><div class="edge-handle v-side top-v">↕</div><div class="edge-handle v-side bottom-v">↕</div></div>`;
                 
@@ -96,7 +86,10 @@
                     if (e.target.classList.contains('edge-handle') || e.target.classList.contains('rotator-btn')) return;
                     let oX = e.clientX - container.offsetLeft, oY = e.clientY - container.offsetTop;
                     container.setPointerCapture(e.pointerId);
-                    container.onpointermove = (ev) => { container.style.left = (ev.clientX - oX)+"px"; container.style.top = (ev.clientY - oY)+"px"; };
+                    container.onpointermove = (ev) => { 
+                        container.style.left = (ev.clientX - oX) + "px"; 
+                        container.style.top = (ev.clientY - oY) + "px"; 
+                    };
                     container.onpointerup = () => { container.onpointermove = null; container.releasePointerCapture(e.pointerId); };
                 };
 
@@ -134,7 +127,7 @@
                 const p = await pdf.getPage(i);
                 const w = document.createElement('div'); w.className = 'pdf-page-wrapper';
                 const c = document.createElement('canvas');
-                const vp = p.getViewport({scale: (view.clientWidth * 0.9) / p.getViewport({scale:1}).width});
+                const vp = p.getViewport({scale: (view.clientWidth * 0.95) / p.getViewport({scale:1}).width});
                 c.width = vp.width; c.height = vp.height;
                 await p.render({canvasContext: c.getContext('2d'), viewport: vp}).promise;
                 w.appendChild(c); view.appendChild(w);
@@ -150,9 +143,9 @@
                 if (container && pages[i]) {
                     const page = pages[i];
                     const { width, height } = page.getSize();
-                    // LÓGICA DE LIMPEZA: Posicionamento puramente relativo ao wrapper
-                    const scX = width / wrapper.offsetWidth;
-                    const scY = height / wrapper.offsetHeight;
+                    // CÁLCULO RELATIVO DIRETO (Ignora modo computador/celular)
+                    const scX = width / wrapper.clientWidth;
+                    const scY = height / wrapper.clientHeight;
                     
                     const fW = container.offsetWidth * scX;
                     const fH = container.offsetHeight * scY;
@@ -170,7 +163,7 @@
             const bytes = await doc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = "assinatura_limpa.pdf";
+            link.download = "assinado_estavel.pdf";
             link.click();
         }
     </script>
