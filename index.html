@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.60 - Sem Travas</title>
+    <title>Assinador v5.61 - Ajuste Dinâmico</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; overflow: hidden; }
+        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; overflow-x: hidden; }
         header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 1000; }
         .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         #viewer { padding: 20px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; min-height: 100vh; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 40px; display: inline-block; }
         
-        /* JANELA DE ASSINATURA - FORÇA TOTAL */
-        #screen-sign { position: fixed; inset: 0; background: #000; z-index: 999999 !important; display: none; flex-direction: column; }
-        #canvas-container { flex: 1; width: 98vw; margin: 10px auto; background: #fff; border-radius: 8px; border: 2px solid #333; }
-        canvas { width: 100%; height: 100%; touch-action: none; }
+        #screen-sign { position: fixed; inset: 0; background: #000; z-index: 999999; display: none; flex-direction: column; }
+        #canvas-container { flex: 1; width: 98vw; margin: 5px auto; background: #fff; border-radius: 4px; position: relative; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; }
         
         .sig-container { position: absolute; z-index: 500; width: 150px; height: 75px; touch-action: none; border: 2px dashed #3498db; background: rgba(52,152,219,0.3); }
         .handle { position: absolute; width: 44px; height: 44px; background: #27ae60; border: 2px solid #fff; border-radius: 50%; right: -22px; bottom: -22px; }
@@ -38,10 +37,10 @@
 
     <div id="screen-sign">
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
-        <div style="padding:15px; display:flex; gap:10px; background:#111; justify-content:center;">
-            <button class="btn" style="background:#27ae60; font-size:14px;" onclick="applySignature()">OK (USAR ESTA)</button>
+        <div style="padding:10px; display:flex; gap:10px; background:#111; justify-content:center;">
+            <button class="btn" style="background:#27ae60" onclick="applySignature()">OK</button>
             <button class="btn" style="background:#e74c3c" onclick="pad.clear()">LIMPAR</button>
-            <button class="btn" style="background:#7f8c8d" onclick="hideSignScreen()">VOLTAR</button>
+            <button class="btn" style="background:#7f8c8d" onclick="hideSignScreen()">SAIR</button>
         </div>
     </div>
 
@@ -49,27 +48,36 @@
         const { PDFDocument, degrees } = PDFLib;
         let pdfData, pad, sigBase64;
 
-        // Redesenha PDF ao girar para manter proporção
-        window.addEventListener('resize', () => { if (pdfData) renderPDF(); });
+        // Ajuste automático ao girar
+        window.addEventListener('resize', () => {
+            if (pdfData) renderPDF();
+            if (document.getElementById('screen-sign').style.display === 'flex') {
+                resizeCanvas();
+            }
+        });
 
         function showSignScreen() {
-            const screen = document.getElementById('screen-sign');
-            screen.style.display = 'flex';
+            document.getElementById('screen-sign').style.display = 'flex';
             const canvas = document.getElementById('sig-canvas');
-            
-            // Inicializa ou limpa o SignaturePad
             if (!pad) {
-                pad = new SignaturePad(canvas, { penColor: "rgb(0, 0, 80)", minWidth: 1.5, maxWidth: 3 });
+                pad = new SignaturePad(canvas, { penColor: "rgb(0, 0, 80)", minWidth: 2, maxWidth: 4 });
             }
+            resizeCanvas();
+        }
+
+        function resizeCanvas() {
+            const canvas = document.getElementById('sig-canvas');
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
             
-            // Força o ajuste do tamanho do canvas para o tamanho atual da tela
-            setTimeout(() => {
-                const ratio = Math.max(window.devicePixelRatio || 1, 1);
-                canvas.width = canvas.offsetWidth * ratio;
-                canvas.height = canvas.offsetHeight * ratio;
-                canvas.getContext("2d").scale(ratio, ratio);
-                pad.clear(); // Limpa para evitar distorção
-            }, 150);
+            // Salva o desenho atual antes de redimensionar
+            const tempCopy = pad.toData();
+            
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            
+            pad.clear(); 
+            pad.fromData(tempCopy); // Restaura o desenho na nova proporção
         }
 
         function hideSignScreen() { document.getElementById('screen-sign').style.display = 'none'; }
@@ -82,7 +90,7 @@
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const container = document.createElement('div');
                 container.className = 'sig-container';
-                container.style.left = "20px"; container.style.top = "20px";
+                container.style.left = "30px"; container.style.top = "30px";
                 container.dataset.rotation = 0;
                 container.innerHTML = `<div class="rot-btn" onclick="rotateBox(this)">↻</div><div style="width:100%;height:100%;pointer-events:none;"><img src="${sigBase64}" style="width:100%;height:100%;object-fit:contain;"></div><div class="handle"></div>`;
                 
@@ -166,7 +174,7 @@
             const bytes = await doc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = "PDF_PRONTO.pdf";
+            link.download = "PDF_FINAL.pdf";
             link.click();
         }
     </script>
