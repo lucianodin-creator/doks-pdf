@@ -1,47 +1,71 @@
 import { PDFDocument } from 'pdf-lib';
 import formidable from 'formidable';
-import fs from 'fs';
+import fs from 'fs/promises';
 
+// Configuração necessária para a Vercel não travar o upload de arquivos
 export const config = {
-  api: { bodyParser: false },
+  api: {
+    bodyParser: false,
+  },
 };
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+  if (req.method !== 'POST') {
+    return res.status(405).send('Método não permitido');
+  }
 
-  const form = formidable({ multiples: false });
+  const form = formidable({});
 
-  form.parse(req, async (err, fields, files) => {
-    if (err) return res.status(500).json({ error: 'Erro no formulário' });
+  try {
+    const [fields, files] = await form.parse(req);
 
-    try {
-      const pdfPath = files.pdfFile[0].filepath;
-      const sigPath = files.signatureImage[0].filepath;
-      const xPct = parseFloat(fields.x[0]);
-      const yPct = parseFloat(fields.y[0]);
+    // 1. Validar e carregar arquivos
+    const pdfFile = files.pdfFile[0];
+    const sigFile = files.signatureImage[0];
+    
+    const pdfBuffer = await fs.readFile(pdfFile.filepath);
+    const sigBuffer = await fs.readFile(sigFile.filepath);
 
-      const pdfDoc = await PDFDocument.load(fs.readFileSync(pdfPath));
-      const sigImg = await pdfDoc.embedPng(fs.readFileSync(sigPath));
-      const pages = pdfDoc.getPages();
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+    const signatureImg = await pdfDoc.embedPng(sigBuffer);
 
-      pages.forEach(page => {
-        const { width, height } = page.getSize();
-        const sW = 150; // Largura padrão da assinatura no PDF
-        const sH = sW * (sigImg.height / sigImg.width);
-        
-        // Converte porcentagem para coordenadas do PDF-LIB (origem inferior esquerda)
-        const finalX = (xPct / 100) * width;
-        const finalY = height - ((yPct / 100) * height) - sH;
+    // Pegar coordenadas (X e Y vêm como porcentagem do frontend)
+    const xPct = parseFloat(fields.x[0]) / 100;
+    const yPct = parseFloat(fields.y[0]) / 100;
 
-        page.drawImage(sigImg, { x: finalX, y: finalY, width: sW, height: sH });
+    const pages = pdfDoc.getPages();
+
+    // 2. Processar cada página do documento
+    pages.forEach((page) => {
+      const { width, height } = page.getSize();
+
+      // Definir tamanho da assinatura no PDF (ex: 150px de largura proporcional)
+      const sigWidth = 150; 
+      const sigHeight = (signatureImg.height / signatureImg.width) * sigWidth;
+
+      // Cálculo das Coordenadas:
+      // X: Largura da página * porcentagem recebida
+      // Y: Inverter (Origem pdf-lib é inferior esquerdo, navegador é superior esquerdo)
+      const drawX = width * xPct;
+      const drawY = height - (height * yPct) - sigHeight;
+
+      page.drawImage(signatureImg, {
+        x: drawX,
+        y: drawY,
+        width: sigWidth,
+        height: sigHeight,
       });
+    });
 
-      const pdfBytes = await pdfDoc.save();
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename="DUCATO_ASSINADO.pdf"');
-      res.send(Buffer.from(pdfBytes));
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  });
+    // 3. Gerar PDF final e enviar
+    const pdfBytes = await pdfDoc.save();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="DUCATO_ASSINADO.pdf"');
+    res.send(Buffer.from(pdfBytes));
+
+  } catch (err) {
+    console.error('Erro no processamento:', err);
+    res.status(500).json({ error: 'Falha ao processar PDF' });
+  }
 }
