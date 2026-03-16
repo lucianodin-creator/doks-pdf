@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assinador v5.35 - Fix Firefox</title>
+    <title>Assinador v5.36 - Orientação Restaurada</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -16,31 +16,21 @@
         #viewer { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; width: 100%; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 150px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; }
         
-        /* CONTAINER MESTRE DA ASSINATURA */
         .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; }
-        
-        .sig-box { 
-            position: relative; width: 100%; height: 100%; border: 2px solid #3498db; 
-            background: rgba(52,152,219,0.15); display: flex; align-items: center; justify-content: center;
-        }
+        .sig-box { position: relative; width: 100%; height: 100%; border: 2px solid #3498db; background: rgba(52,152,219,0.15); display: flex; align-items: center; justify-content: center; }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: fill; }
 
-        /* BOTÕES PRESOS AO CONTAINER */
-        .edge-handle { 
-            position: absolute; color: white; display: flex; align-items: center; justify-content: center; 
-            font-size: 20px; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
-            z-index: 2000; font-weight: bold; border-radius: 8px;
-        }
-        
+        .edge-handle { position: absolute; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 2000; font-weight: bold; border-radius: 8px; }
         .h-side { width: 45px; height: 65px; top: 50%; transform: translateY(-50%); background: #27ae60; }
-        .right-h { right: -50px; }
-        .left-h { left: -50px; }
-
+        .right-h { right: -50px; } .left-h { left: -50px; }
         .v-side { width: 65px; height: 45px; left: 50%; transform: translateX(-50%); background: #e74c3c; }
-        .top-v { top: -50px; }
-        .bottom-v { bottom: -50px; }
-
+        .top-v { top: -50px; } .bottom-v { bottom: -50px; }
         .rotator-btn { position: absolute; top: -100px; right: -30px; background: #f39c12; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid white; z-index: 2100; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+
+        /* TELA DE AVISO DE GIRO */
+        #rotate-notice { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .rotate-icon { font-size: 70px; margin-bottom: 20px; animation: rotateAnim 2s infinite; }
+        @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
 
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.9); padding: 15px; border-top: 1px solid #444; z-index: 5000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
@@ -52,11 +42,17 @@
     <header>
         <input type="file" id="pdf-in" style="display:none" accept="application/pdf">
         <button class="btn" style="background:#3498db" onclick="document.getElementById('pdf-in').click()">1. ABRIR PDF</button>
-        <button id="btn-sign" class="btn" style="background:#f39c12" onclick="showSignScreen()">2. ASSINAR</button>
-        <button id="btn-redo" class="btn" style="background:#e67e22; display:none;" onclick="showSignScreen()">REFAZER</button>
+        <button id="btn-sign" class="btn" style="background:#f39c12" onclick="checkOrientation()">2. ASSINAR</button>
+        <button id="btn-redo" class="btn" style="background:#e67e22; display:none;" onclick="checkOrientation()">REFAZER</button>
     </header>
 
     <div id="viewer"></div>
+
+    <div id="rotate-notice">
+        <div class="rotate-icon">🔄</div>
+        <h2>Gire o celular</h2>
+        <p>Para uma assinatura melhor, use o aparelho na horizontal.</p>
+    </div>
 
     <div id="final-tools">
         <button class="btn" style="background:#2ecc71" onclick="saveFinal(0.9, 'alta')">ALTA</button>
@@ -77,6 +73,27 @@
         const { PDFDocument, degrees } = PDFLib;
         let pdfData, pad, sigBase64;
 
+        // Lógica de Orientação
+        function checkOrientation() {
+            const isMobile = window.innerWidth < 1024;
+            const isPortrait = window.innerHeight > window.innerWidth;
+
+            if (isMobile && isPortrait) {
+                document.getElementById('rotate-notice').style.display = 'flex';
+                window.addEventListener('resize', autoOpenAfterRotate);
+            } else {
+                showSignScreen();
+            }
+        }
+
+        function autoOpenAfterRotate() {
+            if (window.innerWidth > window.innerHeight) {
+                document.getElementById('rotate-notice').style.display = 'none';
+                window.removeEventListener('resize', autoOpenAfterRotate);
+                showSignScreen();
+            }
+        }
+
         function showSignScreen() {
             document.getElementById('screen-sign').style.display = 'flex';
             const canvas = document.getElementById('sig-canvas');
@@ -90,7 +107,10 @@
             }, 300);
         }
 
-        function hideSignScreen() { document.getElementById('screen-sign').style.display = 'none'; }
+        function hideSignScreen() { 
+            document.getElementById('screen-sign').style.display = 'none'; 
+            document.getElementById('rotate-notice').style.display = 'none';
+        }
 
         function applySignature() {
             if (!pad || pad.isEmpty()) return;
@@ -106,7 +126,6 @@
                 const container = document.createElement('div');
                 container.className = 'sig-container';
                 container.style.left = "30px"; container.style.top = "50px";
-                
                 container.innerHTML = `
                     <div class="sig-box">
                         <div class="rotator-btn" onclick="rotateBox(this)">↻</div>
