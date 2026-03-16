@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.69 - Correção de Limite</title>
+    <title>Assinador v5.68 - Estável</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; margin: 0; background: #000; color: #fff; overflow-x: hidden; }
-        header { background: #111; padding: 12px; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 1000; }
-        .btn { height: 46px; border: none; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; flex: 1; max-width: 150px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; font-size: 11px; }
+        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 1000; }
+        .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; flex: 1; max-width: 140px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; font-size: 11px; }
         #viewer { min-height: 100vh; padding: 15px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; }
-        .page-wrapper { position: relative; background: white; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); line-height: 0; }
+        .page-wrapper { position: relative; background: white; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         canvas { max-width: 100%; height: auto; }
         
-        /* Overlay de Assinatura - Limite Corrigido */
         #sign-overlay { position: fixed; inset: 0; background: #000; z-index: 99999; display: none; flex-direction: column; }
-        #canvas-wrap { flex: 1; margin: 15px; background: #fff; border-radius: 8px; position: relative; overflow: hidden; border: 2px solid #555; }
-        #sig-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; }
+        #canvas-wrap { flex: 1; margin: 10px; background: #fff; border-radius: 4px; position: relative; }
+        #sig-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
         
-        .floating-sig { position: absolute; z-index: 500; width: 150px; border: 2px dashed #3498db; background: rgba(52,152,219,0.2); touch-action: none; cursor: move; }
-        .floating-sig img { width: 100%; pointer-events: none; display: block; }
+        .floating-sig { position: absolute; z-index: 500; width: 140px; border: 2px dashed #3498db; background: rgba(52,152,219,0.2); touch-action: none; }
+        .floating-sig img { width: 100%; pointer-events: none; }
         #save-bar { position: fixed; bottom: 0; width: 100%; padding: 15px; background: #000; display: none; justify-content: center; border-top: 2px solid #333; z-index: 2000; }
     </style>
 </head>
@@ -33,16 +32,16 @@
         <input type="file" id="file-in" style="display:none" accept="application/pdf">
     </header>
 
-    <div id="viewer">Aguardando PDF...</div>
+    <div id="viewer">Aguardando arquivo...</div>
 
     <div id="save-bar">
-        <button class="btn" style="background:#2ecc71; max-width: 320px; width: 90%;" onclick="processFinalPDF()">GERAR PDF EM TODAS AS PÁGINAS</button>
+        <button class="btn" style="background:#2ecc71; max-width: 300px; width: 90%;" onclick="processFinalPDF()">GERAR PDF (TODAS AS PÁGINAS)</button>
     </div>
 
     <div id="sign-overlay">
         <div id="canvas-wrap"><canvas id="sig-canvas"></canvas></div>
-        <div style="padding:15px; display:flex; gap:10px; background:#111;">
-            <button class="btn" style="background:#27ae60" onclick="confirmSig()">OK</button>
+        <div style="padding:10px; display:flex; gap:10px; background:#111;">
+            <button class="btn" style="background:#2ecc71" onclick="confirmSig()">OK</button>
             <button class="btn" style="background:#e74c3c" onclick="pad.clear()">LIMPAR</button>
             <button class="btn" style="background:#7f8c8d" onclick="closePad()">VOLTAR</button>
         </div>
@@ -55,7 +54,7 @@
         document.getElementById('file-in').onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            viewer.innerHTML = "Processando manual...";
+            viewer.innerHTML = "Lendo arquivo...";
             currentPdfBytes = await file.arrayBuffer();
             render();
         };
@@ -68,30 +67,24 @@
                     const page = await pdf.getPage(i);
                     const wrap = document.createElement('div');
                     wrap.className = 'page-wrapper';
+                    wrap.id = 'p-' + i;
                     const canvas = document.createElement('canvas');
-                    const vp = page.getViewport({scale: (window.innerWidth * 0.95) / page.getViewport({scale:1}).width});
+                    const vp = page.getViewport({scale: (window.innerWidth * 0.9) / page.getViewport({scale:1}).width});
                     canvas.width = vp.width; canvas.height = vp.height;
                     await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
                     wrap.appendChild(canvas);
                     viewer.appendChild(wrap);
                 }
-            } catch (err) { viewer.innerHTML = "Erro ao carregar PDF."; }
+            } catch (err) { viewer.innerHTML = "Erro ao carregar. Tente novamente."; }
         }
 
         function openPad() {
             document.getElementById('sign-overlay').style.display = 'flex';
             const cv = document.getElementById('sig-canvas');
-            
-            // Re-inicialização forçada para garantir limites corretos
-            if (!pad) {
-                pad = new SignaturePad(cv, { penColor: "rgb(0,0,128)", minWidth: 2, maxWidth: 4 });
-            }
-            
-            // Ajuste de DPI e Limites de Tela
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            cv.width = cv.offsetWidth * ratio;
-            cv.height = cv.offsetHeight * ratio;
-            cv.getContext("2d").scale(ratio, ratio);
+            if (!pad) pad = new SignaturePad(cv, { penColor: "rgb(0,0,128)" });
+            const r = window.devicePixelRatio || 1;
+            cv.width = cv.offsetWidth * r; cv.height = cv.offsetHeight * r;
+            cv.getContext("2d").scale(r, r);
             pad.clear();
         }
 
@@ -105,10 +98,6 @@
             const firstPage = document.querySelector('.page-wrapper');
             if (!firstPage) return;
 
-            // Remove assinatura anterior se existir
-            const old = document.getElementById('drag-sig');
-            if(old) old.remove();
-
             const div = document.createElement('div');
             div.id = 'drag-sig';
             div.className = 'floating-sig';
@@ -119,9 +108,9 @@
                 e.preventDefault();
                 const t = e.touches[0];
                 const r = firstPage.getBoundingClientRect();
-                div.style.left = (t.pageX - r.left - 75) + "px";
-                div.style.top = (t.pageY - r.top - 37) + "px";
-            }, {passive: false});
+                div.style.left = (t.pageX - r.left - 70) + "px";
+                div.style.top = (t.pageY - r.top - 35) + "px";
+            });
 
             firstPage.appendChild(div);
             document.getElementById('save-bar').style.display = 'flex';
@@ -156,7 +145,7 @@
             const blob = new Blob([bytes], { type: "application/pdf" });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = "MANUAL_ASSINADO.pdf";
+            link.download = "DOCUMENTO_ASSINADO.pdf";
             link.click();
         }
     </script>
