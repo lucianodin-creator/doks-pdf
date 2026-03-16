@@ -3,38 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assinador v5.33 - Orientação Inteligente</title>
+    <title>Assinador v5.34 - Alinhamento Corrigido</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
-        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; }
+        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 5000; width: 100%; }
         .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         
-        #viewer { flex: 1; padding: 15px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; }
-        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 120px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; }
-        
-        /* Estilo da Assinatura e Controles v5.32 mantidos */
+        #viewer { flex: 1; padding: 15px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; overflow-x: hidden; width: 100%; }
+        .pdf-page-wrapper { position: relative; background: white; margin-bottom: 120px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; max-width: 100%; }
+        canvas { max-width: 100%; height: auto !important; }
+
+        /* MOLDURA DA ASSINATURA */
         .sig-box { position: absolute; width: 150px; height: 75px; border: 2px solid #3498db; background: rgba(52,152,219,0.15); z-index: 1000; touch-action: none; }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: fill; }
-        .edge-handle { position: absolute; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 2000; font-weight: bold; touch-action: none; border-radius: 12px; }
-        .h-side { width: 60px; height: 80px; top: 50%; transform: translateY(-50%); background: #27ae60; }
-        .right-h { right: -70px; } .left-h { left: -70px; }
-        .v-side { width: 80px; height: 60px; left: 50%; transform: translateX(-50%); background: #e74c3c; }
-        .top-v { top: -70px; } .bottom-v { bottom: -70px; }
-        .rotator-btn { position: absolute; top: -140px; right: -70px; background: #f39c12; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 3px solid white; z-index: 2100; box-shadow: 0 4px 12px rgba(0,0,0,0.4); touch-action: none; }
 
-        /* TELA DE AVISO DE GIRO */
+        /* CONTROLES DE REDIMENSIONAMENTO - AJUSTE DINÂMICO */
+        .edge-handle { 
+            position: absolute; color: white; display: flex; align-items: center; justify-content: center; 
+            font-size: 22px; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+            z-index: 2000; font-weight: bold; touch-action: none; border-radius: 8px;
+        }
+        
+        /* Verde (Largura) - Agora mais próximos para não vazar da tela */
+        .h-side { width: 50px; height: 70px; top: 50%; transform: translateY(-50%); background: #27ae60; }
+        .right-h { right: -55px; }
+        .left-h { left: -55px; }
+
+        /* Vermelho (Altura) */
+        .v-side { width: 70px; height: 50px; left: 50%; transform: translateX(-50%); background: #e74c3c; }
+        .top-v { top: -55px; }
+        .bottom-v { bottom: -55px; }
+
+        /* Giro (Laranja) */
+        .rotator-btn { position: absolute; top: -110px; right: -40px; background: #f39c12; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid white; z-index: 2100; box-shadow: 0 4px 10px rgba(0,0,0,0.4); touch-action: none; }
+
+        /* AVISO DE ORIENTAÇÃO */
         #rotate-notice { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        .rotate-icon { font-size: 80px; margin-bottom: 20px; animation: rotateAnim 2s infinite; }
+        .rotate-icon { font-size: 70px; margin-bottom: 15px; animation: rotateAnim 2s infinite; }
         @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
 
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.9); padding: 15px; border-top: 1px solid #444; z-index: 5000; }
         #screen-sign { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
-        #canvas-container { flex: 1; width: 95vw; margin: 10px auto; background: #fff; border-radius: 12px; }
-        canvas#sig-canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+        #canvas-container { flex: 1; width: 95vw; margin: 10px auto; background: #fff; border-radius: 12px; position: relative; }
+        canvas#sig-canvas { width: 100%; height: 100%; display: block; touch-action: none; border-radius: 12px; }
     </style>
 </head>
 <body>
@@ -50,7 +65,7 @@
     <div id="rotate-notice">
         <div class="rotate-icon">🔄</div>
         <h2>Gire o celular</h2>
-        <p>Para assinar com mais espaço e qualidade, utilize o celular deitado (horizontal).</p>
+        <p>Use o celular deitado para assinar com mais espaço.</p>
     </div>
 
     <div id="final-tools">
@@ -61,7 +76,7 @@
 
     <div id="screen-sign">
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
-        <div style="padding:20px; display:flex; gap:12px; background:#111; justify-content:center;">
+        <div style="padding:15px; display:flex; gap:10px; background:#111; justify-content:center;">
             <button class="btn" style="background:#27ae60" onclick="applySignature()">OK</button>
             <button class="btn" style="background:#e74c3c" onclick="pad.clear()">LIMPAR</button>
             <button class="btn" style="background:#7f8c8d" onclick="hideSignScreen()">SAIR</button>
@@ -72,9 +87,8 @@
         const { PDFDocument, degrees } = PDFLib;
         let pdfData, pad, sigBase64;
 
-        // Função para checar orientação
         function checkOrientationBeforeSign() {
-            if (window.innerHeight > window.innerWidth) {
+            if (window.innerHeight > window.innerWidth && window.innerWidth < 768) {
                 document.getElementById('rotate-notice').style.display = 'flex';
                 window.addEventListener('resize', autoOpenSign);
             } else {
@@ -118,7 +132,7 @@
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const box = document.createElement('div');
                 box.className = 'sig-box';
-                box.style.left = "40px"; box.style.top = "60px";
+                box.style.left = "20px"; box.style.top = "50px";
                 box.innerHTML = `
                     <div class="rotator-btn" onclick="rotateBox(this)">↻</div>
                     <img src="${sigBase64}">
@@ -131,7 +145,6 @@
 
                 const moveLogic = (e) => {
                     if (e.target.className.includes('edge-handle') || e.target.className.includes('rotator')) return;
-                    e.preventDefault();
                     const r = page.getBoundingClientRect();
                     box.style.left = (e.clientX - r.left - (box.offsetWidth/2)) + "px";
                     box.style.top = (e.clientY - r.top - (box.offsetHeight/2)) + "px";
@@ -150,29 +163,25 @@
                 box.querySelectorAll('.edge-handle').forEach(h => {
                     let sX, sY, sW, sH, sL, sT;
                     const resizeLogic = (re) => {
-                        re.preventDefault();
-                        const dx = (re.clientX - sX);
-                        const dy = (re.clientY - sY);
+                        const dx = (re.clientX - sX); const dy = (re.clientY - sY);
                         if (h.className.includes('h-side')) {
                             if (h.className.includes('right-h')) {
                                 box.style.width = Math.max(10, sW + dx) + "px";
                             } else {
-                                const nW = Math.max(10, sW - dx);
-                                box.style.width = nW + "px";
+                                const nW = Math.max(10, sW - dx); box.style.width = nW + "px";
                                 if (nW > 10) box.style.left = (sL + dx) + "px";
                             }
                         } else {
                             if (h.className.includes('bottom-v')) {
                                 box.style.height = Math.max(10, sH + dy) + "px";
                             } else {
-                                const nH = Math.max(10, sH - dy);
-                                box.style.height = nH + "px";
+                                const nH = Math.max(10, sH - dy); box.style.height = nH + "px";
                                 if (nH > 10) box.style.top = (sT + dy) + "px";
                             }
                         }
                     };
                     h.addEventListener("pointerdown", (he) => {
-                        he.preventDefault(); h.setPointerCapture(he.pointerId);
+                        h.setPointerCapture(he.pointerId);
                         sX = he.clientX; sY = he.clientY;
                         sW = box.offsetWidth; sH = box.offsetHeight;
                         sL = parseFloat(box.style.left); sT = parseFloat(box.style.top);
