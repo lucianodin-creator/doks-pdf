@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.46 - Bloco Base Reforçado</title>
+    <title>Assinador v5.47 - Fixação Real</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -14,19 +14,16 @@
         .btn { height: 44px; border: none; border-radius: 6px; font-weight: bold; color: white; font-size: 11px; cursor: pointer; flex: 1; max-width: 120px; display: flex; align-items: center; justify-content: center; }
         #viewer { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; background: #1e1e1e; overflow-y: auto; width: 100%; }
         .pdf-page-wrapper { position: relative; background: white; margin-bottom: 50px; box-shadow: 0 5px 25px rgba(0,0,0,0.7); line-height: 0; display: inline-block; }
-        
-        /* A MOLDURA QUE MANTÉM A POSIÇÃO */
-        .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; cursor: move; border: 2px dashed #3498db; background: rgba(52,152,219,0.15); }
+        .sig-container { position: absolute; z-index: 1000; width: 150px; height: 75px; touch-action: none; cursor: move; border: 2px dashed #3498db; background: rgba(52,152,219,0.2); }
         .sig-box { position: relative; width: 100%; height: 100%; }
         .sig-box img { width: 100%; height: 100%; display: block; pointer-events: none; object-fit: contain; }
         
-        /* Ajuste Firefox e PC */
-        .edge-handle { position: absolute; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid #fff; z-index: 2000; font-weight: bold; border-radius: 8px; }
+        .edge-handle { position: absolute; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid #fff; z-index: 2000; font-weight: bold; border-radius: 8px; min-width: 40px; }
         .h-side { width: 40px; height: 60px; top: 50%; margin-top: -30px; background: #27ae60; }
         .right-h { right: -45px; } .left-h { left: -45px; }
         .v-side { width: 60px; height: 40px; left: 50%; margin-left: -30px; background: #e74c3c; }
         .top-v { top: -45px; } .bottom-v { bottom: -45px; }
-        .rotator-btn { position: absolute; top: -85px; right: -25px; background: #f39c12; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 2px solid white; z-index: 2100; }
+        .rotator-btn { position: absolute; top: -85px; right: -25px; background: #f39c12; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid white; z-index: 2100; }
         
         #rotate-notice { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         #final-tools { position: fixed; bottom: 0; left: 0; width: 100%; display: none; flex-direction: row; justify-content: center; gap: 10px; background: rgba(0,0,0,0.95); padding: 15px; border-top: 1px solid #444; z-index: 5000; }
@@ -43,8 +40,8 @@
     </header>
 
     <div id="viewer"></div>
-    <div id="rotate-notice"><h2>Gire o celular</h2><p>Mantenha na horizontal para assinar.</p></div>
-    <div id="final-tools"><button class="btn" style="background:#2ecc71; max-width: 250px;" onclick="saveFinal()">SALVAR PDF NO LUGAR</button></div>
+    <div id="rotate-notice"><h2>Gire o celular</h2><p>Horizontal para assinar.</p></div>
+    <div id="final-tools"><button class="btn" style="background:#2ecc71; max-width: 280px;" onclick="saveFinal()">SALVAR PDF NO LOCAL MARCADO</button></div>
 
     <div id="screen-sign">
         <div id="canvas-container"><canvas id="sig-canvas"></canvas></div>
@@ -90,15 +87,9 @@
             document.querySelectorAll('.pdf-page-wrapper').forEach(page => {
                 const container = document.createElement('div');
                 container.className = 'sig-container';
-                container.style.left = "40px"; container.style.top = "40px";
+                container.style.left = "30px"; container.style.top = "30px";
                 container.dataset.rotation = 0;
-                container.innerHTML = `
-                    <div class="sig-box">
-                        <div class="rotator-btn" onclick="rotateBox(this)">↻</div>
-                        <img src="${sigBase64}">
-                        <div class="edge-handle h-side left-h">↔</div><div class="edge-handle h-side right-h">↔</div>
-                        <div class="edge-handle v-side top-v">↕</div><div class="edge-handle v-side bottom-v">↕</div>
-                    </div>`;
+                container.innerHTML = `<div class="sig-box"><div class="rotator-btn" onclick="rotateBox(this)">↻</div><img src="${sigBase64}"><div class="edge-handle h-side left-h">↔</div><div class="edge-handle h-side right-h">↔</div><div class="edge-handle v-side top-v">↕</div><div class="edge-handle v-side bottom-v">↕</div></div>`;
                 
                 container.onpointerdown = (e) => {
                     if (e.target.classList.contains('edge-handle') || e.target.classList.contains('rotator-btn')) return;
@@ -111,9 +102,7 @@
                 container.querySelectorAll('.edge-handle').forEach(h => {
                     h.onpointerdown = (e) => {
                         e.stopPropagation();
-                        let sW = container.offsetWidth; let sH = container.offsetHeight;
-                        let sX = e.clientX; let sY = e.clientY;
-                        let sL = container.offsetLeft; let sT = container.offsetTop;
+                        let sW = container.offsetWidth, sH = container.offsetHeight, sX = e.clientX, sY = e.clientY, sL = container.offsetLeft, sT = container.offsetTop;
                         h.setPointerCapture(e.pointerId);
                         h.onpointermove = (ev) => {
                             if (h.classList.contains('right-h')) container.style.width = (sW + (ev.clientX - sX)) + "px";
@@ -155,21 +144,16 @@
             const doc = await PDFDocument.load(pdfData);
             const sigImg = await doc.embedPng(sigBase64);
             const pages = doc.getPages();
-            
             document.querySelectorAll('.pdf-page-wrapper').forEach((wrapper, i) => {
                 const container = wrapper.querySelector('.sig-container');
                 if (container && pages[i]) {
                     const page = pages[i];
                     const { width, height } = page.getSize();
-                    // Escala baseada na largura interna do wrapper para precisão total
-                    const scX = width / wrapper.clientWidth;
-                    const scY = height / wrapper.clientHeight;
-                    
-                    const fW = container.offsetWidth * scX;
-                    const fH = container.offsetHeight * scY;
-                    const fX = container.offsetLeft * scX;
+                    const rect = wrapper.getBoundingClientRect();
+                    const scX = width / rect.width;
+                    const scY = height / rect.height;
+                    const fW = container.offsetWidth * scX, fH = container.offsetHeight * scY, fX = container.offsetLeft * scX;
                     const fY = height - (container.offsetTop * scY) - fH;
-
                     page.drawImage(sigImg, {
                         x: fX + (fW / 2), y: fY + (fH / 2),
                         width: fW, height: fH,
@@ -181,7 +165,7 @@
             const bytes = await doc.save();
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-            link.download = "assinado_final.pdf";
+            link.download = "assinado_posicao_fixa.pdf";
             link.click();
         }
     </script>
