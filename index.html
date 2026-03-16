@@ -1,127 +1,108 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.65 - Fix Reset</title>
+    <title>Assinador v5.66</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: sans-serif; margin: 0; background: #000; color: #fff; overflow: hidden; height: 100vh; }
-        header { background: #111; padding: 10px; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #333; }
-        .btn { height: 45px; border: none; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; padding: 0 15px; }
-        #viewer { height: calc(100vh - 65px); overflow-y: auto; background: #222; display: flex; flex-direction: column; align-items: center; padding: 15px; }
-        canvas { background: #fff; margin-bottom: 20px; max-width: 95%; height: auto !important; box-shadow: 0 5px 15px #000; }
+        body { font-family: sans-serif; margin: 0; background: #111; color: #fff; }
+        header { background: #000; padding: 15px; display: flex; gap: 10px; justify-content: center; border-bottom: 2px solid #333; }
+        .btn { padding: 12px 18px; border: none; border-radius: 5px; font-weight: bold; color: #fff; cursor: pointer; }
+        #viewer { padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 80vh; }
+        canvas { background: #fff; margin-bottom: 20px; max-width: 95%; box-shadow: 0 5px 15px #000; }
         .page-box { position: relative; display: inline-block; }
-        
-        /* Overlay de Assinatura */
-        #sign-wrap { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; }
-        #canvas-area { flex: 1; margin: 10px; background: #fff; border-radius: 5px; }
-        #sig-canvas { width: 100% !important; height: 100% !important; background: #fff; }
-        
-        .sig-item { position: absolute; z-index: 100; width: 150px; border: 2px dashed #3498db; background: rgba(52,152,219,0.2); touch-action: none; }
-        .sig-item img { width: 100%; display: block; pointer-events: none; }
+        #sign-zone { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; }
+        #pad-box { flex: 1; margin: 10px; background: #fff; border-radius: 8px; }
+        #sig-canvas { width: 100% !important; height: 100% !important; }
+        .sig-item { position: absolute; z-index: 100; width: 140px; border: 2px dashed #3498db; }
+        .sig-item img { width: 100%; pointer-events: none; }
     </style>
 </head>
 <body>
     <header>
-        <button class="btn" style="background:#3498db" onclick="triggerFile()">1. PDF</button>
+        <button class="btn" style="background:#3498db" onclick="document.getElementById('f').click()">1. PDF</button>
         <button class="btn" style="background:#f39c12" onclick="openPad()">2. ASSINAR</button>
-        <input type="file" id="pdf-file" style="display:none" accept="application/pdf">
+        <input type="file" id="f" style="display:none" accept="application/pdf">
     </header>
 
-    <div id="viewer">Aguardando PDF...</div>
+    <div id="viewer">Aguardando arquivo...</div>
 
-    <div id="sign-wrap">
-        <div id="canvas-area"><canvas id="sig-canvas"></canvas></div>
-        <div style="padding:15px; display:flex; gap:10px; background:#111;">
+    <div id="sign-zone">
+        <div id="pad-box"><canvas id="sig-canvas"></canvas></div>
+        <div style="padding:15px; display:flex; gap:10px;">
             <button class="btn" style="background:#2ecc71; flex:1" onclick="applySig()">OK</button>
             <button class="btn" style="background:#e74c3c; flex:1" onclick="spad.clear()">LIMPAR</button>
-            <button class="btn" style="background:#555; flex:1" onclick="closePad()">VOLTAR</button>
+            <button class="btn" style="background:#666; flex:1" onclick="closePad()">SAIR</button>
         </div>
     </div>
 
     <script>
-        let pdfBytes, spad, sigData;
+        let pdfData, spad, sigImg;
         const viewer = document.getElementById('viewer');
 
-        // Evita que a página recarregue ao clicar em botões
-        function triggerFile() { document.getElementById('pdf-file').click(); }
-
-        document.getElementById('pdf-file').onchange = async (e) => {
+        document.getElementById('f').onchange = async (e) => {
             const file = e.target.files[0];
             if(!file) return;
-            
-            // Lê o arquivo de forma assíncrona para não travar a UI
             const reader = new FileReader();
             reader.onload = async function() {
-                pdfBytes = this.result;
+                pdfData = this.result;
                 renderPDF();
             };
             reader.readAsArrayBuffer(file);
         };
 
         async function renderPDF() {
-            if(!pdfBytes) return;
-            viewer.innerHTML = "Processando...";
-            try {
-                const pdf = await pdfjsLib.getDocument({data: pdfBytes}).promise;
-                viewer.innerHTML = "";
-                for(let i=1; i<=pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const box = document.createElement('div');
-                    box.className = 'page-box';
-                    const cv = document.createElement('canvas');
-                    const vp = page.getViewport({scale: (window.innerWidth * 0.95) / page.getViewport({scale:1}).width});
-                    cv.width = vp.width; cv.height = vp.height;
-                    await page.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
-                    box.appendChild(cv);
-                    viewer.appendChild(box);
-                }
-            } catch(err) {
-                viewer.innerHTML = "Erro ao ler PDF. Tente outro arquivo.";
+            viewer.innerHTML = "Carregando...";
+            const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
+            viewer.innerHTML = "";
+            for(let i=1; i<=pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const box = document.createElement('div');
+                box.className = 'page-box';
+                const cv = document.createElement('canvas');
+                const vp = page.getViewport({scale: (window.innerWidth * 0.95) / page.getViewport({scale:1}).width});
+                cv.width = vp.width; cv.height = vp.height;
+                await page.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
+                box.appendChild(cv);
+                viewer.appendChild(box);
             }
         }
 
         function openPad() {
-            document.getElementById('sign-wrap').style.display = 'flex';
+            document.getElementById('sign-zone').style.display = 'flex';
             const scv = document.getElementById('sig-canvas');
-            if(!spad) spad = new SignaturePad(scv, {penColor: 'rgb(0,0,128)'});
-            
-            const r = window.devicePixelRatio || 1;
-            scv.width = scv.offsetWidth * r;
-            scv.height = scv.offsetHeight * r;
-            scv.getContext("2d").scale(r, r);
-            spad.clear();
+            if(!spad) spad = new SignaturePad(scv, {penColor: 'navy'});
+            setTimeout(() => {
+                const r = window.devicePixelRatio || 1;
+                scv.width = scv.offsetWidth * r; scv.height = scv.offsetHeight * r;
+                scv.getContext("2d").scale(r, r);
+                spad.clear();
+            }, 200);
         }
 
-        function closePad() { document.getElementById('sign-wrap').style.display = 'none'; }
+        function closePad() { document.getElementById('sign-zone').style.display = 'none'; }
 
         function applySig() {
             if(spad.isEmpty()) return;
-            sigData = spad.toDataURL();
+            sigImg = spad.toDataURL();
             closePad();
-            
-            const target = document.querySelector('.page-box');
-            if(!target) return;
-
+            const first = document.querySelector('.page-box');
+            if(!first) return;
             const div = document.createElement('div');
             div.className = 'sig-item';
-            div.style.left = "20px"; div.style.top = "20px";
-            div.innerHTML = `<img src="${sigData}">`;
-
-            // Movimentação via Touch simples
+            div.style.left = "30px"; div.style.top = "30px";
+            div.innerHTML = `<img src="${sigImg}">`;
             div.addEventListener('touchmove', (e) => {
                 e.preventDefault();
-                const t = e.touches[0];
-                const rect = target.getBoundingClientRect();
-                div.style.left = (t.pageX - rect.left - 75) + "px";
-                div.style.top = (t.pageY - rect.top - 40) + "px";
-            }, {passive: false});
-
-            target.appendChild(div);
+                let t = e.touches[0];
+                let rect = first.getBoundingClientRect();
+                div.style.left = (t.pageX - rect.left - 70) + "px";
+                div.style.top = (t.pageY - rect.top - 35) + "px";
+            });
+            first.appendChild(div);
         }
     </script>
 </body>
