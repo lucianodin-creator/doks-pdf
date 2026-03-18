@@ -1,20 +1,21 @@
 const { PDFDocument, degrees } = PDFLib;
 let pdfBytes, pdfDocJs, pageNum = 1;
-let signaturesByPage = {}; 
 const canvas = document.getElementById("pdf-render"), ctx = canvas.getContext("2d");
-const saveModal = document.getElementById("save-modal"), saveTimer = document.getElementById("save-timer");
 
 document.getElementById('file-in').onchange = async (e) => {
     try {
         const file = e.target.files[0];
         if (!file) return;
         pdfBytes = await file.arrayBuffer();
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         pdfDocJs = await pdfjsLib.getDocument({data: pdfBytes}).promise;
-        document.getElementById('page-count').textContent = pdfDocJs.numPages;
+        
+        // Só atualiza se os IDs existirem
+        if(document.getElementById('page-count')) document.getElementById('page-count').textContent = pdfDocJs.numPages;
+        
         render();
-        alert("PDF Pronto para assinar!");
     } catch (err) {
-        alert("Erro ao carregar: " + err.message);
+        alert("Erro no carregamento: " + err.message);
     }
 };
 
@@ -24,32 +25,28 @@ async function render() {
     const vp = page.getViewport({scale: 1.5});
     canvas.width = vp.width; canvas.height = vp.height;
     await page.render({canvasContext: ctx, viewport: vp}).promise;
+    if(document.getElementById('page-num')) document.getElementById('page-num').textContent = pageNum;
 }
+
+window.changePage = (n) => {
+    if(!pdfDocJs) return;
+    if(pageNum + n > 0 && pageNum + n <= pdfDocJs.numPages) {
+        pageNum += n;
+        render();
+    }
+};
 
 async function saveFinalPdf() {
     if (!pdfBytes) return alert("Abra o PDF primeiro!");
-    saveModal.style.display = "flex";
+    document.getElementById("save-modal").style.display = "flex";
 
     try {
         const pdfDoc = await PDFDocument.load(pdfBytes);
         const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
         
-        // Aqui ele vai aplicar as assinaturas em cada página salva
-        for (const [pNum, data] of Object.entries(signaturesByPage)) {
-            const page = pages[parseInt(pNum) - 1];
-            const { width, height } = page.getSize();
-            const sigImg = await pdfDoc.embedPng(data.img);
-
-            const drawW = width * (data.w / 100);
-            const drawH = height * (data.h / 100);
-            const drawX = width * (data.x / 100);
-            const drawY = height - (height * (data.y / 100)) - drawH;
-
-            page.drawImage(sigImg, {
-                x: drawX, y: drawY, width: drawW, height: drawH,
-                rotate: degrees(-(data.rotation || 0))
-            });
-        }
+        // TESTE: Escreve no topo para confirmar que o motor local funciona
+        firstPage.drawText('TESTE LOCAL MOTOROLA', { x: 50, y: 50, size: 20 });
 
         const finalBytes = await pdfDoc.save();
         const blob = new Blob([finalBytes], { type: 'application/pdf' });
@@ -59,10 +56,9 @@ async function saveFinalPdf() {
         a.download = "DUCATO_ASSINADO.pdf";
         a.click();
         
-        saveModal.style.display = "none";
-        alert("Download Concluído!");
+        document.getElementById("save-modal").style.display = "none";
     } catch (err) {
-        alert("Falha: " + err.message);
-        saveModal.style.display = "none";
+        alert("Erro ao salvar: " + err.message);
+        document.getElementById("save-modal").style.display = "none";
     }
 }
