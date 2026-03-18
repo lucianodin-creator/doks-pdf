@@ -1,7 +1,7 @@
-const { PDFDocument, degrees } = PDFLib;
+const { PDFDocument } = PDFLib;
 let pdfBytes, pdfDocJs, pageNum = 1, zoom = 1.0;
 const canvas = document.getElementById("pdf-render"), ctx = canvas.getContext("2d");
-let signaturesByPage = {}; 
+let sigsByPage = {};
 
 document.getElementById('file-in').onchange = async (e) => {
     const file = e.target.files[0];
@@ -10,15 +10,19 @@ document.getElementById('file-in').onchange = async (e) => {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     pdfDocJs = await pdfjsLib.getDocument({data: pdfBytes}).promise;
     document.getElementById('page-count').textContent = pdfDocJs.numPages;
+    // Zoom inicial inteligente para largura do celular
+    const page = await pdfDocJs.getPage(1);
+    const vp = page.getViewport({scale: 1});
+    zoom = (window.innerWidth * 0.9) / vp.width;
     render();
 };
 
 async function render() {
     if(!pdfDocJs) return;
     const page = await pdfDocJs.getPage(pageNum);
-    const viewport = page.getViewport({scale: zoom});
-    canvas.width = viewport.width; canvas.height = viewport.height;
-    await page.render({canvasContext: ctx, viewport: viewport}).promise;
+    const vp = page.getViewport({scale: zoom});
+    canvas.width = vp.width; canvas.height = vp.height;
+    await page.render({canvasContext: ctx, viewport: vp}).promise;
     document.getElementById('page-num').textContent = pageNum;
     refreshSigs();
 }
@@ -29,85 +33,64 @@ window.changePage = (n) => {
     }
 };
 
-window.adjustZoom = (n) => { zoom += n; render(); };
+// FUNÇÃO DE ZOOM CORRIGIDA
+window.adjustZoom = (delta) => {
+    zoom += delta;
+    if (zoom < 0.2) zoom = 0.2;
+    if (zoom > 3) zoom = 3;
+    render();
+};
 
-// Modal de Assinatura
-let pad;
 window.openSigPad = () => {
     document.getElementById('sig-modal').style.display = 'flex';
     const c = document.getElementById('sig-pad');
     c.width = window.innerWidth; c.height = window.innerHeight - 100;
-    pad = new SignaturePad(c);
+    window.pad = new SignaturePad(c);
 };
 
-window.closeSigPad = () => { document.getElementById('sig-modal').style.display = 'none'; };
-
 window.confirmSig = () => {
-    if(pad.isEmpty()) return alert("Assine primeiro!");
-    const imgData = pad.toDataURL();
-    if(!signaturesByPage[pageNum]) signaturesByPage[pageNum] = [];
-    
-    signaturesByPage[pageNum].push({
-        img: imgData,
-        x: 10, y: 10, w: 150, h: 80, rot: 0
-    });
-    
-    closeSigPad();
+    if(window.pad.isEmpty()) return alert("Assine!");
+    if(!sigsByPage[pageNum]) sigsByPage[pageNum] = [];
+    sigsByPage[pageNum].push({ img: window.pad.toDataURL(), x: 20, y: 20, w: 180 });
+    document.getElementById('sig-modal').style.display = 'none';
     refreshSigs();
 };
 
 function refreshSigs() {
     document.querySelectorAll('.sig-box').forEach(b => b.remove());
-    const pageSigs = signaturesByPage[pageNum] || [];
-    pageSigs.forEach((sig, index) => {
-        const box = document.createElement('div');
-        box.className = 'sig-box';
-        box.style.left = sig.x + 'px';
-        box.style.top = sig.y + 'px';
-        box.style.width = sig.w + 'px';
-        box.innerHTML = `
-            <div class="sig-ctrls">
-                <button class="btn-ctrl btn-del" onclick="removeSig(${index})"><i class="fa fa-trash"></i></button>
-            </div>
-            <img src="${sig.img}" style="width:100%; pointer-events:none;">
-        `;
-        document.getElementById('pdf-wrapper').appendChild(box);
+    (sigsByPage[pageNum] || []).forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'sig-box';
+        div.style.left = s.x + 'px'; div.style.top = s.y + 'px'; div.style.width = s.w + 'px';
+        div.innerHTML = `<div class="sig-ctrls"><button class="btn-del" onclick="removeSig(${i})">X</button></div><img src="${s.img}" style="width:100%">`;
+        document.getElementById('pdf-wrapper').appendChild(div);
     });
 }
 
-window.removeSig = (index) => {
-    signaturesByPage[pageNum].splice(index, 1);
-    refreshSigs();
-};
+window.removeSig = (i) => { sigsByPage[pageNum].splice(i, 1); refreshSigs(); };
 
 async function saveFinalPdf() {
-    if(!pdfBytes) return alert("Abra um PDF!");
-    document.getElementById('loading').style.display = 'flex';
-    try {
-        const doc = await PDFDocument.load(pdfBytes);
-        const pages = doc.getPages();
-        
-        for (const pNum in signaturesByPage) {
-            const page = pages[pNum - 1];
-            const { width, height } = page.getSize();
-            for (const sig of signaturesByPage[pNum]) {
-                const img = await doc.embedPng(sig.img);
-                // Conversão de coordenadas para o PDF
-                page.drawImage(img, {
-                    x: (sig.x / canvas.width) * width,
-                    y: height - ((sig.y + sig.h) / canvas.height) * height,
-                    width: (sig.w / canvas.width) * width,
-                    height: (sig.h / canvas.height) * height
-                });
-            }
+    if(!pdfBytes) return;
+    alert("Salvando... Aguarde.");
+    const doc = await PDFDocument.load(pdfBytes);
+    const pages = doc.getPages();
+    for (let p in sigsByPage) {
+        const page = pages[p-1];
+        const { width, height } = page.getSize();
+        for (let s of sigsByPage[p]) {
+            const img = await doc.embedPng(s.img);
+            page.drawImage(img, {
+                x: (s.x / canvas.width) * width,
+                y: height - ((s.y + (s.w/2)) / canvas.height) * height,
+                width: (s.w / canvas.width) * width,
+                height: ((s.w/2) / canvas.height) * height
+            });
         }
-
-        const finalBytes = await doc.save();
-        const blob = new Blob([finalBytes], {type:'application/pdf'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = "MANUAL_ASSINADO.pdf";
-        a.click();
-    } catch(e) { alert("Erro ao salvar: " + e.message); }
-    document.getElementById('loading').style.display = 'none';
+    }
+    const b = await doc.save();
+    const blob = new Blob([b], {type:'application/pdf'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = "PDF_ASSINADO.pdf";
+    a.click();
 }
