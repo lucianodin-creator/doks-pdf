@@ -1,3 +1,8 @@
+// Verificação de segurança: as bibliotecas carregaram?
+window.onerror = function(msg, url, line) {
+    alert("Erro detectado: " + msg + "\nLinha: " + line);
+};
+
 const { PDFDocument, degrees } = PDFLib;
 let pdfBytes, pdfDocJs, pageNum = 1;
 let signaturesByPage = {}; 
@@ -5,12 +10,16 @@ const canvas = document.getElementById("pdf-render"), ctx = canvas.getContext("2
 const saveModal = document.getElementById("save-modal"), saveTimer = document.getElementById("save-timer");
 
 document.getElementById('file-in').onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    pdfBytes = await file.arrayBuffer();
-    pdfDocJs = await pdfjsLib.getDocument({data: pdfBytes}).promise;
-    document.getElementById('page-count').textContent = pdfDocJs.numPages;
-    render();
+    try {
+        const file = e.target.files[0];
+        if (!file) return;
+        pdfBytes = await file.arrayBuffer();
+        pdfDocJs = await pdfjsLib.getDocument({data: pdfBytes}).promise;
+        document.getElementById('page-count').textContent = pdfDocJs.numPages;
+        render();
+    } catch (err) {
+        alert("Erro ao abrir PDF: " + err.message);
+    }
 };
 
 async function render() {
@@ -24,13 +33,20 @@ async function render() {
 
 async function saveFinalPdf() {
     if (!pdfBytes) return alert("Selecione o PDF primeiro!");
+    
     saveModal.style.display = "flex";
-    saveTimer.textContent = "A processar no telemóvel...";
+    saveTimer.textContent = "Processando no seu celular...";
 
     try {
+        console.log("Iniciando processamento local...");
         const pdfDoc = await PDFDocument.load(pdfBytes);
         const pages = pdfDoc.getPages();
         
+        // Se não houver assinatura posicionada, avisa
+        if (Object.keys(signaturesByPage).length === 0) {
+            throw new Error("Nenhuma assinatura encontrada. Adicione uma antes de salvar.");
+        }
+
         for (const [pNum, data] of Object.entries(signaturesByPage)) {
             const page = pages[parseInt(pNum) - 1];
             const { width, height } = page.getSize();
@@ -39,7 +55,7 @@ async function saveFinalPdf() {
             const drawW = width * (data.w / 100);
             const drawH = height * (data.h / 100);
             const drawX = width * (data.x / 100);
-            // CORREÇÃO FINAL DE EIXO: Inverte o Y e subtrai a altura da assinatura
+            // CORREÇÃO GEOMÉTRICA
             const drawY = height - (height * (data.y / 100)) - drawH;
 
             page.drawImage(sigImg, {
@@ -54,12 +70,14 @@ async function saveFinalPdf() {
         const a = document.createElement("a");
         a.href = url;
         a.download = "MANUAL_ASSINADO.pdf";
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
 
-        saveTimer.textContent = "Concluído!";
+        saveTimer.textContent = "Sucesso!";
         setTimeout(() => { saveModal.style.display = "none"; }, 1000);
     } catch (err) {
-        alert("Erro local: " + err.message);
+        alert("FALHA: " + err.message);
         saveModal.style.display = "none";
     }
 }
