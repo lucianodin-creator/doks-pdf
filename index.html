@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF - Pro</title>
+    <title>MeuPDF Pro</title>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -12,39 +12,26 @@
 </head>
 <body>
     <div class="header">
-        <b>MEUPDF LOCAL</b>
-        <button onclick="document.getElementById('file-in').click()"><i class="fa fa-file-upload"></i> ABRIR</button>
+        <b>MEUPDF - GESTÃO</b>
+        <button onclick="document.getElementById('file-in').click()"><i class="fa fa-upload"></i></button>
         <input type="file" id="file-in" accept="application/pdf" style="display:none">
     </div>
-
-    <div class="container">
-        <div id="pdf-wrapper">
-            <canvas id="pdf-render"></canvas>
-        </div>
-    </div>
-
-    <div class="side-controls">
-        <button class="btn-zoom" onclick="window.adjustZoom(0.1)"><i class="fa fa-plus"></i></button>
-        <button class="btn-zoom" onclick="window.adjustZoom(-0.1)"><i class="fa fa-minus"></i></button>
-    </div>
-
+    <div class="container"><div id="pdf-wrapper"><canvas id="pdf-render"></canvas></div></div>
     <div class="bottom-bar">
-        <button class="btn-nav" onclick="window.changePage(-1)"><i class="fa fa-chevron-left"></i></button>
+        <button class="btn-nav" onclick="window.changePage(-1)"><i class="fa fa-arrow-left"></i></button>
         <div class="page-info"><span id="page-num">0</span> / <span id="page-count">0</span></div>
-        <button class="btn-nav" onclick="window.changePage(1)"><i class="fa fa-chevron-right"></i></button>
-        <button class="btn-nav btn-pen" onclick="window.openSigPad()"><i class="fa fa-pen-nib"></i></button>
-        <button class="btn-nav btn-save" onclick="window.saveFinalPdf()"><i class="fa fa-save"></i></button>
+        <button class="btn-nav" onclick="window.changePage(1)"><i class="fa fa-arrow-right"></i></button>
+        <button class="btn-nav btn-pen" onclick="window.openSigPad()"><i class="fa fa-signature"></i></button>
+        <button class="btn-nav btn-save" onclick="window.saveFinalPdf()"><i class="fa fa-check-double"></i></button>
     </div>
-
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
         <div class="modal-btns">
-            <button onclick="window.closeSigPad()" style="background:#666">Sair</button>
+            <button onclick="window.closeSigPad()" style="background:#888">Sair</button>
             <button onclick="window.pad.clear()" style="background:#f39c12">Limpar</button>
             <button onclick="window.confirmSig()" style="background:#28a745">Confirmar</button>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
