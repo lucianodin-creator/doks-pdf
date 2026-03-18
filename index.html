@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF Local - Final</title>
+    <title>MeuPDF - Versão Final Motorola</title>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -18,25 +18,34 @@
     </div>
 
     <div class="container">
-        <div id="pdf-wrapper" style="position:relative; display:inline-block;">
+        <div id="pdf-wrapper">
             <canvas id="pdf-render"></canvas>
+            <div id="signature-layer"></div>
         </div>
+    </div>
+
+    <div class="side-controls">
+        <button class="btn-side" onclick="adjustZoom(0.1)"><i class="fa fa-plus"></i></button>
+        <button class="btn-side" onclick="adjustZoom(-0.1)"><i class="fa fa-minus"></i></button>
     </div>
 
     <div class="bottom-bar">
         <button class="btn-circle" onclick="changePage(-1)"><i class="fa fa-chevron-left"></i></button>
-        <div class="page-info">
-            <span id="page-num">0</span> / <span id="page-count">0</span>
-        </div>
+        <div class="page-info"><span id="page-num">0</span> / <span id="page-count">0</span></div>
         <button class="btn-circle" onclick="changePage(1)"><i class="fa fa-chevron-right"></i></button>
-        <button class="btn-circle btn-save" onclick="saveFinalPdf()"><i class="fa fa-save"></i> SALVAR</button>
+        <button class="btn-circle btn-pen" onclick="openSigPad()"><i class="fa fa-pen-nib"></i></button>
+        <button class="btn-circle btn-save" onclick="saveFinalPdf()"><i class="fa fa-save"></i></button>
     </div>
 
-    <div id="save-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; color:white; flex-direction:column; align-items:center; justify-content:center;">
-        <i class="fa fa-spinner fa-spin fa-3x"></i>
-        <p>Processando no seu Motorola...</p>
+    <div id="sig-modal">
+        <canvas id="sig-pad"></canvas>
+        <div class="modal-btns">
+            <button onclick="closeSigPad()" class="btn-cancel">CANCELAR</button>
+            <button onclick="confirmSig()" class="btn-confirm">CONFIRMAR</button>
+        </div>
     </div>
 
-    <script src="script.js?v=FINAL_CORRIGIDO"></script>
+    <div id="loading" style="display:none;"><p>Processando no Celular...</p></div>
+    <script src="script.js?v=FINAL_ESTAVEL"></script>
 </body>
 </html>
