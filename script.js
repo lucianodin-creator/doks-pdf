@@ -21,19 +21,20 @@ async function render() {
     canvas.width = vp.width; canvas.height = vp.height;
     await page.render({canvasContext: ctx, viewport: vp}).promise;
     document.getElementById("page-num").textContent = pageNum;
-    updateSigUI();
 }
 
 async function saveFinalPdf() {
-    if (!pdfBytes) return;
+    if (!pdfBytes) return alert("Selecione o PDF primeiro!");
+    
     saveModal.style.display = "flex";
-    saveTimer.textContent = "Gerando PDF no seu celular...";
+    saveTimer.textContent = "Gerando PDF localmente...";
 
     try {
+        // Carrega o PDF original na memória do celular
         const pdfDoc = await PDFDocument.load(pdfBytes);
         const pages = pdfDoc.getPages();
         
-        // Percorre todas as assinaturas salvas no dicionário
+        // Aplica a assinatura (usando a lógica de coordenadas que corrigimos)
         for (const [pNum, data] of Object.entries(signaturesByPage)) {
             const page = pages[parseInt(pNum) - 1];
             const { width, height } = page.getSize();
@@ -42,7 +43,7 @@ async function saveFinalPdf() {
             const drawW = width * (data.w / 100);
             const drawH = height * (data.h / 100);
             const drawX = width * (data.x / 100);
-            // CORREÇÃO GEOMÉTRICA: Eixo Y invertido + compensação de altura
+            // CÁLCULO DE OURO: Inverte o eixo Y e desconta a altura da assinatura
             const drawY = height - (height * (data.y / 100)) - drawH;
 
             page.drawImage(sigImg, {
@@ -59,17 +60,15 @@ async function saveFinalPdf() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "DUCATO_ASSINADO.pdf";
+        a.download = "MANUAL_ASSINADO.pdf";
         a.click();
 
-        saveTimer.textContent = "Concluído!";
+        saveTimer.textContent = "Pronto!";
         setTimeout(() => { saveModal.style.display = "none"; }, 1000);
     } catch (err) {
-        alert("Erro local: " + err.message);
+        alert("Erro no celular: " + err.message);
         saveModal.style.display = "none";
     }
 }
 
-// Funções de navegação e UI (Manter o que já funciona)
 window.changePage = (n) => { if(pdfDocJs && pageNum+n > 0 && pageNum+n <= pdfDocJs.numPages) { pageNum += n; render(); } };
-function updateSigUI() { /* Lógica de exibição da assinatura na tela */ }
