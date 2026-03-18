@@ -3,144 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assinador v5.72 - Ferramentas Fixas</title>
+    <title>MeuPDF - Assinatura Digital</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <style>
-        body { font-family: sans-serif; margin: 0; background: #111; color: #fff; overflow-x: hidden; }
-        header { background: #000; padding: 12px; display: flex; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid #333; }
-        .btn { padding: 10px 14px; border: none; border-radius: 5px; font-weight: bold; color: #fff; cursor: pointer; font-size: 11px; text-transform: uppercase; }
-        #viewer { padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 80vh; }
-        .page-box { position: relative; background: #fff; margin-bottom: 20px; box-shadow: 0 5px 15px #000; line-height: 0; }
-        canvas { max-width: 100%; height: auto; }
-        
-        /* OVERLAY DE ASSINATURA - FOCO NA BARRA DE FERRAMENTAS */
-        #sign-zone { position: fixed; inset: 0; background: #000; z-index: 100000; display: none; flex-direction: column; }
-        #sig-tools { background: #000; padding: 10px; display: flex; gap: 8px; justify-content: center; border-bottom: 1px solid #444; }
-        #pad-box { flex: 1; margin: 10px; background: #fff; border-radius: 8px; position: relative; overflow: hidden; }
-        #sig-canvas { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; touch-action: none; }
-        
-        .sig-item { position: absolute; z-index: 100; width: 150px; border: 2px dashed #3498db; background: rgba(52,152,219,0.2); touch-action: none; }
-        .sig-item img { width: 100%; display: block; pointer-events: none; }
-        #footer-tool { position: fixed; bottom: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.9); display: none; justify-content: center; z-index: 500; border-top: 2px solid #333; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <button class="btn" style="background:#3498db" onclick="document.getElementById('f').click()">1. PDF</button>
-        <button class="btn" style="background:#f39c12" onclick="openPad()">2. ASSINAR</button>
-        <input type="file" id="f" style="display:none" accept="application/pdf">
-    </header>
-
-    <div id="viewer">Aguardando manual...</div>
-
-    <div id="footer-tool">
-        <button class="btn" style="background:#2ecc71; width: 85%; height: 48px; font-size: 14px;" onclick="saveAllPages()">SALVAR EM TODAS AS PÁGINAS</button>
+    <div class="header">
+        <b>MEUPDF</b>
+        <button onclick="document.getElementById('file-in').click()" class="btn-open">ABRIR PDF</button>
+        <input type="file" id="file-in" accept="application/pdf" style="display:none">
     </div>
-
-    <div id="sign-zone">
-        <div id="sig-tools">
-            <button class="btn" style="background:#2ecc71; flex:1; height: 45px;" onclick="applySig()">CONFIRMAR (OK)</button>
-            <button class="btn" style="background:#e74c3c; flex:1; height: 45px;" onclick="spad.clear()">LIMPAR</button>
-            <button class="btn" style="background:#666; flex:1; height: 45px;" onclick="closePad()">SAIR (VOLTAR)</button>
+    <div class="zoom-controls">
+        <button class="btn-zoom" onclick="changeZoom(0.2)"><i class="fa fa-plus"></i></button>
+        <button class="btn-zoom" onclick="changeZoom(-0.2)"><i class="fa fa-minus"></i></button>
+        <button class="btn-zoom" onclick="fitToWidth()"><i class="fa fa-expand"></i></button>
+    </div>
+    <div class="container">
+        <div id="pdf-wrapper">
+            <canvas id="pdf-render"></canvas>
+            <div id="draggable-sig" class="sig-instance">
+                <button class="btn-sig-del" onclick="removeSignature()"><i class="fa fa-trash"></i></button>
+                <button class="btn-sig-copy" onclick="replicateToAll()"><i class="fa fa-copy"></i></button>
+                <button class="btn-sig-rotate" onclick="rotateSignature()"><i class="fa fa-rotate-right"></i></button>
+                <img id="sig-preview" src="">
+            </div>
         </div>
-        <div id="pad-box"><canvas id="sig-canvas"></canvas></div>
     </div>
-
-    <script>
-        let pdfBytes, spad, sigData;
-        const viewer = document.getElementById('viewer');
-
-        document.getElementById('f').onchange = async (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            pdfBytes = await file.arrayBuffer();
-            renderPDF();
-        };
-
-        async function renderPDF() {
-            viewer.innerHTML = "Carregando páginas...";
-            const pdf = await pdfjsLib.getDocument({data: pdfBytes}).promise;
-            viewer.innerHTML = "";
-            for(let i=1; i<=pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const box = document.createElement('div');
-                box.className = 'page-box';
-                const cv = document.createElement('canvas');
-                const vp = page.getViewport({scale: (window.innerWidth * 0.95) / page.getViewport({scale:1}).width});
-                cv.width = vp.width; cv.height = vp.height;
-                await page.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
-                box.appendChild(cv);
-                viewer.appendChild(box);
-            }
-        }
-
-        function openPad() {
-            document.getElementById('sign-zone').style.display = 'flex';
-            const scv = document.getElementById('sig-canvas');
-            const ratio = window.devicePixelRatio || 1;
-            scv.width = scv.clientWidth * ratio; scv.height = scv.clientHeight * ratio;
-            scv.getContext("2d").scale(ratio, ratio);
-            if(!spad) spad = new SignaturePad(scv, {penColor: 'navy'});
-            spad.clear();
-        }
-
-        function closePad() { document.getElementById('sign-zone').style.display = 'none'; }
-
-        function applySig() {
-            if(spad.isEmpty()) return;
-            sigData = spad.toDataURL();
-            closePad();
-            const first = document.querySelector('.page-box');
-            if(!first) return;
-            const old = document.getElementById('sig-floating');
-            if(old) old.remove();
-            const div = document.createElement('div');
-            div.id = 'sig-floating';
-            div.className = 'sig-item';
-            div.style.left = "20px"; div.style.top = "20px";
-            div.innerHTML = `<img src="${sigData}">`;
-            div.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                let t = e.touches[0];
-                let rect = first.getBoundingClientRect();
-                div.style.left = (t.pageX - rect.left - 75) + "px";
-                div.style.top = (t.pageY - rect.top - 40) + "px";
-            }, {passive: false});
-            first.appendChild(div);
-            document.getElementById('footer-tool').style.display = 'flex';
-        }
-
-        async function saveAllPages() {
-            const doc = await PDFLib.PDFDocument.load(pdfBytes);
-            const img = await doc.embedPng(sigData);
-            const pages = doc.getPages();
-            const floating = document.getElementById('sig-floating');
-            const wRect = floating.parentElement.getBoundingClientRect();
-            const sRect = floating.getBoundingClientRect();
-            
-            const xPct = (sRect.left - wRect.left) / wRect.width;
-            const yPct = (sRect.top - wRect.top) / wRect.height;
-            const wPct = sRect.width / wRect.width;
-
-            pages.forEach(page => {
-                const { width, height } = page.getSize();
-                const drawW = width * wPct;
-                const drawH = drawW * (sRect.height / sRect.width);
-                page.drawImage(img, {
-                    x: width * xPct,
-                    y: height - (height * yPct) - drawH,
-                    width: drawW, height: drawH
-                });
-            });
-
-            const bytes = await doc.save();
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(new Blob([bytes], {type: 'application/pdf'}));
-            link.download = "MANUAL_ASSINADO.pdf";
-            link.click();
-        }
-    </script>
+    <div class="bottom-bar">
+        <button class="btn-circle" onclick="changePage(-1)"><i class="fa fa-chevron-left"></i></button>
+        <div class="page-info"><span id="page-num">0</span> / <span id="page-count">0</span></div>
+        <button class="btn-circle" onclick="changePage(1)"><i class="fa fa-chevron-right"></i></button>
+        <button class="btn-circle btn-pen" onclick="openSignature()"><i class="fa fa-pen-nib"></i></button>
+        <button class="btn-circle btn-save" onclick="saveFinalPdf()"><i class="fa fa-save"></i></button>
+    </div>
+    <div id="sig-modal">
+        <div id="sig-canvas-wrapper"><canvas id="sig-canvas"></canvas></div>
+        <div class="sig-actions">
+            <button class="btn-add" onclick="applySignature()">ADICIONAR</button>
+            <button class="btn-clear" onclick="pad.clear()">LIMPAR</button>
+            <button class="btn-close" onclick="document.getElementById('sig-modal').style.display='none'">FECHAR</button>
+        </div>
+    </div>
+    <div id="save-modal">
+        <i class="fa fa-spinner fa-spin fa-3x"></i>
+        <div style="margin-top:20px; font-size:1.2rem;">Processando e Gravando...</div>
+        <div id="save-timer">Aguarde...</div>
+    </div>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+    <script src="script.js"></script>
 </body>
 </html>

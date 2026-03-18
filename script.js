@@ -10,7 +10,6 @@ let pad = null;
 function resizeSigCanvas() {
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
     const wrapper = document.getElementById("sig-canvas-wrapper");
-    // Usa o tamanho fixo definido no CSS
     sigCanvas.width = wrapper.clientWidth * ratio;
     sigCanvas.height = wrapper.clientHeight * ratio;
     sigCanvas.getContext("2d").scale(ratio, ratio);
@@ -68,7 +67,7 @@ function updateSigUI() {
         el.style.display = "block";
         document.getElementById("sig-preview").src = data.img;
         el.style.width = `${wPx}px`; el.style.height = `${hPx}px`;
-        el.style.transform = `translate(${xPx}px, ${yPx}px)`;
+        el.style.transform = `translate(${xPx}px, ${yPx}px) rotate(${data.rotation || 0}deg)`;
         el.setAttribute("data-x", xPx); el.setAttribute("data-y", yPx);
     } else { el.style.display = "none"; }
 }
@@ -92,6 +91,7 @@ function applySignature() {
         y: (initialY / pdfWrapper.clientHeight) * 100,
         w: (initialWidth / pdfWrapper.clientWidth) * 100,
         h: (initialHeight / pdfWrapper.clientHeight) * 100,
+        rotation: 0,
         img: sigData
     };
     updateSigUI();
@@ -100,11 +100,20 @@ function applySignature() {
 
 function removeSignature() { delete signaturesByPage[pageNum]; updateSigUI(); }
 
+function rotateSignature() {
+    if (!signaturesByPage[pageNum]) return;
+    signaturesByPage[pageNum].rotation = (signaturesByPage[pageNum].rotation || 0) + 15;
+    if (signaturesByPage[pageNum].rotation >= 360) signaturesByPage[pageNum].rotation = 0;
+    updateSigUI();
+}
+
 function replicateToAll() {
     const current = signaturesByPage[pageNum];
     if (!current) return alert("Crie uma assinatura primeiro!");
-    for (let i = 1; i <= pdfDocJs.numPages; i++) signaturesByPage[i] = JSON.parse(JSON.stringify(current));
-    alert("Copiado para todas as páginas!");
+    for (let i = 1; i <= pdfDocJs.numPages; i++) {
+        signaturesByPage[i] = JSON.parse(JSON.stringify(current));
+    }
+    alert("Assinatura copiada para todas as páginas com posição, tamanho e rotação!");
     render();
 }
 
@@ -112,7 +121,8 @@ interact("#draggable-sig").draggable({
     listeners: { move (event) {
         let x = (parseFloat(event.target.getAttribute("data-x")) || 0) + event.dx;
         let y = (parseFloat(event.target.getAttribute("data-y")) || 0) + event.dy;
-        event.target.style.transform = `translate(${x}px, ${y}px)`;
+        const rotation = signaturesByPage[pageNum]?.rotation || 0;
+        event.target.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
         event.target.setAttribute("data-x", x); event.target.setAttribute("data-y", y);
         if(signaturesByPage[pageNum]) {
             const pdfWrapper = document.getElementById("pdf-wrapper");
@@ -149,7 +159,14 @@ async function saveFinalPdf() {
                 const sigH = (data.h / 100) * height;
                 const sigX = (data.x / 100) * width;
                 const sigY = height - ((data.y / 100) * height) - sigH;
-                page.drawImage(sigImage, { x: sigX, y: sigY, width: sigW, height: sigH, opacity: 1.0 });
+                const rotation = (data.rotation || 0) * (Math.PI / 180);
+                
+                page.drawImage(sigImage, { 
+                    x: sigX, y: sigY, 
+                    width: sigW, height: sigH, 
+                    opacity: 1.0,
+                    rotate: rotation
+                });
             }
         }
         const b = await pdfDoc.save();
