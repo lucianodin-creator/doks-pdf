@@ -4,7 +4,6 @@ let signaturesByPage = {};
 const canvas = document.getElementById("pdf-render"), ctx = canvas.getContext("2d");
 const saveModal = document.getElementById("save-modal"), saveTimer = document.getElementById("save-timer");
 
-// Inicialização de arquivo
 document.getElementById('file-in').onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -26,64 +25,51 @@ async function render() {
 }
 
 async function saveFinalPdf() {
-    if (!pdfBytes) { alert("Abra um PDF primeiro!"); return; }
-    
+    if (!pdfBytes) return;
     saveModal.style.display = "flex";
-    saveTimer.textContent = "Conectando ao servidor...";
+    saveTimer.textContent = "Gerando PDF no seu celular...";
 
     try {
-        const fileInput = document.getElementById("file-in");
-        const data = signaturesByPage[pageNum];
+        const pdfDoc = await PDFDocument.load(pdfBytes);
+        const pages = pdfDoc.getPages();
         
-        if (!data) throw new Error("Posicione a assinatura na tela antes de salvar.");
+        // Percorre todas as assinaturas salvas no dicionário
+        for (const [pNum, data] of Object.entries(signaturesByPage)) {
+            const page = pages[parseInt(pNum) - 1];
+            const { width, height } = page.getSize();
+            const sigImg = await pdfDoc.embedPng(data.img);
 
-        const responseSig = await fetch(data.img);
-        const sigBlob = await responseSig.blob();
-        
-        const formData = new FormData();
-        formData.append("pdfFile", fileInput.files[0]);
-        formData.append("signatureImage", sigBlob, "signature.png");
-        formData.append("x", data.x);
-        formData.append("y", data.y);
-        formData.append("w", data.w);
-        formData.append("h", data.h);
-        formData.append("rotation", data.rotation || 0);
+            const drawW = width * (data.w / 100);
+            const drawH = height * (data.h / 100);
+            const drawX = width * (data.x / 100);
+            // CORREÇÃO GEOMÉTRICA: Eixo Y invertido + compensação de altura
+            const drawY = height - (height * (data.y / 100)) - drawH;
 
-        saveTimer.textContent = "Enviando arquivos (isso pode demorar)...";
-
-        const response = await fetch("/api/assinar", { 
-            method: "POST", 
-            body: formData 
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error("Erro no Servidor: " + errorText);
+            page.drawImage(sigImg, {
+                x: drawX,
+                y: drawY,
+                width: drawW,
+                height: drawH,
+                rotate: degrees(-(data.rotation || 0))
+            });
         }
 
-        const finalBlob = await response.blob();
-        const downloadUrl = URL.createObjectURL(finalBlob);
-        const link = document.createElement("a");
-        link.href = downloadUrl;
-        link.download = "DUCATO_ASSINADO.pdf";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const finalBytes = await pdfDoc.save();
+        const blob = new Blob([finalBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "DUCATO_ASSINADO.pdf";
+        a.click();
 
-        saveTimer.textContent = "Sucesso!";
-        setTimeout(() => { saveModal.style.display = "none"; }, 1500);
-
+        saveTimer.textContent = "Concluído!";
+        setTimeout(() => { saveModal.style.display = "none"; }, 1000);
     } catch (err) {
-        console.error(err);
-        alert("FALHA CRÍTICA: " + err.message);
+        alert("Erro local: " + err.message);
         saveModal.style.display = "none";
     }
 }
 
-// Funções de navegação simplificadas
-window.changePage = (num) => {
-    if (pageNum + num > 0 && pageNum + num <= pdfDocJs.numPages) {
-        pageNum += num;
-        render();
-    }
-};
+// Funções de navegação e UI (Manter o que já funciona)
+window.changePage = (n) => { if(pdfDocJs && pageNum+n > 0 && pageNum+n <= pdfDocJs.numPages) { pageNum += n; render(); } };
+function updateSigUI() { /* Lógica de exibição da assinatura na tela */ }
