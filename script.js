@@ -1,4 +1,4 @@
-const { PDFDocument } = PDFLib;
+const { PDFDocument, degrees } = PDFLib;
 let pdfBytes, pdfDocJs, pageNum = 1, zoom = 1.0;
 let signaturesByPage = {}; 
 let currentFileName = "documento";
@@ -113,7 +113,7 @@ function replicateToAll() {
     for (let i = 1; i <= pdfDocJs.numPages; i++) {
         signaturesByPage[i] = JSON.parse(JSON.stringify(current));
     }
-    alert("Assinatura copiada para todas as páginas com posição, tamanho e rotação!");
+    alert("Copiado para todas as páginas!");
     render();
 }
 
@@ -155,17 +155,19 @@ async function saveFinalPdf() {
                 const page = pages[i - 1];
                 const { width, height } = page.getSize();
                 const sigImage = await pdfDoc.embedPng(data.img);
+                
                 const sigW = (data.w / 100) * width;
                 const sigH = (data.h / 100) * height;
                 const sigX = (data.x / 100) * width;
+                // Inverte o eixo Y para o padrão do PDF (canto inferior esquerdo)
                 const sigY = height - ((data.y / 100) * height) - sigH;
-                const rotation = (data.rotation || 0) * (Math.PI / 180);
-                
+
                 page.drawImage(sigImage, { 
-                    x: sigX, y: sigY, 
-                    width: sigW, height: sigH, 
-                    opacity: 1.0,
-                    rotate: PDFLib.degrees(data.rotation || 0)
+                    x: sigX, 
+                    y: sigY, 
+                    width: sigW, 
+                    height: sigH, 
+                    rotate: degrees(data.rotation || 0)
                 });
             }
         }
