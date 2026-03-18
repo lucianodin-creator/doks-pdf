@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF - Assinatura Digital</title>
+    <title>MeuPDF - Assinatura</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -17,17 +17,11 @@
         <button onclick="document.getElementById('file-in').click()" class="btn-open">ABRIR PDF</button>
         <input type="file" id="file-in" accept="application/pdf" style="display:none">
     </div>
-    <div class="zoom-controls">
-        <button class="btn-zoom" onclick="changeZoom(0.2)"><i class="fa fa-plus"></i></button>
-        <button class="btn-zoom" onclick="changeZoom(-0.2)"><i class="fa fa-minus"></i></button>
-        <button class="btn-zoom" onclick="fitToWidth()"><i class="fa fa-expand"></i></button>
-    </div>
     <div class="container">
         <div id="pdf-wrapper">
             <canvas id="pdf-render"></canvas>
             <div id="draggable-sig" class="sig-instance">
                 <button class="btn-sig-del" onclick="removeSignature()"><i class="fa fa-trash"></i></button>
-                <button class="btn-sig-copy" onclick="replicateToAll()"><i class="fa fa-copy"></i></button>
                 <div class="sig-rotate-handle"><i class="fa fa-redo"></i></div>
                 <img id="sig-preview" src="">
             </div>
@@ -48,12 +42,10 @@
             <button class="btn-close" onclick="document.getElementById('sig-modal').style.display='none'">FECHAR</button>
         </div>
     </div>
-    <div id="save-modal">
+    <div id="save-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; color:white; display:flex; align-items:center; justify-content:center; flex-direction:column;">
         <i class="fa fa-spinner fa-spin fa-3x"></i>
-        <div style="margin-top:20px; font-size:1.2rem;">Processando e Gravando...</div>
-        <div id="save-timer">Aguarde...</div>
+        <p id="save-timer">Processando...</p>
     </div>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
-    <script src="script.js?v=1773841066"></script>
+    <script src="script.js?v=final_force"></script>
 </body>
 </html>
