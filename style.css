@@ -15,63 +15,81 @@ body {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    z-index: 1000; 
+    z-index: 2000; 
 }
 
-/* O segredo está aqui: o container agora ocupa o espaço restante sem empurrar a barra */
 .container { 
     flex: 1; 
     overflow: auto; 
     display: flex; 
     justify-content: center; 
-    align-items: flex-start;
     background: #333; 
-    position: relative; 
+    position: relative;
+    /* Adiciona um espaço no fundo para o PDF não bater na barra */
+    padding-bottom: 80px; 
 }
 
 #pdf-wrapper { position: relative; margin: 15px auto; box-shadow: 0 0 20px #000; }
 canvas { display: block; background: white; }
 
-/* Barra Inferior Sempre Visível */
+/* Barra Inferior REFORÇADA */
 .bottom-bar { 
-    background: #000; 
-    padding: 10px 5px 30px 5px; 
+    background: #000000 !important; /* Preto absoluto */
+    padding: 10px 0 35px 0; 
     display: flex; 
     justify-content: space-around; 
     align-items: center; 
-    z-index: 1000; 
-    border-top: 1px solid #444;
-    height: 60px; /* Altura definida para garantir presença */
+    z-index: 3000; /* Acima de tudo */
+    border-top: 2px solid #444;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
 }
 
-.btn-nav { width: 44px; height: 44px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-.btn-pen { background: #6f42c1; }
-.btn-save { background: #28a745; }
-.page-info { color: white; font-weight: bold; font-size: 14px; text-align: center; }
+.btn-nav { 
+    width: 46px; 
+    height: 46px; 
+    border-radius: 50%; 
+    border: none; 
+    color: white; 
+    background: #1a73e8; 
+    font-size: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
 
-/* Zoom fixo na lateral */
+.btn-pen { background: #6f42c1 !important; }
+.btn-save { background: #28a745 !important; }
+.page-info { color: #ffffff !important; font-weight: bold; font-size: 16px; }
+
+/* Zoom */
 .side-controls { 
     position: fixed; 
-    right: 12px; 
+    right: 15px; 
     top: 40%; 
     display: flex; 
     flex-direction: column; 
-    gap: 12px; 
-    z-index: 2000; 
+    gap: 15px; 
+    z-index: 2500; 
 }
 .btn-zoom { 
-    width: 44px; 
-    height: 44px; 
+    width: 46px; 
+    height: 46px; 
     border-radius: 10px; 
     border: 2px solid #1a73e8; 
     background: white; 
-    font-size: 20px; 
+    font-size: 24px; 
     color: #1a73e8; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
 }
 
-/* Assinaturas e Modal */
+/* Modal e Assinaturas */
 .sig-box { position: absolute; border: 2px dashed #1a73e8; touch-action: none; z-index: 500; }
-#sig-modal { position: fixed; inset: 0; background: white; z-index: 3000; display: none; flex-direction: column; }
+#sig-modal { position: fixed; inset: 0; background: white; z-index: 4000; display: none; flex-direction: column; }
 #sig-pad { flex: 1; touch-action: none; }
 .modal-btns { display: flex; padding: 15px; gap: 10px; }
 .modal-btns button { flex: 1; padding: 18px; border: none; border-radius: 8px; color: white; font-weight: bold; }
