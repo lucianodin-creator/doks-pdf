@@ -1,85 +1,89 @@
 const { PDFDocument, degrees } = PDFLib;
-let pdfBytes, pdfDocJs, pageNum = 1, zoom = 1.0;
+let pdfBytes, pdfDocJs, pageNum = 1;
 let signaturesByPage = {}; 
-let currentFileName = "documento";
 const canvas = document.getElementById("pdf-render"), ctx = canvas.getContext("2d");
-const sigModal = document.getElementById("sig-modal"), sigCanvas = document.getElementById("sig-canvas");
 const saveModal = document.getElementById("save-modal"), saveTimer = document.getElementById("save-timer");
-let pad = null;
 
-function initSignaturePad() {
-    if (pad) pad.off();
-    pad = new SignaturePad(sigCanvas, { penColor: "rgb(0, 0, 128)" });
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    sigCanvas.width = sigCanvas.offsetWidth * ratio;
-    sigCanvas.height = sigCanvas.offsetHeight * ratio;
-    sigCanvas.getContext("2d").scale(ratio, ratio);
-}
+// Inicialização de arquivo
+document.getElementById('file-in').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const arrayBuffer = await file.arrayBuffer();
+    pdfBytes = arrayBuffer;
+    pdfDocJs = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    document.getElementById('page-count').textContent = pdfDocJs.numPages;
+    render();
+};
 
 async function render() {
     if(!pdfDocJs) return;
     const page = await pdfDocJs.getPage(pageNum);
-    const vp = page.getViewport({scale: 2.0 * zoom});
+    const vp = page.getViewport({scale: 2.0});
     canvas.width = vp.width; canvas.height = vp.height;
-    canvas.style.width = (vp.width / 2) + "px";
-    canvas.style.height = (vp.height / 2) + "px";
-    document.getElementById("pdf-wrapper").style.width = (vp.width / 2) + "px";
-    document.getElementById("pdf-wrapper").style.height = (vp.height / 2) + "px";
     await page.render({canvasContext: ctx, viewport: vp}).promise;
     document.getElementById("page-num").textContent = pageNum;
     updateSigUI();
 }
 
-function updateSigUI() {
-    const el = document.getElementById("draggable-sig");
-    const data = signaturesByPage[pageNum];
-    if (data && data.img) {
-        const pdfWrapper = document.getElementById("pdf-wrapper");
-        const xPx = (data.x / 100) * pdfWrapper.clientWidth;
-        const yPx = (data.y / 100) * pdfWrapper.clientHeight;
-        const wPx = (data.w / 100) * pdfWrapper.clientWidth;
-        const hPx = (data.h / 100) * pdfWrapper.clientHeight;
-        el.style.display = "block";
-        document.getElementById("sig-preview").src = data.img;
-        el.style.width = `${wPx}px`; el.style.height = `${hPx}px`;
-        el.style.transform = `translate(${xPx}px, ${yPx}px) rotate(${data.rotation || 0}deg)`;
-        el.setAttribute("data-x", xPx); el.setAttribute("data-y", yPx);
-    } else { el.style.display = "none"; }
-}
-
 async function saveFinalPdf() {
-    if (!pdfBytes) return;
+    if (!pdfBytes) { alert("Abra um PDF primeiro!"); return; }
+    
     saveModal.style.display = "flex";
-    saveTimer.textContent = "Processando no servidor...";
+    saveTimer.textContent = "Conectando ao servidor...";
+
     try {
         const fileInput = document.getElementById("file-in");
         const data = signaturesByPage[pageNum];
+        
+        if (!data) throw new Error("Posicione a assinatura na tela antes de salvar.");
+
         const responseSig = await fetch(data.img);
         const sigBlob = await responseSig.blob();
         
         const formData = new FormData();
         formData.append("pdfFile", fileInput.files[0]);
         formData.append("signatureImage", sigBlob, "signature.png");
-        formData.append("x", data.x.toFixed(2));
-        formData.append("y", data.y.toFixed(2));
-        formData.append("w", data.w.toFixed(2));
-        formData.append("h", data.h.toFixed(2));
+        formData.append("x", data.x);
+        formData.append("y", data.y);
+        formData.append("w", data.w);
+        formData.append("h", data.h);
         formData.append("rotation", data.rotation || 0);
 
-        const response = await fetch("/api/assinar", { method: "POST", body: formData });
-        if (!response.ok) throw new Error("Erro no servidor");
+        saveTimer.textContent = "Enviando arquivos (isso pode demorar)...";
+
+        const response = await fetch("/api/assinar", { 
+            method: "POST", 
+            body: formData 
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error("Erro no Servidor: " + errorText);
+        }
 
         const finalBlob = await response.blob();
         const downloadUrl = URL.createObjectURL(finalBlob);
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = `${currentFileName}_assinado.pdf`;
+        link.download = "DUCATO_ASSINADO.pdf";
+        document.body.appendChild(link);
         link.click();
-        saveTimer.textContent = "Download concluído!";
-        setTimeout(() => { saveModal.style.display = "none"; }, 2000);
+        document.body.removeChild(link);
+
+        saveTimer.textContent = "Sucesso!";
+        setTimeout(() => { saveModal.style.display = "none"; }, 1500);
+
     } catch (err) {
-        alert("Erro: " + err.message);
+        console.error(err);
+        alert("FALHA CRÍTICA: " + err.message);
         saveModal.style.display = "none";
     }
 }
-// ... (restante das funções auxiliares omitidas para brevidade, mas mantidas no seu arquivo real)
+
+// Funções de navegação simplificadas
+window.changePage = (num) => {
+    if (pageNum + num > 0 && pageNum + num <= pdfDocJs.numPages) {
+        pageNum += num;
+        render();
+    }
+};
