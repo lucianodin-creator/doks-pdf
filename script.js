@@ -165,7 +165,7 @@ async function saveFinalPdf() {
                     x: sigX, y: sigY, 
                     width: sigW, height: sigH, 
                     opacity: 1.0,
-                    rotate: rotation
+                    rotate: PDFLib.degrees(data.rotation || 0)
                 });
             }
         }
