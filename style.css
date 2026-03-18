@@ -1,0 +1,37 @@
+:root { --primary: #2563eb; --dark: #0f172a; --bg: #e2e8f0; --success: #16a34a; --danger: #ef4444; }
+body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.header { background: var(--primary); color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.btn-open { background: white; color: var(--primary); border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; }
+.container { flex: 1; position: relative; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 20px; padding-bottom: 100px; }
+#pdf-wrapper { position: relative; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); line-height: 0; }
+.sig-instance { position: absolute; border: 2px dashed var(--primary); cursor: move; touch-action: none; background: rgba(37, 99, 235, 0.1); z-index: 10; display: none; }
+.sig-instance img { width: 100%; height: 100%; pointer-events: none; }
+.btn-sig-del, .btn-sig-copy { position: absolute; background: white; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 30; border: 2px solid var(--primary); font-size: 1.2rem; }
+.btn-sig-del { top: -21px; left: -21px; color: var(--danger); }
+.btn-sig-copy { top: -21px; right: -21px; color: #8b5cf6; }
+.sig-instance::after { content: ""; position: absolute; width: 30px; height: 30px; right: 0; bottom: 0; background: var(--primary); clip-path: polygon(100% 0, 100% 100%, 0 100%); cursor: nwse-resize; }
+.zoom-controls { position: fixed; right: 15px; top: 75px; display: flex; flex-direction: column; gap: 12px; z-index: 150; }
+.btn-zoom { background: white; color: var(--dark); border: none; width: 50px; height: 50px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-size: 1.3rem; }
+.bottom-bar { position: fixed; bottom: 0; width: 100%; background: var(--dark); display: flex; justify-content: space-around; align-items: center; height: 85px; z-index: 200; }
+.btn-circle { background: var(--primary); color: white; border: none; width: 55px; height: 55px; border-radius: 50%; font-size: 1.4rem; }
+.btn-pen { background: #8b5cf6; }
+.btn-save { background: var(--success); }
+.page-info { color: white; font-weight: bold; font-size: 1.1rem; }
+
+/* MODAL DE ASSINATURA COM JANELA FIXA (PROPORÇÃO 4 DEDOS / ~6CM) */
+#sig-modal { 
+    display: none; position: fixed; inset: 0; z-index: 1000; 
+    background: rgba(15, 23, 42, 0.9); /* Fundo escuro para focar na assinatura */
+    align-items: center; justify-content: center; flex-direction: column; padding: 10px;
+}
+#sig-canvas-wrapper { 
+    width: 90vw; max-width: 350px; /* Largura de um celular em pé */
+    height: 220px; /* Altura fixa de aproximadamente 6cm/4 dedos */
+    background: white; border-radius: 15px; border: 3px solid var(--primary); 
+    overflow: hidden; position: relative;
+}
+#sig-canvas { width: 100%; height: 100%; touch-action: none; }
+.sig-actions { display: flex; gap: 10px; padding-top: 20px; width: 90vw; max-width: 350px; }
+.sig-actions button { flex: 1; height: 50px; border-radius: 12px; border: none; color: white; font-weight: bold; }
+.btn-add { background: var(--success); } .btn-clear { background: var(--danger); } .btn-close { background: #64748b; }
+#save-modal { display: none; position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; color: white; flex-direction: column; }

@@ -9,12 +9,12 @@ let pad = null;
 
 function resizeSigCanvas() {
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    // Pega o tamanho real do container no momento exato
     const wrapper = document.getElementById("sig-canvas-wrapper");
-    sigCanvas.width = wrapper.offsetWidth * ratio;
-    sigCanvas.height = wrapper.offsetHeight * ratio;
+    // Usa o tamanho fixo definido no CSS
+    sigCanvas.width = wrapper.clientWidth * ratio;
+    sigCanvas.height = wrapper.clientHeight * ratio;
     sigCanvas.getContext("2d").scale(ratio, ratio);
-    if (pad) pad.clear(); // Limpa para evitar bugs de rastro ao girar
+    if (pad) pad.clear();
 }
 
 function initSignaturePad() {
@@ -22,14 +22,6 @@ function initSignaturePad() {
     pad = new SignaturePad(sigCanvas, { penColor: "rgb(0, 0, 128)" });
     resizeSigCanvas();
 }
-
-// CORREÇÃO MESTRE: Detecta rotação e ajusta a área NA HORA
-window.addEventListener("resize", () => {
-    if (sigModal.style.display === "flex") {
-        // Se o modal estiver aberto, ele reajusta o tamanho para a nova largura
-        resizeSigCanvas();
-    }
-});
 
 async function fitToWidth() {
     if (!pdfDocJs) return;
