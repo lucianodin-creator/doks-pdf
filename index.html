@@ -12,11 +12,22 @@
 </head>
 <body>
     <div class="header">
-        <b>MEUPDF - GESTÃO</b>
+        <b>MEUPDF PRO</b>
         <button onclick="document.getElementById('file-in').click()"><i class="fa fa-upload"></i></button>
         <input type="file" id="file-in" accept="application/pdf" style="display:none">
     </div>
-    <div class="container"><div id="pdf-wrapper"><canvas id="pdf-render"></canvas></div></div>
+
+    <div class="container">
+        <div id="pdf-wrapper">
+            <canvas id="pdf-render"></canvas>
+        </div>
+    </div>
+
+    <div class="zoom-layer">
+        <button class="btn-zoom-float" onclick="window.adjustZoom(0.1)"><i class="fa fa-plus"></i></button>
+        <button class="btn-zoom-float" onclick="window.adjustZoom(-0.1)"><i class="fa fa-minus"></i></button>
+    </div>
+
     <div class="bottom-bar">
         <button class="btn-nav" onclick="window.changePage(-1)"><i class="fa fa-arrow-left"></i></button>
         <div class="page-info"><span id="page-num">0</span> / <span id="page-count">0</span></div>
@@ -24,6 +35,7 @@
         <button class="btn-nav btn-pen" onclick="window.openSigPad()"><i class="fa fa-signature"></i></button>
         <button class="btn-nav btn-save" onclick="window.saveFinalPdf()"><i class="fa fa-check-double"></i></button>
     </div>
+
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
         <div class="modal-btns">

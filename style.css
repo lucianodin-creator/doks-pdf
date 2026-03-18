@@ -1,55 +1,52 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { 
-    margin: 0; padding: 0; font-family: sans-serif; background: #111; 
-    height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; 
-}
+body { margin: 0; padding: 0; font-family: sans-serif; background: #111; height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
-.header { height: 45px; background: #1a73e8; color: white; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; z-index: 9999; flex-shrink: 0; }
+.header { height: 45px; background: #1a73e8; color: white; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; z-index: 500; flex-shrink: 0; }
 
-/* Container do PDF - Agora com limites rígidos */
-.container { 
-    flex: 1; overflow: auto; display: flex; justify-content: center; 
-    background: #222; position: relative; z-index: 10; padding-bottom: 100px;
-}
-#pdf-wrapper { position: relative; box-shadow: 0 0 20px #000; background: white; margin: 10px auto; }
+.container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; position: relative; z-index: 1; }
+#pdf-wrapper { position: relative; box-shadow: 0 0 20px #000; background: white; margin: 15px auto; }
 canvas { display: block; }
 
-/* CONTROLES DE ZOOM - POSIÇÃO ABSOLUTA FORÇADA */
-.side-controls { 
-    position: fixed !important; 
-    right: 10px !important; 
-    bottom: 100px !important; /* Subi eles para ficarem acima da barra inferior */
-    display: flex !important; 
-    flex-direction: column !important; 
-    gap: 10px !important; 
-    z-index: 100000 !important; 
-}
-.btn-zoom { 
-    width: 42px; height: 42px; border-radius: 8px; border: 2px solid #fff; 
-    background: #1a73e8 !important; color: #fff !important; font-size: 20px; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+/* CAMADA DE ZOOM - FLUTUANDO SOBRE TUDO */
+.zoom-layer {
+    position: fixed !important;
+    right: 20px;
+    bottom: 100px; /* Acima da barra inferior */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 999999 !important; /* Valor absurdo para garantir */
 }
 
-/* BARRA INFERIOR - REDUZIDA PARA NÃO SER CORTADA */
-.bottom-bar { 
-    height: 70px; background: #000; display: flex; justify-content: space-around; 
-    align-items: center; padding-bottom: 15px; border-top: 1px solid #444; flex-shrink: 0; z-index: 99999;
+.btn-zoom-float {
+    width: 50px;
+    height: 50px;
+    background: #1a73e8 !important;
+    color: white !important;
+    border: 3px solid #fff;
+    border-radius: 12px;
+    font-size: 24px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.btn-nav { width: 40px; height: 40px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+
+.bottom-bar { height: 75px; background: #000; display: flex; justify-content: space-around; align-items: center; padding-bottom: 15px; border-top: 1px solid #444; flex-shrink: 0; z-index: 1000; }
+.btn-nav { width: 44px; height: 44px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 18px; display: flex; align-items: center; justify-content: center; }
 .btn-pen { background: #6f42c1 !important; }
 .btn-save { background: #28a745 !important; }
-.page-info { color: white; font-weight: bold; font-size: 13px; min-width: 50px; text-align: center; }
+.page-info { color: white; font-weight: bold; font-size: 14px; min-width: 50px; text-align: center; }
 
-/* Assinaturas e Ferramentas */
-.sig-box { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.1); touch-action: none; z-index: 500; }
+/* Assinatura, Lixeira e Resize */
+.sig-box { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.1); touch-action: none; z-index: 100; }
 .sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 8px; }
-.tool-btn { width: 32px; height: 32px; border-radius: 4px; border: none; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+.tool-btn { width: 34px; height: 34px; border-radius: 6px; border: none; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 .btn-del { background: #dc3545; }
 .btn-clone { background: #17a2b8; }
-.resizer { position: absolute; right: -8px; bottom: -8px; width: 22px; height: 22px; background: #1a73e8; border-radius: 50%; border: 2px solid white; z-index: 600; }
+.resizer { position: absolute; right: -10px; bottom: -10px; width: 25px; height: 25px; background: #1a73e8; border-radius: 50%; border: 2px solid white; z-index: 200; }
 
-/* Modal Corrigido (Botões Invertidos) */
-#sig-modal { position: fixed; inset: 0; background: white; z-index: 200000; display: none; flex-direction: column; }
+#sig-modal { position: fixed; inset: 0; background: white; z-index: 2000000; display: none; flex-direction: column; }
 #sig-pad { flex: 1; touch-action: none; background: #fff; }
-.modal-btns { display: flex; padding: 10px; gap: 10px; background: #eee; }
-.modal-btns button { flex: 1; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; font-size: 14px; }
+.modal-btns { display: flex; padding: 15px; gap: 10px; background: #eee; }
+.modal-btns button { flex: 1; padding: 18px; border: none; border-radius: 8px; color: white; font-weight: bold; }
