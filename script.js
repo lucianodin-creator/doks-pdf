@@ -100,13 +100,6 @@ function applySignature() {
 
 function removeSignature() { delete signaturesByPage[pageNum]; updateSigUI(); }
 
-function rotateSignature() {
-    if (!signaturesByPage[pageNum]) return;
-    signaturesByPage[pageNum].rotation = (signaturesByPage[pageNum].rotation || 0) + 15;
-    if (signaturesByPage[pageNum].rotation >= 360) signaturesByPage[pageNum].rotation = 0;
-    updateSigUI();
-}
-
 function replicateToAll() {
     const current = signaturesByPage[pageNum];
     if (!current) return alert("Crie uma assinatura primeiro!");
@@ -117,6 +110,7 @@ function replicateToAll() {
     render();
 }
 
+// Lógica de Arrastar, Redimensionar e Rotacionar Livremente
 interact("#draggable-sig").draggable({
     listeners: { move (event) {
         let x = (parseFloat(event.target.getAttribute("data-x")) || 0) + event.dx;
@@ -142,6 +136,21 @@ interact("#draggable-sig").draggable({
     }}
 });
 
+// Rotação Livre via Interact.js
+interact(".sig-rotate-handle").draggable({
+    onmove: function (event) {
+        const target = event.target.parentNode;
+        const rect = target.getBoundingClientRect();
+        const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        const angle = Math.atan2(event.pageY - center.y, event.pageX - center.x);
+        let rotation = angle * (180 / Math.PI) + 90;
+        if (signaturesByPage[pageNum]) {
+            signaturesByPage[pageNum].rotation = rotation;
+            updateSigUI();
+        }
+    }
+});
+
 async function saveFinalPdf() {
     if (!pdfBytes) return;
     saveModal.style.display = "flex";
@@ -159,7 +168,6 @@ async function saveFinalPdf() {
                 const sigW = (data.w / 100) * width;
                 const sigH = (data.h / 100) * height;
                 const sigX = (data.x / 100) * width;
-                // Inverte o eixo Y para o padrão do PDF (canto inferior esquerdo)
                 const sigY = height - ((data.y / 100) * height) - sigH;
 
                 page.drawImage(sigImage, { 
