@@ -3,49 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MeuPDF - Assinatura</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <title>MeuPDF - Assinatura Local</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="header">
-        <b>MEUPDF</b>
+        <b>MEUPDF LOCAL</b>
         <button onclick="document.getElementById('file-in').click()" class="btn-open">ABRIR PDF</button>
         <input type="file" id="file-in" accept="application/pdf" style="display:none">
     </div>
+
     <div class="container">
-        <div id="pdf-wrapper">
-            <canvas id="pdf-render"></canvas>
-            <div id="draggable-sig" class="sig-instance">
-                <button class="btn-sig-del" onclick="removeSignature()"><i class="fa fa-trash"></i></button>
-                <div class="sig-rotate-handle"><i class="fa fa-redo"></i></div>
-                <img id="sig-preview" src="">
-            </div>
-        </div>
+        <canvas id="pdf-render"></canvas>
     </div>
+
     <div class="bottom-bar">
-        <button class="btn-circle" onclick="changePage(-1)"><i class="fa fa-chevron-left"></i></button>
-        <div class="page-info"><span id="page-num">0</span> / <span id="page-count">0</span></div>
-        <button class="btn-circle" onclick="changePage(1)"><i class="fa fa-chevron-right"></i></button>
-        <button class="btn-circle btn-pen" onclick="openSignature()"><i class="fa fa-pen-nib"></i></button>
-        <button class="btn-circle btn-save" onclick="saveFinalPdf()"><i class="fa fa-save"></i></button>
+        <button class="btn-circle btn-save" onclick="saveFinalPdf()"><i class="fa fa-save"></i> SALVAR</button>
     </div>
-    <div id="sig-modal">
-        <div id="sig-canvas-wrapper"><canvas id="sig-canvas"></canvas></div>
-        <div class="sig-actions">
-            <button class="btn-add" onclick="applySignature()">ADICIONAR</button>
-            <button class="btn-clear" onclick="pad.clear()">LIMPAR</button>
-            <button class="btn-close" onclick="document.getElementById('sig-modal').style.display='none'">FECHAR</button>
-        </div>
-    </div>
-    <div id="save-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; color:white; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+
+    <div id="save-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; color:white; flex-direction:column; align-items:center; justify-content:center;">
         <i class="fa fa-spinner fa-spin fa-3x"></i>
-        <p id="save-timer">Processando...</p>
+        <p id="save-timer" style="margin-top:15px;">Processando no seu Motorola...</p>
     </div>
-    <script src="script.js?v=1773855619"></script>
+
+    <script src="script.js?v=FORCA_TOTAL"></script>
 </body>
 </html>
