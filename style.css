@@ -6,16 +6,28 @@ body {
 
 .header { height: 45px; background: #1a73e8; color: white; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 2000; }
 
-/* ÁREA DO PDF: Ajuste de rolagem e margem dinâmica */
+/* ÁREA DO PDF: Reduzindo a altura efetiva */
 .container { 
-    flex: 1; overflow: auto; display: flex; justify-content: center; 
-    background: #222; position: relative; z-index: 1;
-    padding-bottom: 110px; /* Margem de segurança padrão */
+    flex: 1; 
+    overflow: auto; 
+    display: flex; 
+    justify-content: center; 
+    background: #222; 
+    position: relative; 
+    z-index: 1;
+    /* Reduzindo a janela do PDF em 120px para não bater na barra inferior */
+    height: calc(100% - 120px); 
+    margin-bottom: 120px; /* Garante que o container não ocupe o espaço da barra */
 }
-#pdf-wrapper { position: relative; margin: 15px auto; background: white; box-shadow: 0 0 20px #000; }
+#pdf-wrapper { 
+    position: relative; 
+    margin: 20px auto; 
+    background: white; 
+    box-shadow: 0 0 20px #000;
+}
 canvas { display: block; }
 
-/* ZOOM: Laranja vibrante, sempre visível */
+/* ZOOM: Flutuando no centro lateral */
 .side-controls { 
     position: fixed !important; right: 20px; top: 50%; transform: translateY(-50%);
     display: flex; flex-direction: column; gap: 15px; z-index: 5000; 
@@ -26,39 +38,29 @@ canvas { display: block; }
     box-shadow: 0 4px 12px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
 }
 
-/* BARRA INFERIOR: Inteligente */
+/* BARRA INFERIOR: Travada na base */
 .bottom-bar { 
-    min-height: 80px; background: #000; display: flex; 
-    align-items: center; border-top: 1px solid #444; 
-    flex-shrink: 0; z-index: 4000; width: 100%;
-}
-
-/* No CELULAR (telas menores que 768px) */
-@media (max-width: 768px) {
-    .bottom-bar { height: 110px; padding-bottom: 30px; } /* Sobe os botões no mobile */
-    .btn-nav { width: 55px; height: 55px; font-size: 24px; }
-    .container { padding-bottom: 130px; }
-}
-
-/* No COMPUTADOR / READY FOR (telas maiores) */
-@media (min-width: 769px) {
-    .bottom-bar { height: 70px; padding-bottom: 0; } /* Mais fina no PC */
-    .btn-nav { width: 45px; height: 45px; font-size: 20px; cursor: pointer; }
-    .btn-nav:hover { background: #1557b0; }
+    position: fixed; /* Força a barra a ficar grudada na base */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 110px; 
+    background: #000; 
+    display: flex; 
+    align-items: flex-start; 
+    padding-top: 15px;
+    padding-bottom: 30px; /* Safe Area para Motorola Edge */
+    border-top: 1px solid #444; 
+    flex-shrink: 0; 
+    z-index: 4000;
 }
 
 .nav-item { flex: 1; display: flex; justify-content: center; align-items: center; }
 .btn-nav { 
-    border-radius: 50%; border: none; color: white; background: #1a73e8; 
+    width: 55px; height: 55px; border-radius: 50%; border: none; color: white; background: #1a73e8; 
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4); transition: 0.2s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
 }
 .btn-pen { background: #6f42c1 !important; }
 .btn-save { background: #28a745 !important; }
 .page-info { color: #fff; font-weight: bold; font-size: 14px; background: #333; padding: 6px 12px; border-radius: 10px; }
-
-/* MODAL: Ajuste para mouse e touch */
-#sig-modal { position: fixed; inset: 0; background: white; z-index: 10000; display: none; flex-direction: column; }
-#sig-pad { flex: 1; cursor: crosshair; }
-.modal-btns { display: flex; padding: 15px; gap: 15px; background: #eee; }
-.modal-btns button { flex: 1; padding: 18px; border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
