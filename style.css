@@ -4,81 +4,23 @@ body { margin: 0; padding: 0; font-family: sans-serif; background: #111; height:
 
 .container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; position: relative; z-index: 1; padding: 20px 0; }
 #pdf-wrapper { position: relative; background: white; box-shadow: 0 0 15px #000; margin: 0 auto; }
-canvas { display: block; }
 
-/* ZOOM ORANGE */
-.side-controls { position: fixed !important; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; z-index: 5000; }
-.btn-zoom { width: 52px; height: 52px; border-radius: 12px; border: 2px solid #000; background: #ff9800 !important; color: #000 !important; font-size: 26px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
-
-/* BARRA INFERIOR UNIFICADA */
+/* BARRA INFERIOR */
 .bottom-bar { height: 100px; background: #000; display: flex; align-items: center; padding-bottom: env(safe-area-inset-bottom, 30px); border-top: 1px solid #333; flex-shrink: 0; z-index: 4000; width: 100%; }
 .nav-item { flex: 1; display: flex; justify-content: center; align-items: center; }
 .btn-nav { width: 52px; height: 52px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 22px; display: flex; align-items: center; justify-content: center; }
-.btn-pen { background: #6f42c1 !important; }
-.btn-save { background: #28a745 !important; }
-.page-info { color: #fff; font-weight: bold; font-size: 14px; background: #333; padding: 6px 12px; border-radius: 10px; }
 
-/* MODAL ASSINATURA BRANCO */
+/* MODAL ASSINATURA */
 #sig-modal { position: fixed; inset: 0; background: #fff !important; z-index: 10000; display: none; flex-direction: column; }
-#sig-pad { flex: 1; background: #fff !important; touch-action: none; }
-.modal-btns { display: flex; padding: 15px; gap: 10px; background: #eee; border-top: 1px solid #ccc; }
+#sig-pad { flex: 1; background: #fff !important; touch-action: none; border-bottom: 1px solid #ddd; }
+.modal-btns { display: flex; padding: 15px; gap: 10px; background: #eee; }
 .modal-btns button { flex: 1; padding: 20px; border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 16px; }
 
-/* --- NOVA PEÇA: CAIXA DE MANIPULAÇÃO DA ASSINATURA --- */
-.sig-box { 
-    position: absolute; 
-    border: 2px dashed #1a73e8; /* Borda de seleção azul */
-    background: rgba(26,115,232,0.05); 
-    touch-action: none; 
-    z-index: 100; 
-    cursor: move;
-}
+/* MANIPULAÇÃO NA FOLHA */
+.sig-box { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.05); touch-action: none; z-index: 100; }
+.handle { position: absolute; width: 22px; height: 22px; background: #1a73e8; border: 2px solid white; border-radius: 50%; z-index: 110; display: flex; align-items: center; justify-content: center; font-size: 12px; }
 
-/* Os pequenos círculos de controle */
-.handle {
-    position: absolute;
-    width: 20px; height: 20px;
-    background: #1a73e8;
-    border: 3px solid white;
-    border-radius: 50%;
-    z-index: 110;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-}
-
-/* Posições dos handles */
-.handle-tl { top: -10px; left: -10px; cursor: nwse-resize; } /* Top Left */
-.handle-tr { top: -10px; right: -10px; cursor: nesw-resize; } /* Top Right - Usaremos para GIRAR */
-.handle-bl { bottom: -10px; left: -10px; cursor: nesw-resize; } /* Bottom Left */
-.handle-br { bottom: -10px; right: -10px; cursor: nwse-resize; } /* Bottom Right - REDIMENSIONAR */
-
-/* Ícone de girar no handle top-right */
-.handle-tr::after {
-    content: '🔄';
-    font-size: 12px; color: white;
-    display: flex; align-items: center; justify-content: center; height: 100%;
-}
-
-/* Container da assinatura na folha (tracejado azul) */
-.sig-box {
-    position: absolute;
-    border: 2px dashed #1a73e8;
-    background: rgba(26,115,232,0.05);
-    touch-action: none; /* Importante para o drag no mobile */
-    z-index: 100;
-}
-
-/* Os pequenos círculos de controle nos cantos */
-.handle {
-    position: absolute;
-    width: 15px; height: 15px;
-    background: #1a73e8;
-    border: 2px solid white;
-    border-radius: 50%;
-    z-index: 110;
-}
-
-/* Posições dos handles */
-.handle-tl { top: -8px; left: -8px; cursor: nwse-resize; }
-.handle-tr { top: -8px; right: -8px; cursor: nesw-resize; }
-.handle-bl { bottom: -8px; left: -8px; cursor: nesw-resize; }
-.handle-br { bottom: -8px; right: -8px; cursor: nwse-resize; } /* Puxe aqui para redimensionar */
+/* SEPARANDO OS BOTÕES */
+.handle-tl { top: -11px; left: -11px; background: #ff4444 !important; cursor: pointer; } /* LIXEIRA - Canto Superior Esquerdo */
+.handle-tr { top: -11px; right: -11px; background: #1a73e8 !important; cursor: pointer; } /* GIRAR - Canto Superior Direito */
+.handle-br { bottom: -11px; right: -11px; background: #28a745 !important; cursor: nwse-resize; } /* REDIMENSIONAR - Canto Inferior Direito */
