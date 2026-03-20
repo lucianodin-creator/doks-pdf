@@ -1,4 +1,4 @@
-const { PDFDocument, rgb } = PDFLib;
+const { PDFDocument } = PDFLib;
 let pdfDoc, currentCanvas, ctx, currentPageNum = 1, totalPages = 0, pdfScale = 1.0;
 const wrapper = document.getElementById('pdf-wrapper'), sigModal = document.getElementById('sig-modal'), sigCanvas = document.getElementById('sig-pad');
 let sigPad;
@@ -26,7 +26,7 @@ window.changePage = (offset) => {
 window.openSigPad = () => {
     sigModal.style.display = 'flex';
     if (!sigPad) {
-        sigPad = new SignaturePad(sigCanvas, { minWidth: 1.0, maxWidth: 2.0, penColor: 'rgb(0,0,0)' });
+        sigPad = new SignaturePad(sigCanvas, { minWidth: 0.8, maxWidth: 1.8, penColor: 'rgb(0,0,0)' });
         resizeSigCanvas();
     } else { sigPad.clear(); }
 };
@@ -38,14 +38,23 @@ function resizeSigCanvas() {
     sigCanvas.getContext("2d").scale(ratio, ratio);
 }
 
-// --- FIX DEFINITIVO DO BOTÃO LIMPAR ---
-window.clearSigPad = function() {
+// --- SOLUÇÃO PARA O BOTÃO LIMPAR ---
+function performClear() {
     if (sigPad) {
-        sigPad.clear(); // Limpa o objeto SignaturePad
+        sigPad.clear();
         const context = sigCanvas.getContext('2d');
-        context.clearRect(0, 0, sigCanvas.width, sigCanvas.height); // Garante limpeza visual do canvas
+        context.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
     }
-};
+}
+
+// Vincula tanto o clique quanto o toque para garantir execução no Motorola
+const clearBtn = document.querySelector('button[onclick*="clearSigPad"]');
+if (clearBtn) {
+    clearBtn.removeAttribute('onclick'); // Remove o antigo
+    clearBtn.addEventListener('touchstart', (e) => { e.preventDefault(); performClear(); });
+    clearBtn.addEventListener('click', (e) => { performClear(); });
+}
+window.clearSigPad = performClear;
 
 window.closeSigPad = () => sigModal.style.display = 'none';
 window.confirmSig = () => { if (!sigPad.isEmpty()) { createSigBox(sigPad.toDataURL()); window.closeSigPad(); } };
@@ -81,13 +90,13 @@ function addManipulation(box, resizer) {
         isDragging = true;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
         startL = parseInt(box.style.left); startT = parseInt(box.style.top);
-    }, {passive: false});
+    });
 
     resizer.addEventListener('touchstart', (e) => {
         e.stopPropagation(); isResizing = true;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
         startW = parseInt(box.style.width); startH = parseInt(box.style.height);
-    }, {passive: false});
+    });
 
     wrapper.addEventListener('touchmove', (e) => {
         if (!isDragging && !isResizing) return;
@@ -96,7 +105,7 @@ function addManipulation(box, resizer) {
         const dy = e.touches[0].clientY - startY;
         if (isDragging) { box.style.left = (startL + dx) + 'px'; box.style.top = (startT + dy) + 'px'; }
         if (isResizing) { box.style.width = (startW + dx) + 'px'; box.style.height = (startH + dy) + 'px'; }
-    }, {passive: false});
+    });
 
     wrapper.addEventListener('touchend', () => { isDragging = isResizing = false; });
 }
