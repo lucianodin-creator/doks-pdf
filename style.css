@@ -57,3 +57,28 @@ canvas { display: block; }
     font-size: 12px; color: white;
     display: flex; align-items: center; justify-content: center; height: 100%;
 }
+
+/* Container da assinatura na folha (tracejado azul) */
+.sig-box {
+    position: absolute;
+    border: 2px dashed #1a73e8;
+    background: rgba(26,115,232,0.05);
+    touch-action: none; /* Importante para o drag no mobile */
+    z-index: 100;
+}
+
+/* Os pequenos círculos de controle nos cantos */
+.handle {
+    position: absolute;
+    width: 15px; height: 15px;
+    background: #1a73e8;
+    border: 2px solid white;
+    border-radius: 50%;
+    z-index: 110;
+}
+
+/* Posições dos handles */
+.handle-tl { top: -8px; left: -8px; cursor: nwse-resize; }
+.handle-tr { top: -8px; right: -8px; cursor: nesw-resize; }
+.handle-bl { bottom: -8px; left: -8px; cursor: nesw-resize; }
+.handle-br { bottom: -8px; right: -8px; cursor: nwse-resize; } /* Puxe aqui para redimensionar */

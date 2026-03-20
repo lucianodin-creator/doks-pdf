@@ -6,8 +6,7 @@ ctx = currentCanvas.getContext('2d');
 const sigModal = document.getElementById('sig-modal'), sigCanvas = document.getElementById('sig-pad');
 let sigPad;
 
-// Carregar PDF inicial (mantenha comentado se quiser abrir limpo)
-// loadPdf(); 
+// loadPdf(); // Mantenha comentado para abrir limpo
 
 async function renderPage(num) {
     const pdfData = await pdfDoc.save();
@@ -19,85 +18,130 @@ async function renderPage(num) {
     document.getElementById('page-num').textContent = num;
 }
 
-// ZOOM
+// ZOOM & NAVEGAÇÃO
 window.adjustZoom = (amount) => { pdfScale = Math.max(0.3, Math.min(3.0, pdfScale + amount)); renderPage(currentPageNum); };
 window.changePage = (offset) => { const newPage = currentPageNum + offset; if (newPage >= 1 && newPage <= totalPages) { currentPageNum = newPage; renderPage(currentPageNum); } };
 
 // --- ASSINATURA ---
+
 window.openSigPad = () => { 
     sigModal.style.display = 'flex'; 
     if (!sigPad) { 
         // --- PEÇA 1: Caneta Ultra-Fina e DPI-Aware ---
         sigPad = new SignaturePad(sigCanvas, {
-            // Traço Mínimo e Máximo super finos para telas de alta densidade
-            minWidth: 0.5, 
-            maxWidth: 1.2, 
-            penColor: 'rgb(0,0,0)',
-            velocityFilterWeight: 0.7 // Suaviza o traço
+            minWidth: 0.6, // Traço inicial super fino
+            maxWidth: 1.4, // Traço máximo fino (DPI-Aware)
+            penColor: 'rgb(0,0,0)'
         }); 
-        // Ajuste de DPI obrigatório para o canvas da assinatura
-        adjustSigPadDPI();
+        // Força o ajuste de DPI imediatamente
+        adjustSigCanvasDPI();
     } else { 
         sigPad.clear(); 
     } 
 };
 
-// --- PEÇA 2: Ajuste técnico de DPI para o Canvas da Assinatura ---
-function adjustSigPadDPI() {
+// --- PEÇA 2: Função técnica para ajustar DPI do Canvas ---
+function adjustSigCanvasDPI() {
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    // Salva o traço atual antes de redimensionar
+    const data = sigPad.toData();
     sigCanvas.width = sigCanvas.offsetWidth * ratio;
     sigCanvas.height = sigCanvas.offsetHeight * ratio;
     sigCanvas.getContext("2d").scale(ratio, ratio);
+    sigPad.clear(); // Limpa e...
+    sigPad.fromData(data); // ...recoloca o traço na nova escala
 }
 
 window.closeSigPad = () => sigModal.style.display = 'none';
 
-// --- PEÇA 3: Correção do Botão Limpar ---
+// --- PEÇA 3: Fix Definitivo do Botão Limpar ---
 window.clearSigPad = () => {
     if (sigPad) {
-        sigPad.clear(); // Limpa o traço
-        adjustSigPadDPI(); // Reseta o DPI para evitar bugs de traço grosso ao re-assinar
+        sigPad.clear(); 
+        // É vital reajustar o DPI após limpar para o próximo traço vir fino
+        adjustSigCanvasDPI(); 
     }
 };
 
 window.confirmSig = () => { if (sigPad.isEmpty()) return; createSigBox(sigPad.toDataURL()); window.closeSigPad(); };
 
-// Criar a caixa de assinatura interativa sobre a folha
+// --- PEÇA 4: Criar Caixa de Assinatura com Handles de Ajuste Manual ---
 function createSigBox(sigData) {
     const sigId = 'sig_' + Date.now();
     const sigBox = document.createElement('div');
     sigBox.id = sigId;
     sigBox.className = 'sig-box';
-    sigBox.style.cssText = 'top:100px;left:100px;width:150px;height:75px;position:absolute;z-index:100;cursor:move;border:2px dashed #1a73e8;';
+    // Posição e tamanho inicial padrão
+    sigBox.style.cssText = 'top:100px;left:100px;width:150px;height:75px;';
     
     const img = document.createElement('img');
     img.src = sigData;
     img.style.cssText = 'width:100%;height:100%;object-fit:contain;pointer-events:none;';
     
-    // Ferramentas (Lixeira e Giro)
+    // Adicionar Handles ( tl, tr, bl, br )
+    ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+        const h = document.createElement('div');
+        h.className = `handle handle-${pos}`;
+        sigBox.appendChild(h);
+    });
+
+    // Lógica de manipulação (Arrastar e Redimensionar)
+    addManipulationLogic(sigBox);
+
+    // Ferramentas (Lixeira)
     const tools = document.createElement('div');
-    tools.style.cssText = 'position:absolute;top:-25px;right:0;display:flex;gap:5px;';
-    
-    // Botão Lixeira
+    tools.style.cssText = 'position:absolute;top:-25px;right:0;';
     const btnDel = document.createElement('button');
     btnDel.innerHTML = '🗑️';
     btnDel.style.cssText = 'background:red;border:none;color:white;padding:3px;border-radius:5px;';
     btnDel.onclick = () => sigBox.remove();
     tools.appendChild(btnDel);
-
     sigBox.appendChild(tools);
+
     sigBox.appendChild(img);
-
-    // Lógica de arrastar
-    sigBox.ontouchmove = (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = wrapper.getBoundingClientRect();
-        sigBox.style.left = (touch.clientX - rect.left - (sigBox.offsetWidth/2)) + 'px';
-        sigBox.style.top = (touch.clientY - rect.top - (sigBox.offsetHeight/2)) + 'px';
-    };
-
     wrapper.appendChild(sigBox);
+}
+
+// --- PEÇA 5: Lógica de Arrastar e Redimensionar com o dedo ---
+function addManipulationLogic(box) {
+    let isDragging = false, isResizing = false;
+    let startX, startY, startWidth, startHeight, startTop, startLeft;
+
+    // Toque no corpo da caixa (para arrastar)
+    box.addEventListener('touchstart', (e) => {
+        if (e.target.classList.contains('handle')) return; // Ignora se clicou no handle
+        isDragging = true;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        startLeft = parseInt(box.style.left); startTop = parseInt(box.style.top);
+    });
+
+    // Toque no handle BR (inferior direito, para redimensionar)
+    box.querySelector('.handle-br').addEventListener('touchstart', (e) => {
+        e.stopPropagation(); // Impede o drag
+        isResizing = true;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        startWidth = parseInt(box.style.width); startHeight = parseInt(box.style.height);
+    });
+
+    // Movimentação
+    wrapper.addEventListener('touchmove', (e) => {
+        if (!isDragging && !isResizing) return;
+        e.preventDefault(); // Impede rolar o PDF
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+
+        if (isDragging) {
+            box.style.left = (startLeft + dx) + 'px';
+            box.style.top = (startTop + dy) + 'px';
+        } else if (isResizing) {
+            // Mantém a proporção da assinatura
+            box.style.width = Math.max(50, startWidth + dx) + 'px';
+            box.style.height = Math.max(25, startHeight + dy) + 'px';
+        }
+    });
+
+    wrapper.addEventListener('touchend', () => { isDragging = isResizing = false; });
 }
 
 // Upload manual
