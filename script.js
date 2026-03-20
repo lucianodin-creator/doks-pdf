@@ -1,5 +1,5 @@
 const { PDFDocument, rgb } = PDFLib;
-let pdfDoc, currentCanvas, ctx, currentPageNum = 1, totalPages = 0, pdfScale = 1.0, viewport;
+let pdfDoc, currentCanvas, ctx, currentPageNum = 1, totalPages = 0, pdfScale = 1.0;
 const wrapper = document.getElementById('pdf-wrapper'), sigModal = document.getElementById('sig-modal'), sigCanvas = document.getElementById('sig-pad');
 let sigPad;
 
@@ -7,18 +7,26 @@ currentCanvas = document.getElementById('pdf-render');
 ctx = currentCanvas.getContext('2d');
 
 async function renderPage(num) {
+    if (!pdfDoc) return;
     const pdfData = await pdfDoc.save();
     const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
     const page = await pdf.getPage(num);
-    viewport = page.getViewport({ scale: pdfScale });
+    const viewport = page.getViewport({ scale: pdfScale });
     currentCanvas.width = viewport.width; currentCanvas.height = viewport.height;
     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    document.getElementById('page-num').textContent = num;
 }
+
+window.adjustZoom = (amount) => { pdfScale = Math.max(0.3, Math.min(3.0, pdfScale + amount)); renderPage(currentPageNum); };
+window.changePage = (offset) => { 
+    const newPage = currentPageNum + offset; 
+    if (newPage >= 1 && newPage <= totalPages) { currentPageNum = newPage; renderPage(currentPageNum); } 
+};
 
 window.openSigPad = () => {
     sigModal.style.display = 'flex';
     if (!sigPad) {
-        sigPad = new SignaturePad(sigCanvas, { minWidth: 0.8, maxWidth: 1.8, penColor: 'rgb(0,0,0)' });
+        sigPad = new SignaturePad(sigCanvas, { minWidth: 1.0, maxWidth: 2.0, penColor: 'rgb(0,0,0)' });
         resizeSigCanvas();
     } else { sigPad.clear(); }
 };
@@ -28,15 +36,14 @@ function resizeSigCanvas() {
     sigCanvas.width = sigCanvas.offsetWidth * ratio;
     sigCanvas.height = sigCanvas.offsetHeight * ratio;
     sigCanvas.getContext("2d").scale(ratio, ratio);
-    sigPad.clear();
 }
 
-// FIX DEFINITIVO DO BOTÃO LIMPAR
-window.clearSigPad = () => {
+// --- FIX DEFINITIVO DO BOTÃO LIMPAR ---
+window.clearSigPad = function() {
     if (sigPad) {
-        sigPad.clear();
-        // Pequeno atraso para garantir que o canvas resetou no mobile
-        setTimeout(resizeSigCanvas, 10);
+        sigPad.clear(); // Limpa o objeto SignaturePad
+        const context = sigCanvas.getContext('2d');
+        context.clearRect(0, 0, sigCanvas.width, sigCanvas.height); // Garante limpeza visual do canvas
     }
 };
 
@@ -48,22 +55,14 @@ function createSigBox(sigData) {
     sigBox.className = 'sig-box';
     sigBox.style.cssText = 'top:100px;left:100px;width:150px;height:75px;';
     
-    // Botão Lixeira (Superior Esquerdo)
-    const btnDel = document.createElement('div');
-    btnDel.className = 'handle handle-tl';
-    btnDel.innerHTML = '🗑️';
-    btnDel.onclick = () => sigBox.remove();
+    const btnDel = document.createElement('div'); btnDel.className = 'handle handle-tl'; btnDel.innerHTML = '🗑️';
+    btnDel.onclick = (e) => { e.stopPropagation(); sigBox.remove(); };
     
-    // Botão Girar (Superior Direito)
-    const btnRot = document.createElement('div');
-    btnRot.className = 'handle handle-tr';
-    btnRot.innerHTML = '🔄';
+    const btnRot = document.createElement('div'); btnRot.className = 'handle handle-tr'; btnRot.innerHTML = '🔄';
     let rotation = 0;
-    btnRot.onclick = () => { rotation += 90; sigBox.style.transform = `rotate(${rotation}deg)`; };
+    btnRot.onclick = (e) => { e.stopPropagation(); rotation += 90; sigBox.style.transform = `rotate(${rotation}deg)`; };
 
-    // Handle Redimensionar (Inferior Direito)
-    const btnRes = document.createElement('div');
-    btnRes.className = 'handle handle-br';
+    const btnRes = document.createElement('div'); btnRes.className = 'handle handle-br';
     
     const img = document.createElement('img');
     img.src = sigData;
@@ -82,13 +81,13 @@ function addManipulation(box, resizer) {
         isDragging = true;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
         startL = parseInt(box.style.left); startT = parseInt(box.style.top);
-    });
+    }, {passive: false});
 
     resizer.addEventListener('touchstart', (e) => {
         e.stopPropagation(); isResizing = true;
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
         startW = parseInt(box.style.width); startH = parseInt(box.style.height);
-    });
+    }, {passive: false});
 
     wrapper.addEventListener('touchmove', (e) => {
         if (!isDragging && !isResizing) return;
@@ -97,7 +96,7 @@ function addManipulation(box, resizer) {
         const dy = e.touches[0].clientY - startY;
         if (isDragging) { box.style.left = (startL + dx) + 'px'; box.style.top = (startT + dy) + 'px'; }
         if (isResizing) { box.style.width = (startW + dx) + 'px'; box.style.height = (startH + dy) + 'px'; }
-    });
+    }, {passive: false});
 
     wrapper.addEventListener('touchend', () => { isDragging = isResizing = false; });
 }
