@@ -1,22 +1,13 @@
 const { PDFDocument, rgb } = PDFLib;
-
-let pdfDoc, currentCanvas, ctx;
-let currentPageNum = 1;
-let totalPages = 0;
-let pdfScale = 1.0; // Escala inicial
-let viewport;
-
+let pdfDoc, currentCanvas, ctx, currentPageNum = 1, totalPages = 0, pdfScale = 1.0, viewport;
 const wrapper = document.getElementById('pdf-wrapper');
 currentCanvas = document.getElementById('pdf-render');
 ctx = currentCanvas.getContext('2d');
-
-// Elementos do Modal
-const sigModal = document.getElementById('sig-modal');
-const sigCanvas = document.getElementById('sig-pad');
+const sigModal = document.getElementById('sig-modal'), sigCanvas = document.getElementById('sig-pad');
 let sigPad;
 
+// Carregar PDF inicial (exemplo)
 async function loadPdf() {
-    // Usando um PDF de exemplo ou o carregado pelo usuário
     const url = 'https://pdf-lib.js.org/assets/with_large_page_count.pdf';
     const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
     pdfDoc = await PDFDocument.load(existingPdfBytes);
@@ -29,116 +20,102 @@ async function renderPage(num) {
     const pdfData = await pdfDoc.save();
     const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
     const page = await pdf.getPage(num);
-    
-    // O segredo do zoom está aqui: aplicar o pdfScale global
     viewport = page.getViewport({ scale: pdfScale });
-    currentCanvas.width = viewport.width;
-    currentCanvas.height = viewport.height;
-
+    currentCanvas.width = viewport.width; currentCanvas.height = viewport.height;
     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
     document.getElementById('page-num').textContent = num;
 }
 
-// FUNÇÃO DE ZOOM (Ajuste de Escala)
-window.adjustZoom = function(amount) {
-    pdfScale += amount;
-    // Limites de segurança para o zoom não sumir ou estourar a memória
-    if (pdfScale < 0.3) pdfScale = 0.3;
-    if (pdfScale > 3.0) pdfScale = 3.0;
-    
-    renderPage(currentPageNum);
-};
+// ZOOM
+window.adjustZoom = (amount) => { pdfScale = Math.max(0.3, Math.min(3.0, pdfScale + amount)); renderPage(currentPageNum); };
+window.changePage = (offset) => { const newPage = currentPageNum + offset; if (newPage >= 1 && newPage <= totalPages) { currentPageNum = newPage; renderPage(currentPageNum); } };
 
-window.changePage = function(offset) {
-    const newPage = currentPageNum + offset;
-    if (newPage >= 1 && newPage <= totalPages) {
-        currentPageNum = newPage;
-        renderPage(currentPageNum);
-    }
-};
-
-// --- ASSINATURA ---
-window.openSigPad = function() {
-    sigModal.style.display = 'flex';
-    if (!sigPad) {
-        sigPad = new SignaturePad(sigCanvas, { penColor: 'rgb(0,0,0)' });
-        // Ajustar tamanho do canvas da assinatura ao abrir
-        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        sigCanvas.width = sigCanvas.offsetWidth * ratio;
-        sigCanvas.height = sigCanvas.offsetHeight * ratio;
-        sigCanvas.getContext("2d").scale(ratio, ratio);
-    } else {
-        sigPad.clear();
-    }
-};
-
+// ASSINATURA
+window.openSigPad = () => { sigModal.style.display = 'flex'; if (!sigPad) { sigPad = new SignaturePad(sigCanvas); } else { sigPad.clear(); } };
 window.closeSigPad = () => sigModal.style.display = 'none';
+window.confirmSig = () => { if (sigPad.isEmpty()) return; createSigBox(sigPad.toDataURL()); window.closeSigPad(); };
 
-window.confirmSig = function() {
-    if (sigPad.isEmpty()) return;
-    const sigData = sigPad.toDataURL();
-    createSigBox(sigData);
-    window.closeSigPad();
-};
-
+// --- NOVA LÓGICA INTERATIVA ---
 function createSigBox(sigData) {
-    const sigId = 'sig_' + Date.now();
     const sigBox = document.createElement('div');
-    sigBox.id = sigId;
     sigBox.className = 'sig-box';
-    sigBox.style.cssText = 'top:50px;left:50px;width:150px;height:75px;position:absolute;z-index:100;cursor:move;';
+    // Posição e tamanho inicial padrão
+    sigBox.style.cssText = 'top:100px;left:100px;width:150px;height:75px;';
     
     const img = document.createElement('img');
     img.src = sigData;
     img.style.cssText = 'width:100%;height:100%;object-fit:contain;pointer-events:none;';
     
-    // Adicionar botão de girar e deletar
-    const tools = document.createElement('div');
-    tools.style.cssText = 'position:absolute;top:-30px;right:0;display:flex;gap:5px;';
+    // Adicionar Handles (tl=top-left, tr=top-right, bl=bottom-left, br=bottom-right)
+    const handles = ['tl', 'tr', 'bl', 'br'].map(pos => {
+        const h = document.createElement('div');
+        h.className = `handle handle-${pos}`;
+        sigBox.appendChild(h);
+        return h;
+    });
+
+    // Estado da manipulação
+    let currentRotation = 0;
+    let isDragging = false, isResizing = false, isRotating = false;
+    let startX, startY, startWidth, startHeight, startTop, startLeft;
+
+    // --- FUNÇÕES DE TOQUE ---
     
-    // Botão Girar
-    let rotation = 0;
-    const btnRotate = document.createElement('button');
-    btnRotate.innerHTML = '🔄';
-    btnRotate.style.cssText = 'background:#1a73e8;border:none;color:white;padding:5px;border-radius:5px;';
-    btnRotate.onclick = () => {
-        rotation += 90;
-        img.style.transform = `rotate(${rotation}deg)`;
-    };
+    // 1. Arrastar (corpo da caixa)
+    sigBox.addEventListener('touchstart', (e) => {
+        if (e.target.classList.contains('handle')) return; // Não arraste se clicou no handle
+        isDragging = true;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        startLeft = parseInt(sigBox.style.left); startTop = parseInt(sigBox.style.top);
+    });
 
-    // Botão Lixeira
-    const btnDel = document.createElement('button');
-    btnDel.innerHTML = '🗑️';
-    btnDel.style.cssText = 'background:red;border:none;color:white;padding:5px;border-radius:5px;';
-    btnDel.onclick = () => sigBox.remove();
+    // 2. Redimensionar (Handle BR - Bottom Right)
+    sigBox.querySelector('.handle-br').addEventListener('touchstart', (e) => {
+        e.stopPropagation(); // Impede o drag
+        isResizing = true;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        startWidth = parseInt(sigBox.style.width); startHeight = parseInt(sigBox.style.height);
+    });
 
-    tools.appendChild(btnRotate);
-    tools.appendChild(btnDel);
-    sigBox.appendChild(tools);
-    sigBox.appendChild(img);
+    // 3. Girar (Handle TR - Top Right)
+    sigBox.querySelector('.handle-tr').addEventListener('touchstart', (e) => {
+        e.stopPropagation(); // Impede o drag
+        isRotating = true;
+        const rect = sigBox.getBoundingClientRect();
+        // Centro da caixa para calcular o ângulo
+        sigBox.dataset.centerX = rect.left + rect.width / 2;
+        sigBox.dataset.centerY = rect.top + rect.height / 2;
+    });
 
-    // Lógica simples de arrastar (Touch)
-    sigBox.ontouchmove = (e) => {
+    // MOVER / REDIMENSIONAR / GIRAR
+    wrapper.addEventListener('touchmove', (e) => {
+        if (!isDragging && !isResizing && !isRotating) return;
         e.preventDefault();
         const touch = e.touches[0];
-        const rect = wrapper.getBoundingClientRect();
-        sigBox.style.left = (touch.clientX - rect.left - (sigBox.offsetWidth/2)) + 'px';
-        sigBox.style.top = (touch.clientY - rect.top - (sigBox.offsetHeight/2)) + 'px';
-    };
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
 
+        if (isDragging) {
+            sigBox.style.left = (startLeft + dx) + 'px';
+            sigBox.style.top = (startTop + dy) + 'px';
+        } else if (isResizing) {
+            // Mantém proporção simples
+            sigBox.style.width = Math.max(50, startWidth + dx) + 'px';
+            sigBox.style.height = Math.max(25, startHeight + dy) + 'px';
+        } else if (isRotating) {
+            const centerX = parseFloat(sigBox.dataset.centerX);
+            const centerY = parseFloat(sigBox.dataset.centerY);
+            // Calcula ângulo baseado na posição do toque em relação ao centro
+            const angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
+            currentRotation = angle * (180 / Math.PI); // Converte para graus
+            sigBox.style.transform = `rotate(${currentRotation}deg)`;
+        }
+    });
+
+    wrapper.addEventListener('touchend', () => { isDragging = isResizing = isRotating = false; });
+
+    sigBox.appendChild(img);
     wrapper.appendChild(sigBox);
 }
 
-// loadPdf();
-
-document.getElementById('file-in').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const arrayBuffer = await file.arrayBuffer();
-        pdfDoc = await PDFDocument.load(arrayBuffer);
-        totalPages = pdfDoc.getPageCount();
-        document.getElementById('page-count').textContent = totalPages;
-        currentPageNum = 1;
-        renderPage(currentPageNum);
-    }
-});
+loadPdf();
