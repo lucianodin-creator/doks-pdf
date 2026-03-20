@@ -118,4 +118,15 @@ function createSigBox(sigData) {
     wrapper.appendChild(sigBox);
 }
 
-loadPdf();
+document.getElementById('file-in').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const arrayBuffer = await file.arrayBuffer();
+        pdfDoc = await PDFDocument.load(arrayBuffer);
+        totalPages = pdfDoc.getPageCount();
+        document.getElementById('page-num').textContent = 1;
+        document.getElementById('page-count').textContent = totalPages;
+        currentPageNum = 1;
+        renderPage(1);
+    }
+});
