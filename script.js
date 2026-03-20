@@ -8,6 +8,7 @@ let sigPad;
 currentCanvas = document.getElementById('pdf-render');
 ctx = currentCanvas.getContext('2d');
 
+// Carregar PDF
 document.getElementById('file-in').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -36,7 +37,7 @@ window.changePage = (offset) => {
     if (newPage >= 1 && newPage <= totalPages) { currentPageNum = newPage; renderPage(currentPageNum); } 
 };
 
-// MODAL ASSINATURA
+// Modal de Assinatura
 window.openSigPad = () => {
     sigModal.style.display = 'flex';
     if (!sigPad) {
@@ -51,27 +52,32 @@ window.openSigPad = () => {
     }, 200);
 };
 
-// CORREÇÃO BRAVA DO BOTÃO LIMPAR
-document.getElementById('btn-clear').addEventListener('click', (e) => {
-    e.preventDefault();
+// BOTÃO LIMPAR - Forçando funcionamento
+document.getElementById('btn-clear').addEventListener('click', () => {
     if(sigPad) sigPad.clear();
 });
 
 window.closeSigPad = () => sigModal.style.display = 'none';
-window.confirmSig = () => { if (sigPad && !sigPad.isEmpty()) { createSigBox(sigPad.toDataURL()); window.closeSigPad(); } };
 
-// ASSINATURA NA FOLHA COM BOTÕES NOS CANTOS OPPOSTOS
+window.confirmSig = () => {
+    if (sigPad && !sigPad.isEmpty()) {
+        createSigBox(sigPad.toDataURL());
+        window.closeSigPad();
+    }
+};
+
+// Criar Assinatura na Folha
 function createSigBox(sigData) {
     const sigBox = document.createElement('div');
     sigBox.className = 'sig-box';
-    sigBox.style.cssText = 'top:150px;left:50px;width:180px;height:90px;position:absolute;z-index:100;';
+    sigBox.style.cssText = 'top:100px;left:50px;width:180px;height:90px;position:absolute;z-index:100;';
     
-    // Lixeira na Esquerda
+    // Lixeira na Esquerda (Afastada)
     const btnDel = document.createElement('button');
     btnDel.className = 'btn-del-box'; btnDel.innerHTML = '🗑️';
     btnDel.onclick = (e) => { e.stopPropagation(); sigBox.remove(); };
 
-    // Girar na Direita
+    // Girar na Direita (Afastado)
     const btnRot = document.createElement('button');
     btnRot.className = 'btn-rot-box'; btnRot.innerHTML = '🔄';
     let rotation = 0;
@@ -82,11 +88,12 @@ function createSigBox(sigData) {
 
     const img = document.createElement('img');
     img.src = sigData;
-    img.style.cssText = 'width:100%;height:100%;object-fit:contain;pointer-events:none;transition:transform 0.2s;';
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;pointer-events:none;';
 
     sigBox.append(btnDel, btnRot, resizer, img);
     wrapper.appendChild(sigBox);
 
+    // Lógica de Mover e Redimensionar
     let isMoving = false, isResizing = false, startX, startY, startW, startH, startL, startT;
 
     sigBox.addEventListener('touchstart', (e) => {
@@ -97,14 +104,13 @@ function createSigBox(sigData) {
         startX = t.clientX; startY = t.clientY;
         startW = sigBox.offsetWidth; startH = sigBox.offsetHeight;
         startL = sigBox.offsetLeft; startT = sigBox.offsetTop;
-    }, {passive: false});
+    });
 
     document.addEventListener('touchmove', (e) => {
         if (!isMoving && !isResizing) return;
         const t = e.touches[0];
         const dx = t.clientX - startX;
         const dy = t.clientY - startY;
-
         if (isMoving) {
             sigBox.style.left = (startL + dx) + 'px';
             sigBox.style.top = (startT + dy) + 'px';
@@ -112,7 +118,7 @@ function createSigBox(sigData) {
             sigBox.style.width = (startW + dx) + 'px';
             sigBox.style.height = (startH + dy) + 'px';
         }
-    }, { passive: false });
+    });
 
     document.addEventListener('touchend', () => { isMoving = isResizing = false; });
 }
