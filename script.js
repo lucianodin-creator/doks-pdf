@@ -6,17 +6,8 @@ ctx = currentCanvas.getContext('2d');
 const sigModal = document.getElementById('sig-modal'), sigCanvas = document.getElementById('sig-pad');
 let sigPad;
 
-// Carregar PDF inicial (opcional, remova se quiser abrir limpo)
+// Carregar PDF inicial (mantenha comentado se quiser abrir limpo)
 // loadPdf(); 
-
-async function loadPdf() {
-    const url = 'https://pdf-lib.js.org/assets/with_large_page_count.pdf';
-    const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
-    pdfDoc = await PDFDocument.load(existingPdfBytes);
-    totalPages = pdfDoc.getPageCount();
-    document.getElementById('page-count').textContent = totalPages;
-    renderPage(currentPageNum);
-}
 
 async function renderPage(num) {
     const pdfData = await pdfDoc.save();
@@ -36,17 +27,39 @@ window.changePage = (offset) => { const newPage = currentPageNum + offset; if (n
 window.openSigPad = () => { 
     sigModal.style.display = 'flex'; 
     if (!sigPad) { 
-        // --- PEÇA 1: Ajustando a espessura da caneta ---
+        // --- PEÇA 1: Caneta Ultra-Fina e DPI-Aware ---
         sigPad = new SignaturePad(sigCanvas, {
-            minWidth: 1.0, // Traço mais fino no início
-            maxWidth: 2.5, // Traço máximo mais fino (era padrão > 5.0)
-            penColor: 'rgb(0,0,0)'
+            // Traço Mínimo e Máximo super finos para telas de alta densidade
+            minWidth: 0.5, 
+            maxWidth: 1.2, 
+            penColor: 'rgb(0,0,0)',
+            velocityFilterWeight: 0.7 // Suaviza o traço
         }); 
+        // Ajuste de DPI obrigatório para o canvas da assinatura
+        adjustSigPadDPI();
     } else { 
         sigPad.clear(); 
     } 
 };
+
+// --- PEÇA 2: Ajuste técnico de DPI para o Canvas da Assinatura ---
+function adjustSigPadDPI() {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    sigCanvas.width = sigCanvas.offsetWidth * ratio;
+    sigCanvas.height = sigCanvas.offsetHeight * ratio;
+    sigCanvas.getContext("2d").scale(ratio, ratio);
+}
+
 window.closeSigPad = () => sigModal.style.display = 'none';
+
+// --- PEÇA 3: Correção do Botão Limpar ---
+window.clearSigPad = () => {
+    if (sigPad) {
+        sigPad.clear(); // Limpa o traço
+        adjustSigPadDPI(); // Reseta o DPI para evitar bugs de traço grosso ao re-assinar
+    }
+};
+
 window.confirmSig = () => { if (sigPad.isEmpty()) return; createSigBox(sigPad.toDataURL()); window.closeSigPad(); };
 
 // Criar a caixa de assinatura interativa sobre a folha
@@ -61,20 +74,21 @@ function createSigBox(sigData) {
     img.src = sigData;
     img.style.cssText = 'width:100%;height:100%;object-fit:contain;pointer-events:none;';
     
-    // --- PEÇA 2: Injetando o botão de Lixeira sobre a assinatura ---
+    // Ferramentas (Lixeira e Giro)
     const tools = document.createElement('div');
-    tools.style.cssText = 'position:absolute;top:-25px;right:-10px;display:flex;gap:5px;z-index:110;';
+    tools.style.cssText = 'position:absolute;top:-25px;right:0;display:flex;gap:5px;';
     
+    // Botão Lixeira
     const btnDel = document.createElement('button');
-    btnDel.innerHTML = '🗑️'; // Ícone simples de lixeira
-    btnDel.style.cssText = 'background:#ff4444;border:2px solid white;color:white;padding:3px 6px;border-radius:50%;font-size:12px;box-shadow:0 2px 5px rgba(0,0,0,0.3);';
-    btnDel.onclick = () => sigBox.remove(); // Deleta a assinatura da folha
-
+    btnDel.innerHTML = '🗑️';
+    btnDel.style.cssText = 'background:red;border:none;color:white;padding:3px;border-radius:5px;';
+    btnDel.onclick = () => sigBox.remove();
     tools.appendChild(btnDel);
+
     sigBox.appendChild(tools);
     sigBox.appendChild(img);
 
-    // Lógica de arrastar (simplificada para o exemplo)
+    // Lógica de arrastar
     sigBox.ontouchmove = (e) => {
         e.preventDefault();
         const touch = e.touches[0];
