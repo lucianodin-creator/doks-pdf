@@ -1,111 +1,26 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
-/* 100dvh garante que o layout preencha a tela sem sobrar nem faltar no Motorola */
-body { 
-    font-family: sans-serif; 
-    background: #111; 
-    height: 100dvh; 
-    width: 100vw; 
-    display: flex; 
-    flex-direction: column; 
-    overflow: hidden; 
-}
+.header { height: 45px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 100; }
+#btn-upload { background: #fff; color: #1a73e8; border: none; padding: 4px 10px; border-radius: 4px; font-size: 16px; }
 
-/* HEADER: Altura fixa */
-.header { 
-    height: 45px; 
-    background: #1a73e8; 
-    color: white; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 0 15px; 
-    flex-shrink: 0; 
-}
-
-/* ÁREA DO PDF: Ocupa o que sobra e centraliza */
-.container { 
-    flex: 1; 
-    overflow: auto; 
-    display: flex; 
-    justify-content: center; 
-    align-items: flex-start; 
-    background: #222; 
-    position: relative; 
-    padding: 15px;
-}
+.container { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; background: #222; position: relative; padding: 15px; }
 #pdf-wrapper { position: relative; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
 
-/* ZOOM: Flutuando na direita, conforme sua preferência */
-.side-controls { 
-    position: fixed; 
-    right: 15px; 
-    top: 200px; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    z-index: 500; 
-}
-.btn-zoom { 
-    width: 50px; 
-    height: 50px; 
-    border-radius: 12px; 
-    border: 2px solid #000; 
-    background: #ffa000 !important; 
-    color: #000; 
-    font-size: 26px; 
-    font-weight: bold; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-}
+.side-controls { position: fixed; right: 15px; top: 200px; display: flex; flex-direction: column; gap: 12px; z-index: 500; }
+.btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: 2px solid #000; background: #ffa000 !important; color: #000; font-size: 26px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
 
-/* BARRA INFERIOR: Travada no rodapé (Flex-shrink: 0 é a chave) */
-.bottom-bar { 
-    height: 80px; 
-    background: #000; 
-    display: flex; 
-    align-items: center; 
-    flex-shrink: 0; 
-    border-top: 1px solid #333;
-}
+.bottom-bar { height: 80px; background: #000; display: flex; align-items: center; flex-shrink: 0; border-top: 1px solid #333; z-index: 1000; }
 .nav-item { flex: 1; display: flex; justify-content: center; }
-.btn-nav { 
-    width: 55px; 
-    height: 55px; 
-    border-radius: 50%; 
-    border: none; 
-    color: white; 
-    background: #1a73e8; 
-    font-size: 24px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-}
+.btn-nav { width: 55px; height: 55px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 24px; display: flex; align-items: center; justify-content: center; }
 .page-info { color: white; background: #333; padding: 6px 15px; border-radius: 20px; font-size: 14px; }
 
-/* MODAL DE ASSINATURA: Ocupa a tela toda de forma independente */
-#sig-modal { 
-    position: fixed; 
-    inset: 0; 
-    background: #fff; 
-    z-index: 10000; 
-    display: none; 
-    flex-direction: column; 
-}
+#sig-modal { position: fixed; inset: 0; background: #fff; z-index: 10000; display: none; flex-direction: column; }
 #sig-pad { flex: 1; width: 100%; touch-action: none; }
-.modal-btns { 
-    height: 80px; 
-    display: flex; 
-    padding: 10px; 
-    gap: 10px; 
-    background: #f0f0f0; 
-    flex-shrink: 0; 
-}
+.modal-btns { height: 80px; display: flex; padding: 10px; gap: 10px; background: #f0f0f0; flex-shrink: 0; }
 .modal-btns button { flex: 1; border: none; border-radius: 10px; color: white; font-weight: bold; }
 #btn-clear { background: #d32f2f !important; }
 #btn-close { background: #546e7a !important; }
 #btn-confirm { background: #2e7d32 !important; }
 
-/* CAIXA DE ASSINATURA NO PDF */
 .sig-box { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.1); }
