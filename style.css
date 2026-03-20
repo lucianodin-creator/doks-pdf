@@ -40,7 +40,7 @@ body {
 .side-controls { 
     position: fixed; 
     right: 15px; 
-    top: 65px; 
+    top: 110px; 
     display: flex; 
     flex-direction: column; 
     gap: 12px; 
