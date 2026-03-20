@@ -1,68 +1,37 @@
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { margin: 0; padding: 0; font-family: sans-serif; background: #111; height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #111; height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
-/* ÁREA DO PDF */
-.header { height: 45px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 2000; }
-.container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; position: relative; padding: 10px 0; }
-#pdf-wrapper { position: relative; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+/* BARRA TOPO */
+.header { height: 50px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 100; }
 
-/* ZOOM LATERAL */
-.side-controls { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 5000; }
-.btn-zoom { width: 55px; height: 55px; border-radius: 15px; border: 2px solid #000; background: #ffa000 !important; color: #000; font-size: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+/* ÁREA CENTRAL DO PDF - OCUPA O RESTO DA TELA */
+.container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; position: relative; padding: 10px; }
+#pdf-wrapper { position: relative; background: white; height: fit-content; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+canvas#pdf-render { display: block; max-width: 100%; }
 
-/* MODAL DE ASSINATURA - ESPAÇO TOTAL */
-#sig-modal { position: fixed; inset: 0; background: #fff; z-index: 10000; display: none; flex-direction: column; }
+/* ZOOM FLUTUANTE NA DIREITA */
+.side-controls { position: fixed; right: 15px; top: 40%; display: flex; flex-direction: column; gap: 10px; z-index: 500; }
+.btn-zoom { width: 55px; height: 55px; border-radius: 12px; border: 2px solid #000; background: #ffa000 !important; color: #000; font-size: 28px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-/* Canvas ocupa tudo o que puder */
-#sig-pad { 
-    flex: 1; 
-    background: #fff; 
-    touch-action: none; 
-    width: 100%;
-    cursor: crosshair;
-}
-
-/* Barra de botões otimizada */
-.modal-btns { 
-    height: 75px; 
-    display: flex; 
-    padding: 10px; 
-    gap: 8px; 
-    background: #eeeeee; 
-    border-top: 2px solid #ddd;
-    flex-shrink: 0; 
-}
-
-.modal-btns button { 
-    flex: 1; 
-    border: none; 
-    border-radius: 10px; 
-    color: white; 
-    font-weight: bold; 
-    font-size: 15px; 
-    elevation: 2;
-}
-
-/* Cores vibrantes para os botões */
-#btn-clear { background: #ff5252 !important; } /* Vermelho */
-#btn-close { background: #607d8b !important; } /* Cinza Azulado */
-#btn-confirm { background: #4caf50 !important; } /* Verde */
-
-/* Ajuste fino para modo deitado (Landscape) */
-@media (orientation: landscape) {
-    .modal-btns { height: 55px; padding: 5px; }
-    .modal-btns button { font-size: 12px; border-radius: 5px; }
-}
-
-/* CONTROLES DO ELEMENTO NA FOLHA */
-.sig-box { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.05); touch-action: none; z-index: 100; }
-.handle { position: absolute; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; z-index: 110; font-size: 16px; }
-.handle-tl { top: -15px; left: -15px; background: #f44336; color: white; } /* Lixeira */
-.handle-tr { top: -15px; right: -15px; background: #2196f3; color: white; } /* Girar */
-.handle-br { bottom: -15px; right: -15px; background: #4caf50; } /* Redimensionar */
-
-/* NAV BAR INFERIOR */
-.bottom-bar { height: 75px; background: #111; display: flex; align-items: center; border-top: 1px solid #333; }
+/* BARRA INFERIOR DE NAVEGAÇÃO */
+.bottom-bar { height: 75px; background: #000; display: flex; align-items: center; flex-shrink: 0; z-index: 100; border-top: 1px solid #333; }
 .nav-item { flex: 1; display: flex; justify-content: center; align-items: center; }
-.btn-nav { width: 55px; height: 55px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
-.page-info { color: white; background: #333; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+.btn-nav { width: 55px; height: 55px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+.page-info { color: white; background: #333; padding: 6px 15px; border-radius: 20px; font-size: 14px; }
+
+/* MODAL DE ASSINATURA - FIXED PARA NÃO AFETAR O PDF */
+#sig-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 9999; display: none; flex-direction: column; }
+#sig-pad { flex: 1; width: 100%; background: #fff; touch-action: none; }
+.modal-btns { height: 85px; display: flex; padding: 12px; gap: 10px; background: #f5f5f5; border-top: 1px solid #ddd; flex-shrink: 0; }
+.modal-btns button { flex: 1; border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 16px; }
+
+#btn-clear { background: #d32f2f !important; }
+#btn-close { background: #546e7a !important; }
+#btn-confirm { background: #2e7d32 !important; }
+
+/* ELEMENTOS SOBRE O PDF */
+.sig-box { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.1); touch-action: none; }
+.handle { position: absolute; width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; z-index: 10; font-size: 18px; }
+.handle-tl { top: -16px; left: -16px; background: #f44336; }
+.handle-tr { top: -16px; right: -16px; background: #2196f3; }
+.handle-br { bottom: -16px; right: -16px; background: #4caf50; }

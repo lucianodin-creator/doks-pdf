@@ -13,7 +13,7 @@ async function renderPage(num) {
     const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
     const page = await pdf.getPage(num);
     const viewport = page.getViewport({ scale: pdfScale });
-    currentCanvas.width = viewport.width; currentCanvas.height = viewport.height;
+    currentCanvas.width = viewport.width; currentCanvas.style.width = viewport.width + "px"; currentCanvas.height = viewport.height; currentCanvas.style.height = viewport.height + "px";
     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
     document.getElementById('page-num').textContent = num;
 }
