@@ -1,37 +1,78 @@
-/* FIX: Barra de Ferramentas (Dica 1) */
-.bottom-bar { 
-    position: fixed !important; 
-    bottom: 0 !important; 
-    left: 0; 
-    width: 100%; 
-    height: 75px; 
-    background: #000; 
-    z-index: 9999; 
-    padding-bottom: env(safe-area-inset-bottom);
-    display: flex;
-    align-items: center;
-    border-top: 1px solid #333;
-}
-.container { padding-bottom: 85px; } /* Espaço para a barra não cobrir o PDF */
-// ALERTA: Ajuste de DPI para evitar traço gigante (Dica 2)
-function ajustarCanvasDPI(canvas) {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    
-    // Ajusta o tamanho interno (resolução)
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    
-    // Ajusta a escala do contexto para o traço bater com o dedo
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MEUPDF PRO</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* FIX: Barra de Ferramentas (Dica 1) */
+        .bottom-bar { 
+            position: fixed !important; bottom: 0; left: 0; width: 100%; 
+            height: calc(75px + env(safe-area-inset-bottom)); 
+            background: #000; display: flex; align-items: center; 
+            z-index: 9999; border-top: 1px solid #333;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .container { flex: 1; overflow: auto; display: flex; justify-content: center; padding-bottom: 90px; }
+        #pdf-wrapper { position: relative; background: #fff; }
+        .btn-nav { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; background: #1a73e8; font-size: 20px; margin: 0 5px; }
+        
+        /* MODAL DE ASSINATURA */
+        #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 10000; display: none; flex-direction: column; }
+        #sig-pad { flex: 1; width: 100%; touch-action: none; background: #fff; }
+        .modal-btns { height: 80px; display: flex; padding: 10px; gap: 10px; background: #f0f0f0; }
+        .modal-btns button { flex: 1; border: none; border-radius: 8px; color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-window.abrirModalAssinatura = () => {
-    const modal = document.getElementById('sig-modal');
-    const canvas = document.getElementById('sig-pad');
-    modal.style.display = 'flex';
-    
-    // O segredo: esperar o CSS renderizar antes de medir o DPI
-    setTimeout(() => ajustarCanvasDPI(canvas), 200);
-};
+    <div class="container">
+        <div id="pdf-wrapper"><canvas id="pdf-render"></canvas></div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="btn-nav" onclick="openSigPad()">🖋️ Assinar</button>
+        <button class="btn-nav" style="background:#2e7d32" onclick="salvarPDF()">✔ Salvar</button>
+    </div>
+
+    <div id="sig-modal">
+        <canvas id="sig-pad"></canvas>
+        <div class="modal-btns">
+            <button onclick="closeSigPad()" style="background:#546e7a">Sair</button>
+            <button onclick="sigPad.clear()" style="background:#ffa000">Limpar</button>
+            <button onclick="confirmSig()" style="background:#2e7d32">Confirmar</button>
+        </div>
+    </div>
+
+    <script>
+        const dpr = window.devicePixelRatio || 1;
+        let sigPad;
+
+        function openSigPad() {
+            const modal = document.getElementById('sig-modal');
+            const canvas = document.getElementById('sig-pad');
+            modal.style.display = 'flex';
+            if (!sigPad) sigPad = new SignaturePad(canvas);
+            
+            // VACINA DE DPI (Dica 2)
+            setTimeout(() => {
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+                sigPad.clear();
+            }, 200);
+        }
+
+        function closeSigPad() { document.getElementById('sig-modal').style.display = 'none'; }
+        
+        async function salvarPDF() { alert("Lógica de salvamento pronta para o commit 302!"); }
+    </script>
+</body>
+</html>
