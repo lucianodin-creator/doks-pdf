@@ -3,62 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MEUPDF PRO - Ajuste de Precisão</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <title>MEUPDF PRO - Ajuste Fino</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        * { box-sizing: border-box; tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
         .header { height: 50px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
-        
-        .container { flex: 1; overflow-y: auto; background: #222; display: flex; flex-direction: column; align-items: center; padding: 10px; position: relative; }
-        #pdf-main-wrapper { position: relative; display: flex; flex-direction: column; gap: 20px; transform-origin: top center; padding-bottom: 120px; }
-        .page-container { position: relative; background: #fff; box-shadow: 0 0 15px #000; line-height: 0; }
+        .container { flex: 1; overflow-y: auto; background: #222; position: relative; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #pdf-main-wrapper { position: relative; transform-origin: top center; display: flex; flex-direction: column; gap: 20px; padding-bottom: 120px; }
+        .page-container { position: relative; background: #fff; line-height: 0; box-shadow: 0 0 15px #000; }
         canvas { display: block; width: 100% !important; height: auto !important; }
 
-        /* Zoom no topo para evitar conflitos */
-        .zoom-controls { position: fixed; right: 15px; top: 60px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
-        .btn-zoom { width: 45px; height: 45px; border-radius: 10px; border: none; background: #fff; color: #1a73e8; font-size: 24px; box-shadow: 0 4px 10px #000; }
-
-        /* Assinaturas com bordas de redimensionamento */
-        .sig-container { position: absolute; width: 180px; height: 80px; border: 2px dashed #1a73e8; z-index: 5000; touch-action: none; background: rgba(26, 115, 232, 0.05); }
-        .sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 8px; z-index: 6000; }
-        .btn-tool { width: 38px; height: 38px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 5px #000; }
-
-        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 9999; }
-        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; }
+        /* ESTILO DA ASSINATURA INTERATIVA COM ALÇAS */
+        .sig-container { 
+            position: absolute; 
+            width: 180px; 
+            min-width: 50px; /* Impede que fique invisível ao redimensionar */
+            min-height: 30px;
+            border: 2px dashed #1a73e8; 
+            touch-action: none; 
+            z-index: 5000; 
+            cursor: move; /* Indica que é móvel */
+            background: rgba(26, 115, 232, 0.05); /* Leve fundo azul para visualização */
+        }
         
+        .sig-tools { position: absolute; top: -40px; left: 0; display: flex; gap: 8px; z-index: 6000; }
+        .btn-tool { width: 32px; height: 32px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; z-index: 9999; border-top: 1px solid #333; }
+        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; margin: 0 8px; }
+
+        /* MODAL */
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; touch-action: none; }
-        .modal-btns { height: 80px; display: flex; padding: 10px; gap: 10px; background: #f0f0f0; }
-        .modal-btns button { flex: 1; border: none; border-radius: 10px; color: white; font-weight: bold; }
-
-        @media (orientation: landscape) {
-            #sig-modal { flex-direction: row; }
-            .modal-btns { flex-direction: column; width: 130px; height: 100%; }
-        }
+        .modal-btns { height: 90px; display: flex; padding: 15px; gap: 10px; background: #f0f0f0; }
+        .modal-btns button { flex: 1; border: none; border-radius: 12px; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <strong>MEUPDF PRO</strong>
-        <label for="file-in" style="background:#fff; color:#1a73e8; padding:5px 12px; border-radius:6px; font-size:13px; font-weight:bold">📂 ABRIR PDF</label>
+        <label for="file-in" style="background:#fff; color:#1a73e8; padding:5px 10px; border-radius:5px; font-weight:bold; font-size:12px">📂 ABRIR PDF</label>
         <input type="file" id="file-in" style="display:none" accept="application/pdf">
     </div>
 
     <div class="container" id="scroll-cont">
-        <div class="zoom-controls">
-            <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
-            <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
-        </div>
         <div id="pdf-main-wrapper"></div>
     </div>
 
     <div class="bottom-bar">
         <button class="btn-action" style="background:#1a73e8" onclick="abrirModal()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="alert('Funcionalidade de exportação será o próximo passo!')">✔ SALVAR</button>
+        <button class="btn-action" style="background:#2e7d32" onclick="alert('Exportando PDF final...')">✔ SALVAR</button>
     </div>
 
     <div id="sig-modal">
@@ -72,41 +72,35 @@
 
     <script>
         const { pdfjsLib } = globalThis;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-        let signaturePad, pdfDoc = null, currentScale = 1.0;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        let signaturePad, pdfDoc = null;
 
         document.getElementById('file-in').onchange = async (e) => {
             const file = e.target.files[0];
             const reader = new FileReader();
             reader.onload = async function() {
                 pdfDoc = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
-                renderAllPages();
+                renderizarDocumento();
             };
             reader.readAsArrayBuffer(file);
         };
 
-        async function renderAllPages() {
+        async function renderizarDocumento() {
             const wrapper = document.getElementById('pdf-main-wrapper');
             wrapper.innerHTML = '';
-            const containerWidth = document.getElementById('scroll-cont').clientWidth - 30;
-
+            const width = document.getElementById('scroll-cont').clientWidth - 40;
             for (let i = 1; i <= pdfDoc.numPages; i++) {
                 const page = await pdfDoc.getPage(i);
-                const viewport = page.getViewport({scale: (containerWidth / page.getViewport({scale:1}).width) * 2});
+                const viewport = page.getViewport({scale: (width / page.getViewport({scale:1}).width) * 2});
+                const canvas = document.createElement('canvas');
+                canvas.height = viewport.height; canvas.width = viewport.width;
                 const div = document.createElement('div');
                 div.className = 'page-container';
                 div.id = `page-${i}`;
-                const canvas = document.createElement('canvas');
-                canvas.height = viewport.height; canvas.width = viewport.width;
                 div.appendChild(canvas);
                 wrapper.appendChild(div);
                 await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
             }
-        }
-
-        function changeZoom(delta) {
-            currentScale += delta;
-            document.getElementById('pdf-main-wrapper').style.transform = `scale(${currentScale})`;
         }
 
         function abrirModal() {
@@ -120,18 +114,18 @@
 
         function confirmarAssinatura() {
             if (signaturePad.isEmpty()) return;
-            addSigToPage(1, signaturePad.toDataURL(), 100, 50);
+            const src = signaturePad.toDataURL();
+            const transform = `translate(10px, 10px)`; // Inicia no topo/esquerda
+            gerarAssinaturaEmFolha(1, src, transform); // Adiciona na página 1
             fecharModal();
         }
 
-        function addSigToPage(pageNum, src, top, left, w = 180, h = 80, transform = 'translate(0px, 0px)') {
+        function gerarAssinaturaEmFolha(pageNum, src, transform, w = 180, h = 80) {
             const page = document.getElementById(`page-${pageNum}`);
             if (!page) return;
 
             const container = document.createElement('div');
             container.className = 'sig-container';
-            container.style.top = top + 'px';
-            container.style.left = left + 'px';
             container.style.width = w + 'px';
             container.style.height = h + 'px';
             container.style.transform = transform;
@@ -139,42 +133,40 @@
             container.innerHTML = `
                 <div class="sig-tools">
                     <button class="btn-tool" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                    <button class="btn-tool" title="Replicar esta posição em todas" style="background:#1976d2" onclick="replicarPosicao(this)">📋</button>
+                    <button class="btn-tool" title="Replicar em todas as folhas" style="background:#1976d2" onclick="replicarAssinatura(this)">📋</button>
                 </div>
                 <img src="${src}" style="width:100%; height:100%; pointer-events:none;">
             `;
             
             page.appendChild(container);
-            initInteract(container);
+            initInteractJS(container);
         }
 
-        function replicarPosicao(btn) {
+        function replicarAssinatura(btn) {
             const original = btn.parentElement.parentElement;
             const src = original.querySelector('img').src;
-            const top = parseInt(original.style.top);
-            const left = parseInt(original.style.left);
-            const w = parseInt(original.style.width);
-            const h = parseInt(original.style.height);
             const transform = original.style.transform;
-            const currentPageId = parseInt(original.parentElement.id.replace('page-', ''));
+            const width = parseInt(original.style.width);
+            const height = parseInt(original.style.height);
+            const currentPageNum = parseInt(original.parentElement.id.replace('page-', ''));
 
             for (let i = 1; i <= pdfDoc.numPages; i++) {
-                if (i === currentPageId) continue;
-                addSigToPage(i, src, top, left, w, h, transform);
+                if (i === currentPageNum) continue; // Pula a página que já tem
+                gerarAssinaturaEmFolha(i, src, transform, width, height);
             }
-            alert("Posição replicada em todas as folhas!");
+            alert("Assinatura replicada em todas as páginas na mesma posição e tamanho!");
         }
 
-        function initInteract(el) {
-            let x = 0, y = 0;
-            // Extrai transform anterior se houver para não resetar ao clicar
+        function initInteractJS(el) {
+            let x = 0, y = 0, angle = 0;
+            // Pega o transform anterior para não resetar ao clicar
             const matrix = new WebKitCSSMatrix(window.getComputedStyle(el).transform);
             x = matrix.m41; y = matrix.m42;
 
             interact(el)
                 .draggable({ listeners: { move(e) { 
                     x += e.dx; y += e.dy; 
-                    e.target.style.transform = `translate(${x}px, ${y}px)`; 
+                    e.target.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`; 
                 } } })
                 .resizable({
                     edges: { left: true, right: true, bottom: true, top: true },
@@ -182,11 +174,16 @@
                         let { width, height } = e.rect;
                         x += e.deltaRect.left; y += e.deltaRect.top;
                         Object.assign(e.target.style, { 
-                            width: `${width}px`, height: `${height}px`, 
-                            transform: `translate(${x}px, ${y}px)` 
+                            width: `${width}px`, 
+                            height: `${height}px`, 
+                            transform: `translate(${x}px, ${y}px) rotate(${angle}deg)` 
                         });
                     } }
-                });
+                })
+                .gesturable({ listeners: { move(e) { 
+                    angle += e.da; // Gira com dois dedos
+                    e.target.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`; 
+                } } });
         }
     </script>
 </body>
