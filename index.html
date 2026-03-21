@@ -8,71 +8,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <style>
-/* CSS de Emergência para o Modal */
-#sig-modal { 
-    position: fixed !important; 
-    inset: 0 !important; 
-    background: #ffffff !important; 
-    z-index: 30000 !important; /* Acima de tudo */
-    display: none; 
-    flex-direction: column; 
-}
-#sig-pad { 
-    flex: 1; 
-    width: 100%; 
-    touch-action: none; 
-    background: #fff;
-}
-.modal-btns { 
-    height: 100px; 
-    display: flex; 
-    padding: 20px; 
-    gap: 15px; 
-    background: #eeeeee; 
-}
-.modal-btns button { 
-    flex: 1; 
-    border: none; 
-    border-radius: 12px; 
-    color: white; 
-    font-weight: bold; 
-    font-size: 16px; 
-}
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* HEADER AZUL */
+        
+        /* HEADER */
         .header { height: 50px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
-        .btn-open { background: #fff; color: #1a73e8; border: none; padding: 6px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+        .btn-open { background: #fff; color: #1a73e8; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; text-decoration: none; }
 
-        /* CONTAINER DO PDF */
-        .container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; padding-bottom: 90px; position: relative; }
-        #pdf-wrapper { position: relative; background: #fff; margin-top: 10px; transform-origin: top center; transition: transform 0.2s; }
-
-        /* BOTÕES DE ZOOM FLUTUANTES (Estratégia Lateral) */
-        .zoom-controls { 
-            position: fixed; right: 15px; top: 50%; transform: translateY(-50%); 
-            display: flex; flex-direction: column; gap: 15px; z-index: 5000; 
-        }
-        .btn-zoom { 
-            width: 50px; height: 50px; border-radius: 12px; border: none; 
-            background: #fff; color: #1a73e8; font-size: 24px; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
-        }
+        /* AREA PDF */
+        .container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; position: relative; }
+        #pdf-wrapper { position: relative; background: #fff; margin: 10px 0; transform-origin: top center; }
+        
+        /* ZOOM */
+        .zoom-controls { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; z-index: 5000; }
+        .btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: none; background: #fff; color: #1a73e8; font-size: 24px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
 
         /* BARRA INFERIOR */
-        .bottom-bar { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            height: calc(80px + env(safe-area-inset-bottom)); 
-            background: #000; display: flex; align-items: center; justify-content: space-around;
-            z-index: 9999; border-top: 1px solid #333;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; margin: 0 10px; }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: calc(80px + env(safe-area-inset-bottom)); background: #000; display: flex; align-items: center; justify-content: space-around; z-index: 9999; padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid #333; }
+        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 16px; margin: 0 8px; }
 
         /* MODAL ASSINATURA */
-        #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 20000; display: none; flex-direction: column; }
-        #sig-pad { flex: 1; width: 100%; touch-action: none; }
+        #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
+        #sig-pad { flex: 1; width: 100%; touch-action: none; background: #fff; }
+        .modal-btns { height: 90px; display: flex; padding: 15px; gap: 10px; background: #f0f0f0; }
+        .modal-btns button { flex: 1; border: none; border-radius: 12px; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -80,7 +39,7 @@
     <div class="header">
         <strong>MEUPDF PRO</strong>
         <label for="file-in" class="btn-open">📂 ABRIR PDF</label>
-        <input type="file" id="file-in" style="display:none">
+        <input type="file" id="file-in" style="display:none" accept="application/pdf">
     </div>
 
     <div class="container">
@@ -88,143 +47,67 @@
             <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
             <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
         </div>
-
         <div id="pdf-wrapper">
             <canvas id="pdf-render"></canvas>
         </div>
     </div>
 
     <div class="bottom-bar">
-        <button class="btn-action" style="background:#1a73e8" onclick="abrirModalAssinatura()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="salvarPDF()">✔ SALVAR</button>
+        <button class="btn-action" style="background:#1a73e8" onclick="abrirModal()">🖋️ ASSINAR</button>
+        <button class="btn-action" style="background:#2e7d32" onclick="alert('Salvando...')">✔ SALVAR</button>
     </div>
 
-    <div id="sig-modal">...</div>
+    <div id="sig-modal">
+        <canvas id="sig-pad"></canvas>
+        <div class="modal-btns">
+            <button onclick="fecharModal()" style="background:#546e7a">Sair</button>
+            <button onclick="signaturePad.clear()" style="background:#ffa000">Limpar</button>
+            <button onclick="confirmarAssinatura()" style="background:#2e7d32">Confirmar</button>
+        </div>
+    </div>
 
     <script>
-// Variável global única para evitar conflitos
-window.sigPad = null;
-
-function openSigPad() {
-    console.log("Tentando abrir o modal...");
-    const modal = document.getElementById('sig-modal');
-    const canvas = document.getElementById('sig-pad');
-    
-    if (!modal || !canvas) {
-        console.error("Erro: Elementos do modal não encontrados!");
-        return;
-    }
-
-    // Força a exibição antes de qualquer lógica
-    modal.style.setProperty('display', 'flex', 'important');
-
-    // Inicializa o SignaturePad se não existir
-    if (!window.sigPad) {
-        window.sigPad = new SignaturePad(canvas, {
-            backgroundColor: 'rgb(255, 255, 255)',
-            penColor: 'rgb(0, 0, 0)'
-        });
-    }
-
-    // Vacina de DPI e Redimensionamento
-    setTimeout(() => {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
-        window.sigPad.clear(); 
-    }, 300);
-}
-
-function closeSigPad() {
-    document.getElementById('sig-modal').style.display = 'none';
-}
-
-// Vincula o clique via código para garantir que o HTML não falhe
-document.addEventListener('DOMContentLoaded', () => {
-    const btnAssinar = document.querySelector('button[onclick="abrirModalAssinatura()"]');
-    if (btnAssinar) {
-        btnAssinar.removeAttribute('onclick');
-        btnAssinar.addEventListener('click', openSigPad);
-    }
-});
         let currentScale = 1.0;
-        const wrapper = document.getElementById('pdf-wrapper');
+        let signaturePad;
+        const dpr = window.devicePixelRatio || 1;
 
-        // FUNÇÃO DE ZOOM
-        function changeZoom(delta) {
-            currentScale = Math.min(Math.max(0.5, currentScale + delta), 3.0);
-            wrapper.style.transform = `scale(${currentScale})`;
-            // Ajusta o scroll para não perder o PDF de vista
-            wrapper.scrollIntoView({behavior: 'smooth', block: 'center'});
+        // Funções do Modal
+        function abrirModal() {
+            const modal = document.getElementById('sig-modal');
+            const canvas = document.getElementById('sig-pad');
+            modal.style.display = 'flex';
+            if (!signaturePad) signaturePad = new SignaturePad(canvas);
+            
+            setTimeout(() => {
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+                signaturePad.clear();
+            }, 200);
         }
 
-        // Lógica de abertura e renderização simplificada
+        function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
+
+        function changeZoom(delta) {
+            currentScale = Math.min(Math.max(0.5, currentScale + delta), 3.0);
+            document.getElementById('pdf-wrapper').style.transform = `scale(${currentScale})`;
+        }
+
+        // Lógica de PDF (simplificada para teste)
         document.getElementById('file-in').onchange = async (e) => {
             const file = e.target.files[0];
             if (file) {
                 const url = URL.createObjectURL(file);
-                const loadingTask = pdfjsLib.getDocument(url);
-                const pdf = await loadingTask.promise;
+                const pdf = await pdfjsLib.getDocument(url).promise;
                 const page = await pdf.getPage(1);
                 const canvas = document.getElementById('pdf-render');
-                const context = canvas.getContext('2d');
-                const viewport = page.getViewport({scale: 1.5}); // Escala base para mobile
+                const viewport = page.getViewport({scale: 1.5});
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                await page.render({canvasContext: context, viewport: viewport}).promise;
+                await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise;
             }
         };
     </script>
 </body>
 </html>
-#sig-modal { 
-    position: fixed !important; 
-    top: 0 !important; 
-    left: 0 !important; 
-    width: 100vw !important; 
-    height: 100vh !important; 
-    background: #ffffff !important; 
-    z-index: 30000 !important; /* Acima do PDF e do Zoom */
-    display: none; 
-    flex-direction: column; 
-}
-#sig-pad { flex: 1; width: 100%; touch-action: none; background: #fff; border-bottom: 2px solid #ddd; }
-.modal-btns { height: 90px; display: flex; padding: 15px; gap: 10px; background: #f5f5f5; z-index: 30001; }
-// Função global para evitar conflitos de escopo
-window.abrirModalAssinatura = function() {
-    console.log("Botão Assinar clicado!");
-    const modal = document.getElementById('sig-modal');
-    const canvas = document.getElementById('sig-pad');
-
-    if (!modal || !canvas) {
-        alert("Erro: Elementos do modal não encontrados no HTML!");
-        return;
-    }
-
-    // Força a exibição
-    modal.style.setProperty('display', 'flex', 'important');
-
-    // Inicializa o SignaturePad se necessário
-    if (!window.signaturePad) {
-        window.signaturePad = new SignaturePad(canvas, {
-            backgroundColor: 'rgb(255, 255, 255)',
-            penColor: 'rgb(0, 0, 0)'
-        });
-    }
-
-    // Ajuste de DPI (Dica 2 da estratégia de build)
-    setTimeout(() => {
-        const ratio = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * ratio;
-        canvas.height = rect.height * ratio;
-        canvas.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
-        window.signaturePad.clear();
-    }, 300);
-};
-
-window.fecharModal = function() {
-    document.getElementById('sig-modal').style.display = 'none';
-};
