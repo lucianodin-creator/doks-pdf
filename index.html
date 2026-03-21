@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MEUPDF PRO - Multi-Páginas</title>
+    <title>MEUPDF PRO - Ajuste de Precisão</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
@@ -17,17 +17,17 @@
         .page-container { position: relative; background: #fff; box-shadow: 0 0 15px #000; line-height: 0; }
         canvas { display: block; width: 100% !important; height: auto !important; }
 
-        /* Zoom reposicionado para não atrapalhar */
+        /* Zoom no topo para evitar conflitos */
         .zoom-controls { position: fixed; right: 15px; top: 60px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
-        .btn-zoom { width: 45px; height: 45px; border-radius: 10px; border: none; background: #fff; color: #1a73e8; font-size: 24px; font-weight: bold; box-shadow: 0 4px 10px #000; }
+        .btn-zoom { width: 45px; height: 45px; border-radius: 10px; border: none; background: #fff; color: #1a73e8; font-size: 24px; box-shadow: 0 4px 10px #000; }
 
-        /* Assinaturas */
+        /* Assinaturas com bordas de redimensionamento */
         .sig-container { position: absolute; width: 180px; height: 80px; border: 2px dashed #1a73e8; z-index: 5000; touch-action: none; background: rgba(26, 115, 232, 0.05); }
         .sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 8px; z-index: 6000; }
         .btn-tool { width: 38px; height: 38px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 5px #000; }
 
         .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 9999; }
-        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 16px; }
+        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; }
         
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; touch-action: none; }
@@ -58,7 +58,7 @@
 
     <div class="bottom-bar">
         <button class="btn-action" style="background:#1a73e8" onclick="abrirModal()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="alert('Salvando PDF final...')">✔ SALVAR</button>
+        <button class="btn-action" style="background:#2e7d32" onclick="alert('Funcionalidade de exportação será o próximo passo!')">✔ SALVAR</button>
     </div>
 
     <div id="sig-modal">
@@ -120,13 +120,11 @@
 
         function confirmarAssinatura() {
             if (signaturePad.isEmpty()) return;
-            const src = signaturePad.toDataURL();
-            // Adiciona na primeira página visível
-            addSigToPage(1, src, 50, 50);
+            addSigToPage(1, signaturePad.toDataURL(), 100, 50);
             fecharModal();
         }
 
-        function addSigToPage(pageNum, src, top, left, w = 180, h = 80) {
+        function addSigToPage(pageNum, src, top, left, w = 180, h = 80, transform = 'translate(0px, 0px)') {
             const page = document.getElementById(`page-${pageNum}`);
             if (!page) return;
 
@@ -136,11 +134,12 @@
             container.style.left = left + 'px';
             container.style.width = w + 'px';
             container.style.height = h + 'px';
+            container.style.transform = transform;
             
             container.innerHTML = `
                 <div class="sig-tools">
                     <button class="btn-tool" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                    <button class="btn-tool" title="Replicar em todas as páginas" style="background:#1976d2" onclick="replicarEmTodas(this)">📋</button>
+                    <button class="btn-tool" title="Replicar esta posição em todas" style="background:#1976d2" onclick="replicarPosicao(this)">📋</button>
                 </div>
                 <img src="${src}" style="width:100%; height:100%; pointer-events:none;">
             `;
@@ -149,24 +148,29 @@
             initInteract(container);
         }
 
-        function replicarEmTodas(btn) {
+        function replicarPosicao(btn) {
             const original = btn.parentElement.parentElement;
             const src = original.querySelector('img').src;
-            const top = original.style.top;
-            const left = original.style.left;
-            const width = original.style.width;
-            const height = original.style.height;
-            const currentPageId = original.parentElement.id.replace('page-', '');
+            const top = parseInt(original.style.top);
+            const left = parseInt(original.style.left);
+            const w = parseInt(original.style.width);
+            const h = parseInt(original.style.height);
+            const transform = original.style.transform;
+            const currentPageId = parseInt(original.parentElement.id.replace('page-', ''));
 
             for (let i = 1; i <= pdfDoc.numPages; i++) {
-                if (i == currentPageId) continue; // Pula a página atual
-                addSigToPage(i, src, parseInt(top), parseInt(left), parseInt(width), parseInt(height));
+                if (i === currentPageId) continue;
+                addSigToPage(i, src, top, left, w, h, transform);
             }
-            alert("Assinatura replicada em todas as páginas na mesma posição!");
+            alert("Posição replicada em todas as folhas!");
         }
 
         function initInteract(el) {
             let x = 0, y = 0;
+            // Extrai transform anterior se houver para não resetar ao clicar
+            const matrix = new WebKitCSSMatrix(window.getComputedStyle(el).transform);
+            x = matrix.m41; y = matrix.m42;
+
             interact(el)
                 .draggable({ listeners: { move(e) { 
                     x += e.dx; y += e.dy; 
@@ -178,8 +182,7 @@
                         let { width, height } = e.rect;
                         x += e.deltaRect.left; y += e.deltaRect.top;
                         Object.assign(e.target.style, { 
-                            width: `${width}px`, 
-                            height: `${height}px`, 
+                            width: `${width}px`, height: `${height}px`, 
                             transform: `translate(${x}px, ${y}px)` 
                         });
                     } }
