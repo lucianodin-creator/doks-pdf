@@ -1,33 +1,30 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
-.header { height: 45px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 10000; }
-#btn-upload { background: #fff; color: #1a73e8; border: none; padding: 4px 10px; border-radius: 4px; font-size: 16px; font-weight: bold; }
+/* BARRA SUPERIOR */
+.header { height: 45px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 1000; }
+#btn-upload { background: #fff; color: #1a73e8; border: none; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
 
-/* CONTAINER: Padding-bottom para não esconder conteúdo sob a barra */
-.container { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; background: #222; position: relative; padding: 15px 15px 100px 15px; }
+/* CONTAINER COM PADDING DE SEGURANÇA (Estratégia 2) */
+.container { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; background: #222; position: relative; padding-bottom: 90px; }
 #pdf-wrapper { position: relative; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
 
-.side-controls { position: fixed; right: 15px; top: 200px; display: flex; flex-direction: column; gap: 12px; z-index: 5000; }
-.btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: 2px solid #000; background: #ffa000 !important; color: #000; font-size: 26px; font-weight: bold; }
-
-/* BARRA FIXA: Regra de Ouro do Z-Index */
+/* BARRA DE FERRAMENTAS FIXA (Estratégia 2) */
 .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; background: #000; display: flex; align-items: center; border-top: 1px solid #333; z-index: 9999; }
 .nav-item { flex: 1; display: flex; justify-content: center; }
-.btn-nav { width: 55px; height: 55px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 24px; }
-.page-info { color: white; background: #333; padding: 6px 15px; border-radius: 20px; font-size: 14px; }
+.btn-nav { width: 55px; height: 55px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 22px; }
 
-/* MODAL DE ASSINATURA: Ocupa tudo com prioridade máxima */
+/* MODAL DE ASSINATURA (Estratégia 3) */
 #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 20000; display: none; flex-direction: column; }
-#sig-pad { flex: 1; width: 100%; touch-action: none; background: #fff; cursor: crosshair; }
-.modal-btns { height: 85px; display: flex; padding: 12px; gap: 10px; background: #f0f0f0; flex-shrink: 0; }
-.modal-btns button { flex: 1; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 18px; }
+#sig-pad { flex: 1; width: 100%; touch-action: none; background: #fff; }
+.modal-btns { height: 85px; display: flex; padding: 12px; gap: 10px; background: #f8f9fa; flex-shrink: 0; border-top: 1px solid #ddd; }
+.modal-btns button { flex: 1; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; }
 #btn-clear { background: #d32f2f !important; }
 #btn-close { background: #546e7a !important; }
 #btn-confirm { background: #2e7d32 !important; }
 
-/* CAIXA NA FOLHA */
+/* CONTROLES NA FOLHA */
 .sig-box { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.1); touch-action: none; }
-.btn-del-box { position: absolute; top: -45px; left: -10px; width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 1px solid #ccc; font-size: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 110; display: flex; align-items: center; justify-content: center; }
-.btn-rot-box { position: absolute; top: -45px; right: -10px; width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 1px solid #ccc; font-size: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 110; display: flex; align-items: center; justify-content: center; }
-.resizer { width: 32px; height: 32px; background: #1a73e8; position: absolute; right: -16px; bottom: -16px; border-radius: 50%; border: 3px solid #fff; z-index: 110; }
+.btn-del-box { position: absolute; top: -45px; left: -10px; width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.btn-rot-box { position: absolute; top: -45px; right: -10px; width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.resizer { width: 32px; height: 32px; background: #1a73e8; position: absolute; right: -16px; bottom: -16px; border-radius: 50%; border: 3px solid #fff; z-index: 100; }

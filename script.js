@@ -37,24 +37,25 @@ window.changePage = (off) => {
     if (n >= 1 && n <= totalPages) { currentPageNum = n; renderPage(n); } 
 };
 
-// AJUSTE DE DPI PARA ASSINATURA (Sincronizando CSS e Interno)
+// ESTRATÉGIA 3: Sincronização de DPI e Área de Desenho
 function resizeSigCanvas() {
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    sigCanvas.width = sigCanvas.offsetWidth * ratio;
-    sigCanvas.height = sigCanvas.offsetHeight * ratio;
-    sigCanvas.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
-    if(sigPad) sigPad.clear(); 
+    const rect = sigCanvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    sigCanvas.width = rect.width * ratio;
+    sigCanvas.height = rect.height * ratio;
+    sigCanvas.getContext("2d").scale(ratio, ratio);
+    if(sigPad) sigPad.clear();
 }
 
 window.openSigPad = () => {
     sigModal.style.display = 'flex';
     if (!sigPad) {
-        sigPad = new SignaturePad(sigCanvas, { minWidth: 1.5, maxWidth: 4, penColor: 'black' });
+        sigPad = new SignaturePad(sigCanvas, { minWidth: 1.5, maxWidth: 4.5, penColor: 'black' });
     }
-    setTimeout(resizeSigCanvas, 200);
+    setTimeout(resizeSigCanvas, 250);
 };
 
-document.getElementById('btn-clear').onclick = () => sigPad && sigPad.clear();
+document.getElementById('btn-clear').onclick = () => sigPad.clear();
 window.closeSigPad = () => sigModal.style.display = 'none';
 window.confirmSig = () => {
     if (sigPad && !sigPad.isEmpty()) {
@@ -76,7 +77,6 @@ function createSigBox(data) {
     rot.onclick = (e) => { e.stopPropagation(); r += 90; img.style.transform = `rotate(${r}deg)`; };
 
     const res = document.createElement('div'); res.className = 'resizer';
-
     const img = document.createElement('img');
     img.src = data; img.style.cssText = 'width:100%;height:100%;object-fit:contain;pointer-events:none;';
 
