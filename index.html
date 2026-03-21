@@ -7,99 +7,98 @@
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* BARRA SUPERIOR AZUL */
-        .header { 
-            height: 50px; background: #1a73e8; color: white; 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 15px; z-index: 10000; /* Prioridade máxima */
-        }
-        
-        #btn-open-wrapper { display: flex; align-items: center; gap: 8px; }
-        #btn-upload { background: #fff; color: #1a73e8; border: none; padding: 5px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        
-        .container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; padding-bottom: 90px; }
-        #pdf-wrapper { position: relative; background: #fff; margin-top: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
-        canvas#pdf-render { display: block; }
+        /* HEADER AZUL */
+        .header { height: 50px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
+        .btn-open { background: #fff; color: #1a73e8; border: none; padding: 6px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; }
 
-        /* BARRA INFERIOR (Confirmação/Assinatura) */
+        /* CONTAINER DO PDF */
+        .container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; padding-bottom: 90px; position: relative; }
+        #pdf-wrapper { position: relative; background: #fff; margin-top: 10px; transform-origin: top center; transition: transform 0.2s; }
+
+        /* BOTÕES DE ZOOM FLUTUANTES (Estratégia Lateral) */
+        .zoom-controls { 
+            position: fixed; right: 15px; top: 50%; transform: translateY(-50%); 
+            display: flex; flex-direction: column; gap: 15px; z-index: 5000; 
+        }
+        .btn-zoom { 
+            width: 50px; height: 50px; border-radius: 12px; border: none; 
+            background: #fff; color: #1a73e8; font-size: 24px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+        }
+
+        /* BARRA INFERIOR */
         .bottom-bar { 
-            position: fixed !important; bottom: 0; left: 0; width: 100%; 
+            position: fixed; bottom: 0; left: 0; width: 100%; 
             height: calc(80px + env(safe-area-inset-bottom)); 
             background: #000; display: flex; align-items: center; justify-content: space-around;
             z-index: 9999; border-top: 1px solid #333;
-            padding: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
         }
-        
-        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 16px; margin: 0 5px; }
-        .btn-blue { background: #1a73e8; }
-        .btn-green { background: #2e7d32; }
+        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; margin: 0 10px; }
+
+        /* MODAL ASSINATURA */
+        #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 20000; display: none; flex-direction: column; }
+        #sig-pad { flex: 1; width: 100%; touch-action: none; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <strong>MEUPDF PRO</strong>
-        <div id="btn-open-wrapper">
-            <label for="file-in" id="btn-upload">📂 Abrir</label>
-            <input type="file" id="file-in" style="display:none">
-        </div>
+        <label for="file-in" class="btn-open">📂 ABRIR PDF</label>
+        <input type="file" id="file-in" style="display:none">
     </div>
 
     <div class="container">
+        <div class="zoom-controls">
+            <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
+            <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
+        </div>
+
         <div id="pdf-wrapper">
             <canvas id="pdf-render"></canvas>
         </div>
     </div>
 
     <div class="bottom-bar">
-        <button class="btn-action btn-blue" onclick="openSigPad()">🖋️ Assinar</button>
-        <button class="btn-action btn-green" onclick="salvarPDF()">✔ Salvar</button>
+        <button class="btn-action" style="background:#1a73e8" onclick="openSigPad()">🖋️ ASSINAR</button>
+        <button class="btn-action" style="background:#2e7d32" onclick="salvarPDF()">✔ SALVAR</button>
     </div>
 
+    <div id="sig-modal">...</div>
+
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        let currentScale = 1.0;
+        const wrapper = document.getElementById('pdf-wrapper');
 
-        let pdfDocLib, currentCanvas, ctx, currentPageNum = 1;
-        
-        currentCanvas = document.getElementById('pdf-render');
-        ctx = currentCanvas.getContext('2d');
-
-        // Lógica de Carregamento (O que o botão Abrir faz)
-        document.getElementById('file-in').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (file && file.type === "application/pdf") {
-                try {
-                    const reader = new FileReader();
-                    reader.onload = async function() {
-                        const arrayBuffer = this.result;
-                        pdfDocLib = await PDFLib.PDFDocument.load(arrayBuffer);
-                        loadPage(1, arrayBuffer); // Carrega a primeira página
-                    };
-                    reader.readAsArrayBuffer(file);
-                } catch (err) { alert("Erro ao carregar PDF: " + err.message); }
-            } else { alert("Por favor, selecione um arquivo PDF válido."); }
-        };
-
-        async function loadPage(num, pdfData) {
-            const pdfjsDoc = await pdfjsLib.getDocument({data: pdfData}).promise;
-            const page = await pdfjsDoc.getPage(num);
-            const viewport = page.getViewport({scale: 1.0}); // Escala fixa Mobile
-
-            currentCanvas.height = viewport.height;
-            currentCanvas.width = viewport.width;
-
-            const renderContext = { canvasContext: ctx, viewport: viewport };
-            await page.render(renderContext).promise;
+        // FUNÇÃO DE ZOOM
+        function changeZoom(delta) {
+            currentScale = Math.min(Math.max(0.5, currentScale + delta), 3.0);
+            wrapper.style.transform = `scale(${currentScale})`;
+            // Ajusta o scroll para não perder o PDF de vista
+            wrapper.scrollIntoView({behavior: 'smooth', block: 'center'});
         }
 
-        // Outras funções (openSigPad, salvarPDF) podem ser mantidas aqui
-        function openSigPad() { alert("Modal de Assinatura pronto!"); }
-        async function salvarPDF() { alert("Salvar pronto!"); }
+        // Lógica de abertura e renderização simplificada
+        document.getElementById('file-in').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                const loadingTask = pdfjsLib.getDocument(url);
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
+                const canvas = document.getElementById('pdf-render');
+                const context = canvas.getContext('2d');
+                const viewport = page.getViewport({scale: 1.5}); // Escala base para mobile
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                await page.render({canvasContext: context, viewport: viewport}).promise;
+            }
+        };
     </script>
 </body>
 </html>
