@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MEUPDF PRO - Preenchimento Total</title>
+    <title>MEUPDF PRO - Borda Total</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
@@ -17,29 +17,31 @@
         .page-container { position: relative; background: #fff; line-height: 0; box-shadow: 0 0 15px #000; margin-bottom: 10px; }
         canvas { display: block; width: 100% !important; height: auto !important; }
         
-        /* Controles de Zoom */
         .zoom-controls { position: fixed; right: 15px; top: 70px; display: flex; flex-direction: column; gap: 12px; z-index: 9999; }
         .btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: none; background: #ff6d00; color: #fff; font-size: 26px; font-weight: bold; }
         
-        /* Janela da Assinatura sem espaços */
         .sig-container { 
             position: absolute; border: 2px dashed #4169E1; z-index: 5000; touch-action: none; 
-            background: rgba(65, 105, 225, 0.05); padding: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;
+            background: rgba(65, 105, 225, 0.05); padding: 0; display: flex; align-items: center; justify-content: center;
         }
         
-        /* CORREÇÃO: Força a imagem a preencher 100% da caixa azul */
         .sig-container img { 
-            width: 100% !important; 
-            height: 100% !important; 
-            object-fit: fill !important; /* Estica a assinatura para ocupar todo o espaço */
-            pointer-events: none; 
-            display: block;
+            width: 100% !important; height: 100% !important; 
+            object-fit: fill !important; pointer-events: none; display: block;
         }
 
-        .handle-tr, .handle-bl { position: absolute; width: 20px; height: 20px; background: #4169E1; border: 2px solid #fff; border-radius: 50%; z-index: 5001; }
-        .handle-tr { top: -10px; right: -10px; } .handle-bl { bottom: -10px; left: -10px; }
-        .sig-tools { position: absolute; top: -55px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 6000; }
-        .btn-tool { width: 44px; height: 44px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 5px #000; }
+        /* AJUSTE: Botões agora ficam fixos no topo da assinatura para não sumirem */
+        .sig-tools { 
+            position: absolute; top: -50px; left: 0; display: flex; gap: 5px; z-index: 6000; 
+        }
+        .btn-tool { 
+            width: 40px; height: 40px; border-radius: 8px; border: none; color: white; 
+            display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 5px #000; 
+        }
+
+        .handle-tr, .handle-bl { position: absolute; width: 22px; height: 22px; background: #4169E1; border: 2px solid #fff; border-radius: 50%; z-index: 5001; }
+        .handle-tr { top: -11px; right: -11px; } .handle-bl { bottom: -11px; left: -11px; }
+        
         .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; z-index: 9999; }
         .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 16px; margin: 0 5px; }
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
