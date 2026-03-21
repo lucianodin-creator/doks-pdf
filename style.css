@@ -1,15 +1,21 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
-.header { height: 45px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; }
-#btn-upload { background: #fff; color: #1a73e8; border: none; padding: 4px 10px; border-radius: 4px; font-size: 16px; }
+.header { height: 45px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 100; }
+#btn-upload { background: #fff; color: #1a73e8; border: none; padding: 4px 10px; border-radius: 4px; font-size: 16px; cursor: pointer; }
 
+/* CONTAINER DO PDF - O PALCO PRINCIPAL */
 .container { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; background: #222; position: relative; padding: 15px; }
-#pdf-wrapper { position: relative; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
 
+/* O WRAPPER AGORA É O LAYER SEPARADO */
+#pdf-wrapper { position: relative; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); display: inline-block; }
+canvas#pdf-render { display: block; }
+
+/* CONTROLES DE ZOOM */
 .side-controls { position: fixed; right: 15px; top: 200px; display: flex; flex-direction: column; gap: 12px; z-index: 500; }
 .btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: 2px solid #000; background: #ffa000 !important; color: #000; font-size: 26px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
 
+/* BARRA INFERIOR */
 .bottom-bar { height: 80px; background: #000; display: flex; align-items: center; flex-shrink: 0; border-top: 1px solid #333; z-index: 1000; }
 .nav-item { flex: 1; display: flex; justify-content: center; }
 .btn-nav { width: 55px; height: 55px; border-radius: 50%; border: none; color: white; background: #1a73e8; font-size: 24px; display: flex; align-items: center; justify-content: center; }
@@ -24,8 +30,8 @@ body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; 
 #btn-close { background: #546e7a !important; }
 #btn-confirm { background: #2e7d32 !important; }
 
-/* CAIXA DE ASSINATURA NA FOLHA - CONTROLES SEPARADOS */
+/* CAIXA DE ASSINATURA NA FOLHA - USANDO % */
 .sig-box { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.1); touch-action: none; }
-.btn-del-box { position: absolute; top: -45px; left: -10px; width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid #ccc; font-size: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 110; display: flex; align-items: center; justify-content: center; }
-.btn-rot-box { position: absolute; top: -45px; right: -10px; width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid #ccc; font-size: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 110; display: flex; align-items: center; justify-content: center; }
+.btn-del-box { position: absolute; top: -45px; left: -5px; width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid #ccc; font-size: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 110; display: flex; align-items: center; justify-content: center; }
+.btn-rot-box { position: absolute; top: -45px; right: -5px; width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid #ccc; font-size: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 110; display: flex; align-items: center; justify-content: center; }
 .resizer { width: 30px; height: 30px; background: #1a73e8; position: absolute; right: -15px; bottom: -15px; border-radius: 50%; border: 3px solid #fff; z-index: 110; }
