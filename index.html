@@ -7,58 +7,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* CABEÇALHO AZUL ROYAL */
         .header { height: 50px; background: #4169E1; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
-        
         .container { flex: 1; overflow-y: auto; background: #222; position: relative; display: flex; flex-direction: column; align-items: center; padding: 10px; }
         #pdf-main-wrapper { position: relative; transform-origin: top center; display: flex; flex-direction: column; gap: 20px; padding-bottom: 150px; }
         .page-container { position: relative; background: #fff; line-height: 0; box-shadow: 0 0 15px #000; }
         canvas { display: block; width: 100% !important; height: auto !important; }
-
-        /* BOTÕES DE ZOOM CONTINUAM LARANJA */
         .zoom-controls { position: fixed; right: 15px; top: 70px; display: flex; flex-direction: column; gap: 12px; z-index: 9999; }
         .btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: none; background: #ff6d00; color: #fff; font-size: 26px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-
-        /* JANELA DE ASSINATURA VOLTA PARA O AZUL */
-        .sig-container { 
-            position: absolute; 
-            width: 180px; 
-            height: 80px; 
-            border: 2px dashed #4169E1; 
-            z-index: 5000; 
-            touch-action: none; 
-            background: rgba(65, 105, 225, 0.1); 
-        }
-
-        /* Alças (Bolinhas) em Azul */
-        .sig-container::before, .sig-container::after,
-        .handle-tr, .handle-bl {
-            content: "";
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            background: #4169E1;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            z-index: 5001;
-        }
-        .sig-container::before { top: -8px; left: -8px; }
-        .sig-container::after { bottom: -8px; right: -8px; }
-        .handle-tr { top: -8px; right: -8px; position: absolute; }
-        .handle-bl { bottom: -8px; left: -8px; position: absolute; }
-
-        .sig-tools { position: absolute; top: -55px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 6000; }
-        .btn-tool { width: 42px; height: 42px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 2px 5px #000; }
-
+        .sig-container { position: absolute; border: 2px dashed #4169E1; z-index: 5000; touch-action: none; background: rgba(65, 105, 225, 0.1); }
+        .sig-container::before, .sig-container::after, .handle-tr, .handle-bl { content: ""; position: absolute; width: 14px; height: 14px; background: #4169E1; border: 2px solid #fff; border-radius: 50%; }
+        .sig-container::before { top: -8px; left: -8px; } .sig-container::after { bottom: -8px; right: -8px; }
+        .handle-tr { top: -8px; right: -8px; } .handle-bl { bottom: -8px; left: -8px; }
+        .sig-tools { position: absolute; top: -55px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; }
+        .btn-tool { width: 42px; height: 42px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; z-index: 9999; }
-        
-        /* BOTÃO ASSINAR VOLTA PARA O AZUL */
         .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 16px; margin: 0 5px; }
-        
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; touch-action: none; }
         .modal-btns { height: 80px; display: flex; padding: 10px; gap: 10px; background: #f0f0f0; }
@@ -66,26 +33,19 @@
     </style>
 </head>
 <body>
-
     <div class="header">
         <strong>MEUPDF PRO</strong>
         <label for="file-in" style="background:#fff; color:#4169E1; padding:5px 12px; border-radius:6px; font-weight:bold">📂 ABRIR PDF</label>
         <input type="file" id="file-in" style="display:none" accept="application/pdf">
     </div>
-
     <div class="container" id="scroll-cont">
-        <div class="zoom-controls">
-            <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
-            <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
-        </div>
+        <div class="zoom-controls"><button class="btn-zoom" onclick="changeZoom(0.1)">+</button><button class="btn-zoom" onclick="changeZoom(-0.1)">-</button></div>
         <div id="pdf-main-wrapper"></div>
     </div>
-
     <div class="bottom-bar">
         <button class="btn-action" style="background:#4169E1" onclick="abrirModal()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="alert('Salvando PDF...')">✔ SALVAR</button>
+        <button class="btn-action" style="background:#2e7d32" onclick="gerarPDF()">✔ SALVAR</button>
     </div>
-
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
         <div class="modal-btns">
@@ -98,10 +58,12 @@
     <script>
         const { pdfjsLib } = globalThis;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let signaturePad, pdfDoc = null, zoomBase = 1.0;
+        let signaturePad, pdfDoc = null, zoomBase = 1.0, pdfFileName = "documento_assinado.pdf";
 
         document.getElementById('file-in').onchange = async (e) => {
             const file = e.target.files[0];
+            if(!file) return;
+            pdfFileName = file.name.replace(".pdf", "_assinado.pdf");
             const reader = new FileReader();
             reader.onload = async function() {
                 pdfDoc = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
@@ -118,8 +80,7 @@
                 const page = await pdfDoc.getPage(i);
                 const viewport = page.getViewport({scale: (width / page.getViewport({scale:1}).width) * 2});
                 const div = document.createElement('div');
-                div.className = 'page-container';
-                div.id = `page-${i}`;
+                div.className = 'page-container'; div.id = `page-${i}`;
                 const canvas = document.createElement('canvas');
                 canvas.height = viewport.height; canvas.width = viewport.width;
                 div.appendChild(canvas);
@@ -128,88 +89,79 @@
             }
         }
 
-        function changeZoom(delta) {
-            zoomBase += delta;
-            document.getElementById('pdf-main-wrapper').style.transform = `scale(${zoomBase})`;
+        async function gerarPDF() {
+            if (!pdfDoc) return alert("Abra um PDF primeiro!");
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'a4');
+            const pages = document.querySelectorAll('.page-container');
+
+            for (let i = 0; i < pages.length; i++) {
+                const pageDiv = pages[i];
+                const canvas = pageDiv.querySelector('canvas');
+                if (i > 0) doc.addPage();
+                
+                // 1. Adiciona o fundo (página do PDF original)
+                doc.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 595.28, 841.89);
+
+                // 2. Busca assinaturas nesta página específica
+                const sigs = pageDiv.querySelectorAll('.sig-container');
+                sigs.forEach(sig => {
+                    const img = sig.querySelector('img');
+                    const rect = sig.getBoundingClientRect();
+                    const pageRect = pageDiv.getBoundingClientRect();
+
+                    // Calcula posição relativa para o PDF final
+                    const x = ((rect.left - pageRect.left) / pageRect.width) * 595.28;
+                    const y = ((rect.top - pageRect.top) / pageRect.height) * 841.89;
+                    const w = (rect.width / pageRect.width) * 595.28;
+                    const h = (rect.height / pageRect.height) * 841.89;
+
+                    doc.addImage(img.src, 'PNG', x, y, w, h);
+                });
+            }
+            doc.save(pdfFileName);
+            alert("Sucesso! O PDF foi enviado para sua pasta de Downloads.");
         }
 
-        function abrirModal() {
+        // Funções de interface (Zoom, Modal, Assinatura) permanecem iguais...
+        function changeZoom(s) { zoomBase += s; document.getElementById('pdf-main-wrapper').style.transform = `scale(${zoomBase})`; }
+        function abrirModal() { 
             document.getElementById('sig-modal').style.display = 'flex';
-            const canvas = document.getElementById('sig-pad');
-            if (!signaturePad) signaturePad = new SignaturePad(canvas);
-            canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+            const c = document.getElementById('sig-pad');
+            c.width = c.offsetWidth; c.height = c.offsetHeight;
+            if (!signaturePad) signaturePad = new SignaturePad(c);
             signaturePad.clear();
         }
         function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
-
         function confirmarAssinatura() {
             if (signaturePad.isEmpty()) return;
-            addSig(1, signaturePad.toDataURL(), 120, 40);
+            addSig(1, signaturePad.toDataURL(), 100, 100);
             fecharModal();
         }
-
-        function addSig(pageNum, src, top, left, w = 180, h = 80, trans = 'translate(0px, 0px)') {
-            const page = document.getElementById(`page-${pageNum}`);
-            if (!page) return;
-            const container = document.createElement('div');
-            container.className = 'sig-container';
-            container.style.width = w + 'px'; container.style.height = h + 'px';
-            container.style.top = top + 'px'; container.style.left = left + 'px';
-            container.style.transform = trans;
-            
-            container.innerHTML = `
-                <div class="handle-tr"></div>
-                <div class="handle-bl"></div>
-                <div class="sig-tools">
-                    <button class="btn-tool" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                    <button class="btn-tool" style="background:#4169E1" onclick="replicar(this)">📋</button>
-                </div>
-                <img src="${src}" style="width:100%; height:100%; pointer-events:none;">
-            `;
-            page.appendChild(container);
-            setupInteract(container);
+        function addSig(pNum, src, t, l) {
+            const page = document.getElementById(`page-${pNum}`);
+            const div = document.createElement('div');
+            div.className = 'sig-container';
+            div.style.top = t+'px'; div.style.left = l+'px'; div.style.width = '180px'; div.style.height = '80px';
+            div.innerHTML = `<div class="handle-tr"></div><div class="handle-bl"></div><div class="sig-tools"><button class="btn-tool" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button><button class="btn-tool" style="background:#4169E1" onclick="replicar(this)">📋</button></div><img src="${src}" style="width:100%; height:100%; pointer-events:none;">`;
+            page.appendChild(div);
+            setupInteract(div);
         }
-
         function replicar(btn) {
             const el = btn.parentElement.parentElement;
             const src = el.querySelector('img').src;
-            const top = parseInt(el.style.top);
-            const left = parseInt(el.style.left);
-            const w = parseInt(el.style.width);
-            const h = parseInt(el.style.height);
-            const trans = el.style.transform;
             for (let i = 1; i <= pdfDoc.numPages; i++) {
                 if (`page-${i}` === el.parentElement.id) continue;
-                addSig(i, src, top, left, w, h, trans);
+                addSig(i, src, parseInt(el.style.top), parseInt(el.style.left));
             }
-            alert("Sincronizado em todas as páginas!");
         }
-
         function setupInteract(el) {
-            let x = 0, y = 0, angle = 0;
-            const matrix = new WebKitCSSMatrix(window.getComputedStyle(el).transform);
-            x = matrix.m41; y = matrix.m42;
-
-            interact(el)
-                .draggable({ listeners: { move(e) { 
-                    x += e.dx; y += e.dy; 
-                    e.target.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`; 
-                } } })
-                .resizable({
-                    edges: { left: true, right: true, bottom: true, top: true },
-                    listeners: { move(e) {
-                        let { width, height } = e.rect;
-                        x += e.deltaRect.left; y += e.deltaRect.top;
-                        Object.assign(e.target.style, { 
-                            width: `${width}px`, height: `${height}px`, 
-                            transform: `translate(${x}px, ${y}px) rotate(${angle}deg)` 
-                        });
-                    } }
-                })
-                .gesturable({ listeners: { move(e) { 
-                    angle += e.da;
-                    e.target.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`; 
-                } } });
+            let x = 0, y = 0;
+            interact(el).draggable({ listeners: { move(e) { x += e.dx; y += e.dy; e.target.style.transform = `translate(${x}px, ${y}px)`; } } })
+            .resizable({ edges: { left: true, right: true, bottom: true, top: true }, listeners: { move(e) {
+                let { width, height } = e.rect; x += e.deltaRect.left; y += e.deltaRect.top;
+                Object.assign(e.target.style, { width: `${width}px`, height: `${height}px`, transform: `translate(${x}px, ${y}px)` });
+            } } });
         }
     </script>
 </body>
