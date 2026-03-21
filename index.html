@@ -23,6 +23,7 @@
         .modal-btns { height: 90px; display: flex; padding: 15px; gap: 10px; background: #f0f0f0; }
         .modal-btns button { flex: 1; border: none; border-radius: 12px; color: white; font-weight: bold; }
         .sig-overlay { position: absolute; border: 2px dashed #1a73e8; background: rgba(26,115,232,0.1); cursor: move; }
+@import url("layout_fix.css");
     </style>
 </head>
 <body>
@@ -124,3 +125,31 @@
     </script>
 </body>
 </html>
+/* Ajuste inteligente para tela horizontal */
+@media (orientation: landscape) {
+    #sig-modal {
+        flex-direction: row !important; /* Coloca botões na lateral em vez de baixo */
+    }
+    #sig-pad {
+        height: 100% !important;
+        flex: 3;
+    }
+    .modal-btns {
+        flex: 1;
+        flex-direction: column !important; /* Botões empilhados na direita */
+        height: 100% !important;
+        padding: 10px !important;
+        justify-content: center;
+    }
+    .modal-btns button {
+        height: 45px !important; /* Botões mais baixos para caber na horizontal */
+        margin-bottom: 5px;
+        font-size: 14px !important;
+    }
+}
+
+/* Garante que o modal sempre respeite o tamanho da tela */
+#sig-modal {
+    max-height: 100vh;
+    overflow: hidden;
+}
