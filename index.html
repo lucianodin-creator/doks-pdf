@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MEUPDF PRO</title>
+    <title>MEUPDF PRO - Multi-Páginas</title>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -13,21 +13,27 @@
         body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
         .header { height: 50px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
         .btn-open { background: #fff; color: #1a73e8; border: none; padding: 6px 15px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
-        .container { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; background: #222; padding: 10px; position: relative; }
-        #pdf-wrapper { position: relative; background: #fff; transform-origin: top center; box-shadow: 0 0 20px rgba(0,0,0,0.5); display: none; margin-bottom: 100px; }
-        canvas { display: block; max-width: 100%; height: auto !important; }
         
-        /* BOTÕES DE ZOOM LATERAIS */
-        .zoom-controls { position: fixed; right: 10px; top: 40%; display: flex; flex-direction: column; gap: 10px; z-index: 8000; }
-        .btn-zoom { width: 40px; height: 40px; border-radius: 10px; border: none; background: #fff; color: #1a73e8; font-size: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        /* Container de rolagem para ver todas as páginas */
+        .container { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; background: #222; padding: 10px; position: relative; }
+        
+        /* Wrapper que conterá todas as páginas e assinaturas */
+        #pdf-main-wrapper { position: relative; display: flex; flex-direction: column; gap: 20px; transform-origin: top center; padding-bottom: 120px; }
+        
+        /* Estilo individual de cada página */
+        .page-container { position: relative; background: #fff; box-shadow: 0 0 15px rgba(0,0,0,0.5); line-height: 0; }
+        canvas { display: block; width: 100% !important; height: auto !important; }
 
-        /* ESTILO DA ASSINATURA E FERRAMENTAS */
+        .zoom-controls { position: fixed; right: 10px; top: 40%; display: flex; flex-direction: column; gap: 10px; z-index: 8000; }
+        .btn-zoom { width: 42px; height: 42px; border-radius: 10px; border: none; background: #fff; color: #1a73e8; font-size: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+        /* Assinaturas */
         .sig-container { position: absolute; width: 150px; border: 2px dashed #1a73e8; touch-action: none; z-index: 5000; background: rgba(26, 115, 232, 0.05); }
-        .sig-tools { position: absolute; top: -40px; left: 0; display: flex; gap: 8px; z-index: 6000; }
-        .btn-tool { width: 32px; height: 32px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .sig-tools { position: absolute; top: -42px; left: 0; display: flex; gap: 8px; z-index: 6000; }
+        .btn-tool { width: 34px; height: 34px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
         .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: #000; display: flex; align-items: center; justify-content: space-around; z-index: 9999; border-top: 1px solid #333; }
-        .btn-action { flex: 1; height: 48px; border-radius: 24px; border: none; color: white; font-weight: bold; margin: 0 8px; font-size: 14px; }
+        .btn-action { flex: 1; height: 48px; border-radius: 24px; border: none; color: white; font-weight: bold; margin: 0 8px; }
         
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; touch-action: none; }
@@ -43,17 +49,17 @@
         <input type="file" id="file-in" style="display:none" accept="application/pdf">
     </div>
 
-    <div class="container" id="main-container">
+    <div class="container" id="scroll-container">
         <div class="zoom-controls">
             <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
             <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
         </div>
-        <div id="pdf-wrapper"><canvas id="pdf-render"></canvas></div>
+        <div id="pdf-main-wrapper"></div>
     </div>
 
     <div class="bottom-bar">
         <button class="btn-action" style="background:#1a73e8" onclick="abrirModal()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="alert('Exportação em breve...')">✔ SALVAR</button>
+        <button class="btn-action" style="background:#2e7d32" onclick="alert('Salvando todas as páginas...')">✔ SALVAR</button>
     </div>
 
     <div id="sig-modal">
@@ -78,32 +84,46 @@
             reader.onload = async function() {
                 const typedarray = new Uint8Array(this.result);
                 pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
-                renderPage(1);
-                document.getElementById('pdf-wrapper').style.display = 'block';
+                renderAllPages();
             };
             reader.readAsArrayBuffer(file);
         };
 
-        async function renderPage(num) {
-            const page = await pdfDoc.getPage(num);
-            const canvas = document.getElementById('pdf-render');
-            const ctx = canvas.getContext('2d');
+        async function renderAllPages() {
+            const mainWrapper = document.getElementById('pdf-main-wrapper');
+            mainWrapper.innerHTML = ''; // Limpa antes de carregar novo
             
-            // AJUSTE AUTOMÁTICO: Calcula escala baseada na largura da tela do celular
-            const containerWidth = document.getElementById('main-container').clientWidth - 20;
-            const unscaledViewport = page.getViewport({scale: 1});
-            const autoScale = containerWidth / unscaledViewport.width;
-            
-            const viewport = page.getViewport({scale: autoScale * 2}); // Renderiza em 2x para nitidez
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            
-            await page.render({canvasContext: ctx, viewport: viewport}).promise;
+            const containerWidth = document.getElementById('scroll-container').clientWidth - 20;
+
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                
+                // Cria elementos de estrutura
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'page-container';
+                pageDiv.id = `page-p-${i}`;
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Ajuste de largura automática
+                const unscaledViewport = page.getViewport({scale: 1});
+                const autoScale = containerWidth / unscaledViewport.width;
+                const viewport = page.getViewport({scale: autoScale * 2}); // 2x para nitidez
+                
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                pageDiv.appendChild(canvas);
+                mainWrapper.appendChild(pageDiv);
+                
+                await page.render({canvasContext: ctx, viewport: viewport}).promise;
+            }
         }
 
         function changeZoom(delta) {
             currentScale += delta;
-            document.getElementById('pdf-wrapper').style.transform = `scale(${currentScale})`;
+            document.getElementById('pdf-main-wrapper').style.transform = `scale(${currentScale})`;
         }
 
         function abrirModal() {
@@ -119,41 +139,27 @@
 
         function confirmarAssinatura() {
             if (signaturePad.isEmpty()) return;
-            const dataUrl = signaturePad.toDataURL();
-            const wrapper = document.getElementById('pdf-wrapper');
-            const container = document.createElement('div');
-            container.className = 'sig-container';
-            container.innerHTML = `
-                <div class="sig-tools">
-                    <button class="btn-tool" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                    <button class="btn-tool" style="background:#1976d2" onclick="duplicar(this)">📋</button>
-                </div>
-                <img src="${dataUrl}" style="width:100%; height:100%; pointer-events:none;">
-            `;
-            container.style.top = '50px'; container.style.left = '50px';
-            wrapper.appendChild(container);
-            initInteract(container);
+            addSignatureToView(signaturePad.toDataURL());
             fecharModal();
         }
 
-        function duplicar(btn) {
-            const src = btn.parentElement.parentElement.querySelector('img').src;
-            confirmarAssinaturaComSrc(src);
-        }
-
-        function confirmarAssinaturaComSrc(src) {
-            const wrapper = document.getElementById('pdf-wrapper');
+        function addSignatureToView(src) {
+            const mainWrapper = document.getElementById('pdf-main-wrapper');
             const container = document.createElement('div');
             container.className = 'sig-container';
             container.innerHTML = `
                 <div class="sig-tools">
                     <button class="btn-tool" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                    <button class="btn-tool" style="background:#1976d2" onclick="duplicar(this)">📋</button>
+                    <button class="btn-tool" style="background:#1976d2" onclick="addSignatureToView('${src}')">📋</button>
                 </div>
                 <img src="${src}" style="width:100%; height:100%; pointer-events:none;">
             `;
-            container.style.top = '100px'; container.style.left = '80px';
-            wrapper.appendChild(container);
+            // Posiciona a assinatura no topo da visualização atual
+            const scrollY = document.getElementById('scroll-container').scrollTop;
+            container.style.top = (scrollY + 50) + 'px';
+            container.style.left = '50px';
+            
+            mainWrapper.appendChild(container);
             initInteract(container);
         }
 
