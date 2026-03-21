@@ -11,60 +11,28 @@
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
-        
         .header { height: 50px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
         .btn-open { background: #fff; color: #1a73e8; border: none; padding: 6px 15px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
-
-        .container { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; background: #222; padding: 20px; position: relative; }
-        #pdf-wrapper { position: relative; background: #fff; transform-origin: top center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .container { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; background: #222; padding: 10px; position: relative; }
+        #pdf-wrapper { position: relative; background: #fff; transform-origin: top center; box-shadow: 0 0 20px rgba(0,0,0,0.5); display: none; margin-bottom: 100px; }
+        canvas { display: block; max-width: 100%; height: auto !important; }
         
-        /* CONTAINER DA ASSINATURA COM ALÇAS */
-        .sig-container { 
-            position: absolute; 
-            width: 180px; 
-            min-width: 50px;
-            min-height: 30px;
-            border: 2px dashed #1a73e8; 
-            touch-action: none; 
-            z-index: 5000;
-            cursor: move;
-            background: rgba(26, 115, 232, 0.05);
-        }
+        /* BOTÕES DE ZOOM LATERAIS */
+        .zoom-controls { position: fixed; right: 10px; top: 40%; display: flex; flex-direction: column; gap: 10px; z-index: 8000; }
+        .btn-zoom { width: 40px; height: 40px; border-radius: 10px; border: none; background: #fff; color: #1a73e8; font-size: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-        /* BOTÕES DE FERRAMENTA (LIXEIRA E COPIAR) */
-        .sig-tools {
-            position: absolute;
-            top: -45px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-            z-index: 6000;
-        }
-        .btn-tool {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            border: none;
-            color: white;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
+        /* ESTILO DA ASSINATURA E FERRAMENTAS */
+        .sig-container { position: absolute; width: 150px; border: 2px dashed #1a73e8; touch-action: none; z-index: 5000; background: rgba(26, 115, 232, 0.05); }
+        .sig-tools { position: absolute; top: -40px; left: 0; display: flex; gap: 8px; z-index: 6000; }
+        .btn-tool { width: 32px; height: 32px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
-        /* ZOOM E BOTTOM BAR */
-        .zoom-controls { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 8000; }
-        .btn-zoom { width: 45px; height: 45px; border-radius: 10px; border: none; background: #fff; color: #1a73e8; font-size: 20px; font-weight: bold; }
-        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; background: #000; display: flex; align-items: center; justify-content: space-around; z-index: 9999; border-top: 1px solid #333; }
-        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; margin: 0 10px; }
-
-        /* MODAL */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: #000; display: flex; align-items: center; justify-content: space-around; z-index: 9999; border-top: 1px solid #333; }
+        .btn-action { flex: 1; height: 48px; border-radius: 24px; border: none; color: white; font-weight: bold; margin: 0 8px; font-size: 14px; }
+        
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; touch-action: none; }
-        .modal-btns { height: 90px; display: flex; padding: 15px; gap: 10px; background: #f0f0f0; }
-        .modal-btns button { flex: 1; border: none; border-radius: 12px; color: white; font-weight: bold; }
+        .modal-btns { height: 80px; display: flex; padding: 10px; gap: 10px; background: #f0f0f0; }
+        .modal-btns button { flex: 1; border: none; border-radius: 10px; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -75,7 +43,7 @@
         <input type="file" id="file-in" style="display:none" accept="application/pdf">
     </div>
 
-    <div class="container">
+    <div class="container" id="main-container">
         <div class="zoom-controls">
             <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
             <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
@@ -85,7 +53,7 @@
 
     <div class="bottom-bar">
         <button class="btn-action" style="background:#1a73e8" onclick="abrirModal()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="alert('Salvando...')">✔ SALVAR</button>
+        <button class="btn-action" style="background:#2e7d32" onclick="alert('Exportação em breve...')">✔ SALVAR</button>
     </div>
 
     <div id="sig-modal">
@@ -100,9 +68,9 @@
     <script>
         const { pdfjsLib } = globalThis;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
         let currentScale = 1.0, signaturePad, pdfDoc = null;
 
-        // MANIPULAÇÃO DE PDF
         document.getElementById('file-in').onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -111,6 +79,7 @@
                 const typedarray = new Uint8Array(this.result);
                 pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
                 renderPage(1);
+                document.getElementById('pdf-wrapper').style.display = 'block';
             };
             reader.readAsArrayBuffer(file);
         };
@@ -118,16 +87,31 @@
         async function renderPage(num) {
             const page = await pdfDoc.getPage(num);
             const canvas = document.getElementById('pdf-render');
-            const viewport = page.getViewport({scale: 2.0});
-            canvas.height = viewport.height; canvas.width = viewport.width;
-            await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise;
+            const ctx = canvas.getContext('2d');
+            
+            // AJUSTE AUTOMÁTICO: Calcula escala baseada na largura da tela do celular
+            const containerWidth = document.getElementById('main-container').clientWidth - 20;
+            const unscaledViewport = page.getViewport({scale: 1});
+            const autoScale = containerWidth / unscaledViewport.width;
+            
+            const viewport = page.getViewport({scale: autoScale * 2}); // Renderiza em 2x para nitidez
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            await page.render({canvasContext: ctx, viewport: viewport}).promise;
         }
 
-        // ASSINATURA INTERATIVA
+        function changeZoom(delta) {
+            currentScale += delta;
+            document.getElementById('pdf-wrapper').style.transform = `scale(${currentScale})`;
+        }
+
         function abrirModal() {
-            const modal = document.getElementById('sig-modal');
-            modal.style.display = 'flex';
-            if (!signaturePad) signaturePad = new SignaturePad(document.getElementById('sig-pad'));
+            document.getElementById('sig-modal').style.display = 'flex';
+            const canvas = document.getElementById('sig-pad');
+            if (!signaturePad) signaturePad = new SignaturePad(canvas);
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width; canvas.height = rect.height;
             signaturePad.clear();
         }
 
@@ -135,11 +119,29 @@
 
         function confirmarAssinatura() {
             if (signaturePad.isEmpty()) return;
-            criarAssinatura(signaturePad.toDataURL());
+            const dataUrl = signaturePad.toDataURL();
+            const wrapper = document.getElementById('pdf-wrapper');
+            const container = document.createElement('div');
+            container.className = 'sig-container';
+            container.innerHTML = `
+                <div class="sig-tools">
+                    <button class="btn-tool" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
+                    <button class="btn-tool" style="background:#1976d2" onclick="duplicar(this)">📋</button>
+                </div>
+                <img src="${dataUrl}" style="width:100%; height:100%; pointer-events:none;">
+            `;
+            container.style.top = '50px'; container.style.left = '50px';
+            wrapper.appendChild(container);
+            initInteract(container);
             fecharModal();
         }
 
-        function criarAssinatura(src) {
+        function duplicar(btn) {
+            const src = btn.parentElement.parentElement.querySelector('img').src;
+            confirmarAssinaturaComSrc(src);
+        }
+
+        function confirmarAssinaturaComSrc(src) {
             const wrapper = document.getElementById('pdf-wrapper');
             const container = document.createElement('div');
             container.className = 'sig-container';
@@ -150,47 +152,23 @@
                 </div>
                 <img src="${src}" style="width:100%; height:100%; pointer-events:none;">
             `;
-            container.style.top = '100px'; container.style.left = '100px';
+            container.style.top = '100px'; container.style.left = '80px';
             wrapper.appendChild(container);
             initInteract(container);
-        }
-
-        function duplicar(btn) {
-            const src = btn.parentElement.parentElement.querySelector('img').src;
-            criarAssinatura(src);
         }
 
         function initInteract(el) {
             let x = 0, y = 0, angle = 0;
             interact(el)
-                .draggable({
-                    listeners: { move(event) {
-                        x += event.dx; y += event.dy;
-                        event.target.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
-                    }}
+                .draggable({ listeners: { move(e) { x += e.dx; y += e.dy; e.target.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`; } } })
+                .resizable({ edges: { left: true, right: true, bottom: true, top: true },
+                    listeners: { move(e) {
+                        let { width, height } = e.rect;
+                        x += e.deltaRect.left; y += e.deltaRect.top;
+                        Object.assign(e.target.style, { width: `${width}px`, height: `${height}px`, transform: `translate(${x}px, ${y}px) rotate(${angle}deg)` });
+                    } }
                 })
-                .resizable({
-                    edges: { left: true, right: true, bottom: true, top: true },
-                    listeners: { move(event) {
-                        let { width, height } = event.rect;
-                        x += event.deltaRect.left; y += event.deltaRect.top;
-                        Object.assign(event.target.style, {
-                            width: `${width}px`, height: `${height}px`,
-                            transform: `translate(${x}px, ${y}px) rotate(${angle}deg)`
-                        });
-                    }}
-                })
-                .gesturable({
-                    listeners: { move(event) {
-                        angle += event.da;
-                        event.target.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
-                    }}
-                });
-        }
-
-        function changeZoom(delta) {
-            currentScale += delta;
-            document.getElementById('pdf-wrapper').style.transform = `scale(${currentScale})`;
+                .gesturable({ listeners: { move(e) { angle += e.da; e.target.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`; } } });
         }
     </script>
 </body>
