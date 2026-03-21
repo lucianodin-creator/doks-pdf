@@ -1,9 +1,6 @@
 const { PDFDocument } = PDFLib;
 let pdfDoc, currentCanvas, ctx, currentPageNum = 1, totalPages = 0, pdfScale = 1.0;
-const wrapper = document.getElementById('pdf-wrapper');
-const sigModal = document.getElementById('sig-modal');
-const sigCanvas = document.getElementById('sig-pad');
-let sigPad;
+const dpr = window.devicePixelRatio || 1;
 
 currentCanvas = document.getElementById('pdf-render');
 ctx = currentCanvas.getContext('2d');
@@ -18,81 +15,78 @@ async function renderPage(num) {
     currentCanvas.height = viewport.height;
     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
     document.getElementById('page-num').textContent = num;
-    document.getElementById('page-count').textContent = totalPages;
 }
 
+// FUNÇÃO DE SALVAR (O Check Verde)
+async function salvarPDF() {
+    if (!pdfDoc) return alert("Carregue um PDF!");
+    const boxes = document.querySelectorAll('.sig-box');
+    if (boxes.length === 0) return alert("Nenhuma assinatura!");
+
+    const pages = pdfDoc.getPages();
+    const page = pages[currentPageNum - 1];
+    const { width, height } = page.getSize();
+    const canvasRect = currentCanvas.getBoundingClientRect();
+
+    for (const box of boxes) {
+        const imgData = box.querySelector('img').src;
+        const sigImg = await pdfDoc.embedPng(imgData);
+        const boxRect = box.getBoundingClientRect();
+
+        // Cálculo de conversão Pixels -> Pontos PDF
+        const x = (boxRect.left - canvasRect.left) * (width / canvasRect.width);
+        const y = height - ((boxRect.top - canvasRect.top + boxRect.height) * (height / canvasRect.height));
+
+        page.drawImage(sigImg, {
+            x: x, y: y,
+            width: boxRect.width * (width / canvasRect.width),
+            height: boxRect.height * (height / canvasRect.height),
+        });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `assinado_${Date.now()}.pdf`;
+    link.click();
+}
+
+// Vinculando botões
+document.getElementById('btn-save').onclick = salvarPDF;
 document.getElementById('file-in').onchange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-        const arrayBuffer = await file.arrayBuffer();
-        pdfDoc = await PDFDocument.load(arrayBuffer);
+        pdfDoc = await PDFDocument.load(await file.arrayBuffer());
         totalPages = pdfDoc.getPageCount();
-        currentPageNum = 1; renderPage(1);
+        renderPage(1);
     }
 };
 
-window.adjustZoom = (amt) => { pdfScale = Math.max(0.3, Math.min(3.0, pdfScale + amt)); renderPage(currentPageNum); };
-window.changePage = (off) => { 
-    const n = currentPageNum + off; 
-    if (n >= 1 && n <= totalPages) { currentPageNum = n; renderPage(n); } 
-};
-
-// AJUSTE DE DPR (Device Pixel Ratio) - Estratégia 3
-function resizeSigCanvas() {
-    const ratio = window.devicePixelRatio || 1;
-    const rect = sigCanvas.getBoundingClientRect();
-    sigCanvas.width = rect.width * ratio;
-    sigCanvas.height = rect.height * ratio;
-    sigCanvas.getContext("2d").scale(ratio, ratio);
-    if(sigPad) sigPad.clear();
-}
-
+// Funções de Assinatura
 window.openSigPad = () => {
-    sigModal.style.display = 'flex';
-    if (!sigPad) {
-        sigPad = new SignaturePad(sigCanvas, { minWidth: 1.2, maxWidth: 4.0, penColor: 'black' });
-    }
-    setTimeout(resizeSigCanvas, 200);
+    document.getElementById('sig-modal').style.display = 'flex';
+    const canvas = document.getElementById('sig-pad');
+    if (!window.sigPad) window.sigPad = new SignaturePad(canvas);
+    setTimeout(() => {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+        window.sigPad.clear();
+    }, 200);
 };
 
-document.getElementById('btn-clear').onclick = () => sigPad.clear();
-window.closeSigPad = () => sigModal.style.display = 'none';
 window.confirmSig = () => {
-    if (sigPad && !sigPad.isEmpty()) {
-        createSigBox(sigPad.toDataURL());
-        window.closeSigPad();
+    if (window.sigPad && !window.sigPad.isEmpty()) {
+        const box = document.createElement('div');
+        box.className = 'sig-box';
+        box.style.cssText = 'width:150px; position:absolute; top:100px; left:50px; z-index:100;';
+        const img = document.createElement('img');
+        img.src = window.sigPad.toDataURL();
+        img.style.width = '100%';
+        box.appendChild(img);
+        document.getElementById('pdf-wrapper').appendChild(box);
+        document.getElementById('sig-modal').style.display = 'none';
     }
 };
-
-function createSigBox(data) {
-    const box = document.createElement('div');
-    box.className = 'sig-box';
-    box.style.cssText = 'top:100px;left:50px;width:180px;height:90px;position:absolute;z-index:100;';
-    const del = document.createElement('button'); del.className = 'btn-del-box'; del.innerHTML = '🗑️';
-    del.onclick = (e) => { e.stopPropagation(); box.remove(); };
-    const rot = document.createElement('button'); rot.className = 'btn-rot-box'; rot.innerHTML = '🔄';
-    let r = 0;
-    rot.onclick = (e) => { e.stopPropagation(); r += 90; img.style.transform = `rotate(${r}deg)`; };
-    const res = document.createElement('div'); res.className = 'resizer';
-    const img = document.createElement('img');
-    img.src = data; img.style.cssText = 'width:100%;height:100%;object-fit:contain;pointer-events:none;';
-    box.append(del, rot, res, img);
-    wrapper.appendChild(box);
-    addInteraction(box, res);
-}
-
-function addInteraction(el, res) {
-    let m = false, r = false, sx, sy, sw, sh, sl, st;
-    el.ontouchstart = (e) => {
-        const t = e.touches[0];
-        if (e.target === res) r = true; else if (e.target.tagName === 'BUTTON') return; else m = true;
-        sx = t.clientX; sy = t.clientY; sw = el.offsetWidth; sh = el.offsetHeight; sl = el.offsetLeft; st = el.offsetTop;
-    };
-    document.ontouchmove = (e) => {
-        if (!m && !r) return;
-        const t = e.touches[0];
-        if (m) { el.style.left = (sl + (t.clientX - sx)) + 'px'; el.style.top = (st + (t.clientY - sy)) + 'px'; }
-        else if (r) { el.style.width = (sw + (t.clientX - sx)) + 'px'; el.style.height = (sh + (t.clientY - sy)) + 'px'; }
-    };
-    document.ontouchend = () => { m = r = false; };
-}

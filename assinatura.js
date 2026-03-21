@@ -1,18 +1,3 @@
-/* FIX: Barra de Ferramentas (Dica 1) */
-.bottom-bar { 
-    position: fixed !important; 
-    bottom: 0 !important; 
-    left: 0; 
-    width: 100%; 
-    height: 75px; 
-    background: #000; 
-    z-index: 9999; 
-    padding-bottom: env(safe-area-inset-bottom);
-    display: flex;
-    align-items: center;
-    border-top: 1px solid #333;
-}
-.container { padding-bottom: 85px; } /* Espaço para a barra não cobrir o PDF */
 // ALERTA: Ajuste de DPI para evitar traço gigante (Dica 2)
 function ajustarCanvasDPI(canvas) {
     const dpr = window.devicePixelRatio || 1;
