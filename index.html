@@ -14,26 +14,34 @@
         .header { height: 50px; background: #1a73e8; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
         .btn-open { background: #fff; color: #1a73e8; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; }
 
-        .container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; position: relative; }
-        #pdf-wrapper { position: relative; background: #fff; margin: 20px 0; transform-origin: top center; }
+        .container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #222; position: relative; padding: 20px; }
+        #pdf-wrapper { position: relative; background: #fff; transform-origin: top center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         
         .zoom-controls { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; z-index: 5000; }
-        .btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: none; background: #fff; color: #1a73e8; font-size: 24px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: none; background: #fff; color: #1a73e8; font-size: 24px; font-weight: bold; }
 
-        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: calc(80px + env(safe-area-inset-bottom)); background: #000; display: flex; align-items: center; justify-content: space-around; z-index: 9999; padding: 10px; border-top: 1px solid #333; }
-        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 16px; margin: 0 8px; }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; background: #000; display: flex; align-items: center; justify-content: space-around; z-index: 9999; border-top: 1px solid #333; }
+        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; margin: 0 10px; }
 
-        /* MODAL DE ASSINATURA */
+        /* MODAL */
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
-        #sig-pad { flex: 1; width: 100%; touch-action: none; background: #fff; }
+        #sig-pad { flex: 1; width: 100%; touch-action: none; }
         .modal-btns { height: 90px; display: flex; padding: 15px; gap: 10px; background: #f0f0f0; }
         .modal-btns button { flex: 1; border: none; border-radius: 12px; color: white; font-weight: bold; }
 
-        /* CORREÇÃO PARA CELULAR VIRADO (PAISAGEM) */
+        /* A ASSINATURA NA FOLHA */
+        .sig-element { 
+            position: absolute; 
+            width: 150px; 
+            cursor: move; 
+            border: 2px dashed rgba(26,115,232,0.5);
+            touch-action: none;
+            z-index: 1000;
+        }
+
         @media (orientation: landscape) {
             #sig-modal { flex-direction: row !important; }
-            .modal-btns { width: 120px; height: 100% !important; flex-direction: column !important; justify-content: center; }
-            .modal-btns button { width: 100%; height: 50px !important; margin: 5px 0; font-size: 14px; }
+            .modal-btns { width: 120px; height: 100% !important; flex-direction: column !important; }
         }
     </style>
 </head>
@@ -47,17 +55,17 @@
 
     <div class="container">
         <div class="zoom-controls">
-            <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
-            <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
+            <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
+            <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
         </div>
         <div id="pdf-wrapper">
             <canvas id="pdf-render"></canvas>
-        </div>
+            </div>
     </div>
 
     <div class="bottom-bar">
         <button class="btn-action" style="background:#1a73e8" onclick="abrirModal()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="alert('Salvando...')">✔ SALVAR</button>
+        <button class="btn-action" style="background:#2e7d32" onclick="salvarTudo()">✔ SALVAR</button>
     </div>
 
     <div id="sig-modal">
@@ -90,15 +98,31 @@
         }
 
         function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
-        
+
         function confirmarAssinatura() {
-            if (signaturePad.isEmpty()) return alert("Por favor, assine primeiro.");
-            alert("Assinatura capturada!");
+            if (signaturePad.isEmpty()) return;
+
+            const dataUrl = signaturePad.toDataURL();
+            const wrapper = document.getElementById('pdf-wrapper');
+            
+            // Criando o elemento da assinatura no PDF
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.className = 'sig-element';
+            img.id = 'minha-assinatura';
+            img.style.top = '100px';
+            img.style.left = '100px';
+
+            // Remove assinatura anterior se existir
+            const oldSig = document.getElementById('minha-assinatura');
+            if (oldSig) oldSig.remove();
+
+            wrapper.appendChild(img);
             fecharModal();
         }
 
         function changeZoom(delta) {
-            currentScale = Math.min(Math.max(0.5, currentScale + delta), 3.0);
+            currentScale += delta;
             document.getElementById('pdf-wrapper').style.transform = `scale(${currentScale})`;
         }
 
@@ -115,6 +139,8 @@
                 await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise;
             }
         };
+
+        function salvarTudo() { alert("Pronto para o commit 305!"); }
     </script>
 </body>
 </html>
