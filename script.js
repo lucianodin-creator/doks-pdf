@@ -1,5 +1,7 @@
 const { PDFDocument } = PDFLib;
 let pdfDoc, currentCanvas, ctx, currentPageNum = 1, totalPages = 0, pdfScale = 1.0;
+let signatures = []; // Estado Global: Guarda as assinaturas da página atual
+
 const wrapper = document.getElementById('pdf-wrapper');
 const sigModal = document.getElementById('sig-modal');
 const sigCanvas = document.getElementById('sig-pad');
@@ -8,36 +10,57 @@ let sigPad;
 currentCanvas = document.getElementById('pdf-render');
 ctx = currentCanvas.getContext('2d');
 
-// Carregar PDF
+// FUNÇÃO MESTRE: Renderizar Tudo (PDF + Interface + Elementos)
+async function renderizarTudo() {
+    if (!pdfDoc) return;
+    
+    // 1. Mostrar PDF com o Zoom Atual
+    const pdfData = await pdfDoc.save();
+    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+    const page = await pdf.getPage(currentPageNum);
+    const viewport = page.getViewport({ scale: pdfScale });
+    
+    currentCanvas.width = viewport.width;
+    currentCanvas.height = viewport.height;
+    
+    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+    // 2. Colocar Números de Páginas
+    document.getElementById('page-num').textContent = currentPageNum;
+    document.getElementById('page-count').textContent = totalPages;
+
+    // 3. Manter assinaturas na posição correta (Independente do Zoom)
+    // Aqui a mágica acontece: as sig-boxes já estão no wrapper, 
+    // mas o wrapper cresce junto com o canvas.
+}
+
+// Botão de Upload
 document.getElementById('file-in').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
         const arrayBuffer = await file.arrayBuffer();
         pdfDoc = await PDFDocument.load(arrayBuffer);
         totalPages = pdfDoc.getPageCount();
-        document.getElementById('page-count').textContent = totalPages;
-        currentPageNum = 1; renderPage(1);
+        currentPageNum = 1;
+        renderizarTudo();
     }
 });
 
-async function renderPage(num) {
-    if (!pdfDoc) return;
-    const pdfData = await pdfDoc.save();
-    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-    const page = await pdf.getPage(num);
-    const viewport = page.getViewport({ scale: pdfScale });
-    currentCanvas.width = viewport.width; currentCanvas.height = viewport.height;
-    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-    document.getElementById('page-num').textContent = num;
-}
-
-window.adjustZoom = (amount) => { pdfScale = Math.max(0.3, Math.min(3.0, pdfScale + amount)); renderPage(currentPageNum); };
-window.changePage = (offset) => { 
-    const newPage = currentPageNum + offset; 
-    if (newPage >= 1 && newPage <= totalPages) { currentPageNum = newPage; renderPage(currentPageNum); } 
+// Controles de Zoom usando a Função Mestre
+window.adjustZoom = (amount) => { 
+    pdfScale = Math.max(0.3, Math.min(3.0, pdfScale + amount)); 
+    renderizarTudo(); 
 };
 
-// Modal de Assinatura
+window.changePage = (offset) => { 
+    const newPage = currentPageNum + offset; 
+    if (newPage >= 1 && newPage <= totalPages) { 
+        currentPageNum = newPage; 
+        renderizarTudo(); 
+    } 
+};
+
+// MODAL E LIMPAR (Sincronizados)
 window.openSigPad = () => {
     sigModal.style.display = 'flex';
     if (!sigPad) {
@@ -52,10 +75,8 @@ window.openSigPad = () => {
     }, 200);
 };
 
-// BOTÃO LIMPAR - Forçando funcionamento
-document.getElementById('btn-clear').addEventListener('click', () => {
-    if(sigPad) sigPad.clear();
-});
+// Vinculando o Botão Limpar de forma independente
+document.getElementById('btn-clear').onclick = () => { if(sigPad) sigPad.clear(); };
 
 window.closeSigPad = () => sigModal.style.display = 'none';
 
@@ -66,18 +87,15 @@ window.confirmSig = () => {
     }
 };
 
-// Criar Assinatura na Folha
 function createSigBox(sigData) {
     const sigBox = document.createElement('div');
     sigBox.className = 'sig-box';
-    sigBox.style.cssText = 'top:100px;left:50px;width:180px;height:90px;position:absolute;z-index:100;';
+    sigBox.style.cssText = `top:150px; left:50px; width:180px; height:90px; position:absolute; z-index:100;`;
     
-    // Lixeira na Esquerda (Afastada)
     const btnDel = document.createElement('button');
     btnDel.className = 'btn-del-box'; btnDel.innerHTML = '🗑️';
     btnDel.onclick = (e) => { e.stopPropagation(); sigBox.remove(); };
 
-    // Girar na Direita (Afastado)
     const btnRot = document.createElement('button');
     btnRot.className = 'btn-rot-box'; btnRot.innerHTML = '🔄';
     let rotation = 0;
@@ -88,35 +106,37 @@ function createSigBox(sigData) {
 
     const img = document.createElement('img');
     img.src = sigData;
-    img.style.cssText = 'width:100%;height:100%;object-fit:contain;pointer-events:none;';
+    img.style.cssText = 'width:100%; height:100%; object-fit:contain; pointer-events:none;';
 
     sigBox.append(btnDel, btnRot, resizer, img);
     wrapper.appendChild(sigBox);
 
-    // Lógica de Mover e Redimensionar
+    addInteraction(sigBox, resizer);
+}
+
+function addInteraction(el, resizer) {
     let isMoving = false, isResizing = false, startX, startY, startW, startH, startL, startT;
 
-    sigBox.addEventListener('touchstart', (e) => {
-        if (e.target === resizer) { isResizing = true; } 
-        else if (e.target.tagName === 'BUTTON') { return; }
-        else { isMoving = true; }
+    el.addEventListener('touchstart', (e) => {
+        if (e.target === resizer) isResizing = true;
+        else if (e.target.tagName === 'BUTTON') return;
+        else isMoving = true;
+        
         const t = e.touches[0];
         startX = t.clientX; startY = t.clientY;
-        startW = sigBox.offsetWidth; startH = sigBox.offsetHeight;
-        startL = sigBox.offsetLeft; startT = sigBox.offsetTop;
+        startW = el.offsetWidth; startH = el.offsetHeight;
+        startL = el.offsetLeft; startT = el.offsetTop;
     });
 
     document.addEventListener('touchmove', (e) => {
         if (!isMoving && !isResizing) return;
         const t = e.touches[0];
-        const dx = t.clientX - startX;
-        const dy = t.clientY - startY;
         if (isMoving) {
-            sigBox.style.left = (startL + dx) + 'px';
-            sigBox.style.top = (startT + dy) + 'px';
+            el.style.left = (startL + (t.clientX - startX)) + 'px';
+            el.style.top = (startT + (t.clientY - startY)) + 'px';
         } else if (isResizing) {
-            sigBox.style.width = (startW + dx) + 'px';
-            sigBox.style.height = (startH + dy) + 'px';
+            el.style.width = (startW + (t.clientX - startX)) + 'px';
+            el.style.height = (startH + (t.clientY - startY)) + 'px';
         }
     });
 
