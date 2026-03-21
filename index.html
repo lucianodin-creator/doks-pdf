@@ -8,6 +8,36 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <style>
+/* CSS de Emergência para o Modal */
+#sig-modal { 
+    position: fixed !important; 
+    inset: 0 !important; 
+    background: #ffffff !important; 
+    z-index: 30000 !important; /* Acima de tudo */
+    display: none; 
+    flex-direction: column; 
+}
+#sig-pad { 
+    flex: 1; 
+    width: 100%; 
+    touch-action: none; 
+    background: #fff;
+}
+.modal-btns { 
+    height: 100px; 
+    display: flex; 
+    padding: 20px; 
+    gap: 15px; 
+    background: #eeeeee; 
+}
+.modal-btns button { 
+    flex: 1; 
+    border: none; 
+    border-radius: 12px; 
+    color: white; 
+    font-weight: bold; 
+    font-size: 16px; 
+}
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
 
@@ -72,6 +102,53 @@
     <div id="sig-modal">...</div>
 
     <script>
+// Variável global única para evitar conflitos
+window.sigPad = null;
+
+function openSigPad() {
+    console.log("Tentando abrir o modal...");
+    const modal = document.getElementById('sig-modal');
+    const canvas = document.getElementById('sig-pad');
+    
+    if (!modal || !canvas) {
+        console.error("Erro: Elementos do modal não encontrados!");
+        return;
+    }
+
+    // Força a exibição antes de qualquer lógica
+    modal.style.setProperty('display', 'flex', 'important');
+
+    // Inicializa o SignaturePad se não existir
+    if (!window.sigPad) {
+        window.sigPad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+    }
+
+    // Vacina de DPI e Redimensionamento
+    setTimeout(() => {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+        window.sigPad.clear(); 
+    }, 300);
+}
+
+function closeSigPad() {
+    document.getElementById('sig-modal').style.display = 'none';
+}
+
+// Vincula o clique via código para garantir que o HTML não falhe
+document.addEventListener('DOMContentLoaded', () => {
+    const btnAssinar = document.querySelector('button[onclick="openSigPad()"]');
+    if (btnAssinar) {
+        btnAssinar.removeAttribute('onclick');
+        btnAssinar.addEventListener('click', openSigPad);
+    }
+});
         let currentScale = 1.0;
         const wrapper = document.getElementById('pdf-wrapper');
 
