@@ -2,31 +2,37 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <title>DOKS PDF</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #000; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .navbar { background-color: #2b52d4; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .logo { font-weight: bold; font-size: 18px; }
+        
+        /* Navbar Superior */
+        .navbar { background-color: #2b52d4; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; height: 50px; }
+        .logo { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 5px; }
         .nav-buttons { display: flex; gap: 8px; }
         .btn-nav { background-color: #fff; color: #2b52d4; padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: bold; cursor: pointer; border: none; }
         .btn-history { background-color: #f39c12; color: white; }
         
-        #viewer-container { flex: 1; width: 100%; position: relative; background: #000; overflow: auto; display: flex; justify-content: center; }
-        #pdf-viewer { width: 100%; border: none; background: #000; transition: transform 0.2s ease; transform-origin: top center; }
+        /* Área do PDF */
+        #viewer-container { flex: 1; width: 100%; position: relative; background: #000; overflow: auto; display: flex; justify-content: center; align-items: flex-start; }
+        #pdf-viewer { width: 100%; height: 100%; border: none; background: #000; transition: transform 0.2s ease; transform-origin: top center; }
         
-        /* Botões de Zoom Laranja Flutuantes */
-        .zoom-controls { position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 20; }
-        .btn-zoom { background-color: #f39c12; color: white; width: 45px; height: 45px; border-radius: 8px; border: none; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        /* Botões de Zoom Laranja */
+        .zoom-controls { position: fixed; right: 20px; top: 80px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
+        .btn-zoom { background-color: #f39c12; color: white; width: 50px; height: 50px; border-radius: 10px; border: none; font-size: 28px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; }
         
-        .footer { background: #000; padding: 15px; display: flex; gap: 10px; justify-content: center; border-top: 1px solid #222; z-index: 10; }
-        .btn-footer { flex: 1; padding: 12px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        /* Footer com Botões de Ação */
+        .footer { background: #000; padding: 15px; display: flex; gap: 10px; justify-content: center; border-top: 1px solid #222; z-index: 100; height: 70px; box-sizing: border-box; }
+        .btn-footer { flex: 1; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; height: 100%; }
         .btn-assign { background-color: #3b66f5; }
         .btn-save { background-color: #2d8c3c; }
+        
         input[type="file"] { display: none; }
         
-        #history-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333; width: 80%; max-width: 300px; z-index: 100; }
+        /* Modal do Histórico */
+        #history-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333; width: 85%; max-width: 320px; z-index: 300; }
     </style>
 </head>
 <body>
@@ -36,17 +42,18 @@
         <div class="nav-buttons">
             <button class="btn-nav btn-history" onclick="toggleHistory()">🕒 RECENTES</button>
             <label class="btn-nav">
-                📂 ABRIR PDF
+                📂 ABRIR
                 <input type="file" id="pdfInput" accept="application/pdf">
             </label>
         </div>
     </div>
 
+    <div class="zoom-controls">
+        <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
+        <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
+    </div>
+
     <div id="viewer-container">
-        <div class="zoom-controls">
-            <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
-            <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
-        </div>
         <iframe id="pdf-viewer"></iframe>
     </div>
 
@@ -56,9 +63,9 @@
     </div>
 
     <div id="history-modal">
-        <h3 style="margin-top:0">Arquivos Recentes</h3>
-        <div id="history-list" style="color:#ccc"></div>
-        <button style="margin-top: 15px; background: #cc0000; color: white; width: 100%; padding: 8px; border: none; border-radius: 5px;" onclick="toggleHistory()">FECHAR</button>
+        <h3 style="margin-top:0; color: #f39c12;">Documentos Recentes</h3>
+        <div id="history-list" style="color:#eee; max-height: 200px; overflow-y: auto;"></div>
+        <button style="margin-top: 20px; background: #cc0000; color: white; width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: bold;" onclick="toggleHistory()">FECHAR</button>
     </div>
 
     <script>
@@ -70,16 +77,29 @@
             const file = e.target.files[0];
             if (file) {
                 const fileURL = URL.createObjectURL(file);
-                pdfViewer.src = fileURL;
+                // Adicionamos parâmetros para tentar forçar o modo de visualização correto
+                pdfViewer.src = fileURL + "#toolbar=0&navpanes=0&scrollbar=1";
                 saveToHistory(file.name);
+                currentZoom = 1.0;
+                pdfViewer.style.transform = `scale(1)`;
             }
         });
 
         function changeZoom(delta) {
             currentZoom += delta;
             if (currentZoom < 0.5) currentZoom = 0.5;
+            if (currentZoom > 3.0) currentZoom = 3.0;
+            
             pdfViewer.style.transform = `scale(${currentZoom})`;
-            pdfViewer.style.height = (100 / currentZoom) + "%";
+            
+            // Ajuste dinâmico para evitar que o PDF "suma" ao diminuir
+            if (currentZoom < 1) {
+                pdfViewer.style.width = (100 / currentZoom) + "%";
+                pdfViewer.style.height = (100 / currentZoom) + "%";
+            } else {
+                pdfViewer.style.width = "100%";
+                pdfViewer.style.height = "100%";
+            }
         }
 
         function saveToHistory(name) {
@@ -94,9 +114,9 @@
             const modal = document.getElementById('history-modal');
             const list = document.getElementById('history-list');
             const history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
-            list.innerHTML = history.length ? '' : 'Nenhum histórico.';
+            list.innerHTML = history.length ? '' : 'Nenhum documento na lista.';
             history.forEach(item => {
-                list.innerHTML += `<div style="padding:10px 0; border-bottom:1px solid #222">📄 ${item}</div>`;
+                list.innerHTML += `<div style="padding:12px 0; border-bottom:1px solid #222; font-size: 14px;">📄 ${item}</div>`;
             });
             modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
         }
