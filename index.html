@@ -3,52 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>DOKS PDF</title>
+    <title>DOKS PDF PRO</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
         :root { --vh: 100vh; }
         body { font-family: sans-serif; background: #000; color: #fff; margin: 0; display: flex; flex-direction: column; height: var(--vh); width: 100vw; overflow: hidden; position: fixed; }
-        .navbar { background: #2b52d4; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; height: 55px; flex-shrink: 0; }
+        .navbar { background: #2b52d4; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; height: 55px; flex-shrink: 0; z-index: 100; }
         .btn-nav { border: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; font-weight: bold; background: #fff; color: #2b52d4; }
-        #viewer-container { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; display: flex; flex-direction: column; align-items: center; position: relative; }
-        canvas.pdf-page { border-bottom: 10px solid #000; max-width: 100%; height: auto !important; margin-top: 5px; }
-        .zoom-controls { position: fixed; right: 15px; top: 75px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
-        .btn-zoom { background: #f39c12; color: #fff; width: 48px; height: 48px; border-radius: 12px; border: none; font-size: 24px; font-weight: bold; }
-        .footer { background: #000; padding: 10px; display: flex; gap: 10px; height: 75px; border-top: 1px solid #333; flex-shrink: 0; }
+        #viewer-wrapper { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; position: relative; display: flex; flex-direction: column; align-items: center; }
+        .page-container { position: relative; margin-bottom: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        canvas.pdf-page { display: block; }
+        .interaction-layer { position: absolute; top: 0; left: 0; z-index: 10; }
+        .footer { background: #000; padding: 10px; display: flex; gap: 10px; height: 75px; border-top: 1px solid #333; flex-shrink: 0; z-index: 100; }
         .btn-footer { flex: 1; border-radius: 12px; border: none; color: #fff; font-weight: bold; font-size: 14px; text-transform: uppercase; }
-        #signature-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: var(--vh); background: #fff; z-index: 500; flex-direction: column; }
-        #signature-canvas { width: 100%; height: 100%; touch-action: none; background: #fff; }
+        #sig-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: var(--vh); background: #fff; z-index: 500; flex-direction: column; }
         .pad-btns { display: flex; gap: 10px; padding: 15px; background: #eee; }
         .btn-p { flex: 1; padding: 15px; border-radius: 8px; border: none; color: #fff; font-weight: bold; }
-        /* Estilo da Prévia Visual */
-        .sig-preview { position: absolute; pointer-events: none; border: 1px dashed #3b66f5; background: rgba(59, 102, 245, 0.1); }
     </style>
 </head>
 <body>
     <div class="navbar">
         <div style="font-weight:bold;">DOKS PDF</div>
         <div style="display:flex; gap:5px;">
-            <button class="btn-nav" style="background:#f39c12; color:#fff;">RECENTE</button>
             <label class="btn-nav">ABRIR <input type="file" id="pdfIn" accept="application/pdf" style="display:none"></label>
+            <button class="btn-nav" style="background:#e74c3c; color:white;" onclick="cloneSig()">CLONAR</button>
         </div>
     </div>
-    <div class="zoom-controls">
-        <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
-        <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
-    </div>
-    <div id="viewer-container"></div>
+
+    <div id="viewer-wrapper"></div>
+
     <div class="footer">
         <button class="btn-footer" style="background:#3b66f5;" onclick="openP()">ASSINAR</button>
         <button class="btn-footer" style="background:#2d8c3c;" onclick="saveP()">SALVAR PDF</button>
     </div>
-    <div id="signature-modal">
-        <div style="background:#2b52d4; color:#fff; padding:10px; text-align:center; font-size:12px;">ASSINE ABAIXO</div>
-        <div style="flex:1; position:relative;"><canvas id="signature-canvas"></canvas></div>
+
+    <div id="sig-modal">
+        <div style="background:#2b52d4; color:#fff; padding:10px; text-align:center;">ASSINE ABAIXO</div>
+        <div style="flex:1;"><canvas id="sig-canvas" style="width:100%; height:100%;"></canvas></div>
         <div class="pad-btns">
             <button class="btn-p" style="background:#546e7a;" onclick="closeP()">Sair</button>
-            <button class="btn-p" style="background:#ffa000;" onclick="signaturePad.clear()">Limpar</button>
+            <button class="btn-p" style="background:#ffa000;" onclick="pad.clear()">Limpar</button>
             <button class="btn-p" style="background:#388e3c;" onclick="confirmP()">Confirmar</button>
         </div>
     </div>
@@ -59,95 +56,118 @@
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         
-        let pdfDataBackup = null;
+        let pdfRaw = null;
         let pdfDocJS = null;
-        let scale = 1.0;
-        const canvasPad = document.getElementById('signature-canvas');
-        const signaturePad = new SignaturePad(canvasPad, { backgroundColor: 'rgba(255,255,255,0)' });
+        let fabricCanvas = null;
+        const sCanvas = document.getElementById('sig-canvas');
+        const pad = new SignaturePad(sCanvas, { backgroundColor: 'rgba(255,255,255,0)' });
 
-        function openP() { document.getElementById('signature-modal').style.display = 'flex'; resPad(); }
-        function closeP() { document.getElementById('signature-modal').style.display = 'none'; }
+        function openP() { document.getElementById('sig-modal').style.display = 'flex'; resPad(); }
+        function closeP() { document.getElementById('sig-modal').style.display = 'none'; }
         
-        function confirmP() { 
-            if(signaturePad.isEmpty()) return alert("Assine primeiro");
-            showPreviewOnCanvas(); // MOSTRA A ASSINATURA NA TELA
-            closeP(); 
-        }
-
         function resPad() {
-            const r = Math.max(window.devicePixelRatio || 1, 1);
-            canvasPad.width = canvasPad.offsetWidth * r;
-            canvasPad.height = canvasPad.offsetHeight * r;
-            canvasPad.getContext("2d").setTransform(r, 0, 0, r, 0, 0);
-            signaturePad.clear();
+            const r = window.devicePixelRatio || 1;
+            sCanvas.width = sCanvas.offsetWidth * r;
+            sCanvas.height = sCanvas.offsetHeight * r;
+            sCanvas.getContext("2d").scale(r, r);
+            pad.clear();
         }
 
         document.getElementById('pdfIn').onchange = async (e) => {
             const f = e.target.files[0];
             if (f) {
-                const buffer = await f.arrayBuffer();
-                pdfDataBackup = buffer.slice(0);
-                pdfDocJS = await pdfjsLib.getDocument({data: new Uint8Array(buffer)}).promise;
+                pdfRaw = await f.arrayBuffer();
+                pdfDocJS = await pdfjsLib.getDocument({data: new Uint8Array(pdfRaw.slice(0))}).promise;
                 render();
             }
         };
 
         async function render() {
-            if (!pdfDocJS) return;
-            const container = document.getElementById('viewer-container');
-            container.innerHTML = '';
+            const wrapper = document.getElementById('viewer-wrapper');
+            wrapper.innerHTML = '';
             for (let i = 1; i <= pdfDocJS.numPages; i++) {
-                const p = await pdfDocJS.getPage(i);
-                const vp = p.getViewport({ scale: scale });
-                const c = document.createElement('canvas');
-                c.className = 'pdf-page';
-                c.id = 'page-' + i;
-                c.width = vp.width; c.height = vp.height;
-                container.appendChild(c);
-                await p.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+                const page = await pdfDocJS.getPage(i);
+                const vp = page.getViewport({ scale: 1.2 });
+                
+                const container = document.createElement('div');
+                container.className = 'page-container';
+                container.style.width = vp.width + 'px';
+                container.style.height = vp.height + 'px';
+                
+                const canvas = document.createElement('canvas');
+                canvas.className = 'pdf-page';
+                canvas.width = vp.width; canvas.height = vp.height;
+                container.appendChild(canvas);
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+
+                // Camada de interação Fabric.js apenas na última página (ou todas se quiser)
+                if (i === pdfDocJS.numPages) {
+                    const fCanvasEl = document.createElement('canvas');
+                    fCanvasEl.className = 'interaction-layer';
+                    container.appendChild(fCanvasEl);
+                    fabricCanvas = new fabric.Canvas(fCanvasEl, { width: vp.width, height: vp.height });
+                }
+                wrapper.appendChild(container);
             }
         }
 
-        function showPreviewOnCanvas() {
-            const lastCanvas = document.querySelector('.pdf-page:last-child');
-            if (!lastCanvas) return;
-            const ctx = lastCanvas.getContext('2d');
-            const img = new Image();
-            img.onload = function() {
-                // Desenha a prévia no canvas de visualização (escala proporcional ao zoom)
-                const w = 200 * scale;
-                const h = 80 * scale;
-                ctx.drawImage(img, (lastCanvas.width / 2) - (w / 2), lastCanvas.height - h - (50 * scale), w, h);
-            };
-            img.src = signaturePad.toDataURL();
+        function confirmP() {
+            if(pad.isEmpty()) return;
+            const dataUrl = pad.toDataURL();
+            fabric.Image.fromURL(dataUrl, (img) => {
+                img.set({ left: 100, top: 100, scaleX: 0.5, scaleY: 0.5 });
+                fabricCanvas.add(img);
+                fabricCanvas.setActiveObject(img);
+            });
+            closeP();
         }
 
-        function changeZoom(d) { scale = Math.max(0.4, scale + d); render(); }
+        function cloneSig() {
+            const active = fabricCanvas.getActiveObject();
+            if (active) {
+                active.clone((cloned) => {
+                    cloned.set({ left: active.left + 20, top: active.top + 20 });
+                    fabricCanvas.add(cloned);
+                });
+            }
+        }
 
         async function saveP() {
-            if (!pdfDataBackup || signaturePad.isEmpty()) return alert("Abra o PDF e assine.");
+            if (!pdfRaw || !fabricCanvas) return;
             try {
                 const { PDFDocument } = PDFLib;
-                const doc = await PDFDocument.load(pdfDataBackup.slice(0));
-                const pgs = doc.getPages();
-                const last = pgs[pgs.length - 1];
-                const { width, height } = last.getSize();
-                const img = await doc.embedPng(signaturePad.toDataURL());
+                const doc = await PDFDocument.load(pdfRaw.slice(0));
+                const pages = doc.getPages();
+                const lastPage = pages[pages.length - 1];
+                const { width, height } = lastPage.getSize();
                 
-                last.drawImage(img, {
-                    x: width / 2 - 100,
-                    y: 70, // Posição no PDF final
-                    width: 200,
-                    height: 80
-                });
+                // Pegamos todos os objetos do Fabric (assinaturas)
+                const objects = fabricCanvas.getObjects('image');
+                
+                for (const obj of objects) {
+                    const imgData = obj.toDataURL();
+                    const pdfImg = await doc.embedPng(imgData);
+                    
+                    // Cálculo de escala proporcional entre a tela e o PDF real
+                    const scaleX = width / fabricCanvas.width;
+                    const scaleY = height / fabricCanvas.height;
+
+                    lastPage.drawImage(pdfImg, {
+                        x: obj.left * scaleX,
+                        y: height - (obj.top * scaleY) - (obj.height * obj.scaleY * scaleY),
+                        width: obj.width * obj.scaleX * scaleX,
+                        height: obj.height * obj.scaleY * scaleY,
+                        rotation: PDFLib.degrees(-obj.angle || 0)
+                    });
+                }
 
                 const bytes = await doc.save();
                 const b = new Blob([bytes], { type: 'application/pdf' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(b);
-                a.download = "assinado.pdf";
+                a.download = "DOKS_EDITADO.pdf";
                 a.click();
-            } catch (err) { alert("Erro ao salvar: " + err.message); }
+            } catch (err) { alert(err.message); }
         }
     </script>
 </body>
