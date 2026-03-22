@@ -94,7 +94,7 @@
             const c = document.getElementById('sig-pad');
             c.width = window.innerWidth;
             c.height = window.innerHeight - 70;
-            if (!signaturePad) signaturePad = new SignaturePad(c, { penColor: "rgb(0, 0, 0)" });
+            if (!signaturePad) signaturePad = new SignaturePad(c, { throttle: 0, minDistance: 0, velocityFilterWeight: 0.1, penColor: "rgb(0, 0, 0)" });
             signaturePad.clear();
         }
 
