@@ -5,99 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DOKS PDF</title>
     <style>
-        /* Ajuste para altura real do celular (evita sumir barra) */
         :root { --app-height: 100vh; }
-
         body { 
-            font-family: sans-serif; 
-            background-color: #000; 
-            color: white; 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            height: var(--app-height); 
-            width: 100vw;
-            overflow: hidden; 
-            position: fixed; /* Trava a tela para não "quicar" no mobile */
+            font-family: sans-serif; background-color: #000; color: white; margin: 0; 
+            display: flex; flex-direction: column; height: var(--app-height); 
+            width: 100vw; overflow: hidden; position: fixed; 
         }
         
         .navbar { 
-            background-color: #2b52d4; 
-            padding: 10px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            height: 60px; 
-            z-index: 100;
+            background-color: #2b52d4; padding: 0 15px; display: flex; 
+            justify-content: space-between; align-items: center; height: 55px; z-index: 100;
         }
 
-        /* Área do PDF com scroll independente */
-        #viewer-container { 
-            flex: 1; 
-            width: 100%; 
-            background: #000; 
-            overflow: auto; 
-            -webkit-overflow-scrolling: touch;
-            display: flex;
-            justify-content: center;
-        }
-
+        #viewer-container { flex: 1; width: 100%; background: #000; overflow: auto; display: flex; justify-content: center; }
         #pdf-viewer { width: 100%; height: 100%; border: none; transition: transform 0.2s; transform-origin: top center; }
 
-        /* Botões de Zoom Flutuantes - Tamanho otimizado para dedo */
-        .zoom-controls { position: fixed; right: 15px; top: 75px; display: flex; flex-direction: column; gap: 12px; z-index: 200; }
+        /* Zoom Laranja - Posicionado mais abaixo para evitar toques acidentais */
+        .zoom-controls { position: fixed; right: 15px; top: 150px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
         .btn-zoom { 
-            background-color: #f39c12; 
-            color: white; 
-            width: 48px; 
-            height: 48px; 
-            border-radius: 10px; 
-            border: none; 
-            font-size: 24px; 
-            font-weight: bold; 
+            background-color: #f39c12; color: white; width: 44px; height: 44px; 
+            border-radius: 8px; border: none; font-size: 22px; font-weight: bold; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
         }
         
-        /* RODAPÉ BLINDADO: Sempre visível */
+        /* Rodapé mais baixo e compacto */
         .footer { 
-            background: #000; 
-            padding: 10px 15px; 
-            display: flex; 
-            gap: 10px; 
-            height: 80px; 
-            border-top: 1px solid #222; 
-            z-index: 100;
-            box-sizing: border-box;
-            padding-bottom: env(safe-area-inset-bottom); /* Suporte para iPhones novos */
+            background: #000; padding: 8px 15px; display: flex; gap: 10px; 
+            height: 65px; border-top: 1px solid #222; z-index: 100; box-sizing: border-box;
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .btn-footer { 
-            flex: 1; 
-            border-radius: 12px; 
-            border: none; 
-            color: white; 
-            font-weight: bold; 
-            font-size: 14px; 
-            text-transform: uppercase;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 5px;
+            flex: 1; border-radius: 10px; border: none; color: white; 
+            font-weight: bold; font-size: 13px; text-transform: uppercase;
+            display: flex; align-items: center; justify-content: center; gap: 5px; height: 100%;
         }
         .btn-assign { background-color: #3b66f5; }
         .btn-save { background-color: #2d8c3c; }
 
-        #history-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; padding: 20px; border-radius: 15px; border: 1px solid #333; width: 80%; z-index: 300; }
+        input[type="file"] { display: none; }
+        .btn-nav-icon { background:#f39c12; color:white; border:none; padding:6px 10px; border-radius:5px; font-size:16px; cursor:pointer; }
+        .btn-nav-open { background:#fff; color:#2b52d4; padding:6px 12px; border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div style="font-weight:bold">📄 DOKS PDF</div>
-        <div style="display:flex; gap:5px">
-            <button class="btn-nav" onclick="toggleHistory()" style="background:#f39c12; color:white; border:none; padding:8px; border-radius:5px">🕒</button>
-            <label style="background:#fff; color:#2b52d4; padding:8px; border-radius:5px; font-size:12px; font-weight:bold">
-                📂 ABRIR <input type="file" id="pdfInput" accept="application/pdf" style="display:none">
+        <div style="font-weight:bold; font-size: 16px;">📄 DOKS PDF</div>
+        <div style="display:flex; gap:8px; align-items: center;">
+            <button class="btn-nav-icon" onclick="toggleHistory()">🕒</button>
+            <label class="btn-nav-open">
+                📂 ABRIR <input type="file" id="pdfInput" accept="application/pdf">
             </label>
         </div>
     </div>
@@ -116,11 +74,14 @@
         <button class="btn-footer btn-save">✔️ SALVAR</button>
     </div>
 
+    <div id="history-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; padding:20px; border-radius:12px; border:1px solid #333; width:80%; z-index:300;">
+        <h3 style="margin:0 0 10px 0; color:#f39c12; font-size:16px">Recentes</h3>
+        <div id="history-list" style="font-size:13px; color:#ccc"></div>
+        <button onclick="toggleHistory()" style="margin-top:15px; width:100%; padding:8px; background:#cc0000; color:white; border:none; border-radius:5px">FECHAR</button>
+    </div>
+
     <script>
-        // Script para calcular altura real e evitar o corte do Chrome
-        const appHeight = () => {
-            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-        }
+        const appHeight = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
         window.addEventListener('resize', appHeight);
         appHeight();
 
@@ -134,17 +95,32 @@
                 pdfViewer.src = URL.createObjectURL(file) + "#toolbar=0";
                 currentZoom = 1.0;
                 pdfViewer.style.transform = `scale(1)`;
+                saveToHistory(file.name);
             }
         });
 
         function changeZoom(delta) {
-            currentZoom += delta;
-            currentZoom = Math.min(Math.max(currentZoom, 0.5), 3);
+            currentZoom = Math.min(Math.max(currentZoom + delta, 0.5), 3);
             pdfViewer.style.transform = `scale(${currentZoom})`;
             pdfViewer.style.width = (currentZoom > 1) ? (100 / currentZoom) + "%" : "100%";
         }
 
-        function toggleHistory() { /* lógica do histórico */ }
+        function saveToHistory(name) {
+            let history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
+            if (!history.includes(name)) {
+                history = [name, ...history.slice(0, 4)];
+                localStorage.setItem('pdf_history', JSON.stringify(history));
+            }
+        }
+
+        function toggleHistory() {
+            const modal = document.getElementById('history-modal');
+            const list = document.getElementById('history-list');
+            const history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
+            list.innerHTML = history.length ? '' : 'Nenhum histórico.';
+            history.forEach(item => list.innerHTML += `<div style="padding:8px 0; border-bottom:1px solid #222">📄 ${item}</div>`);
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+        }
     </script>
 </body>
 </html>
