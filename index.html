@@ -72,8 +72,7 @@
             const file = e.target.files[0];
             if (file) {
                 pdfBytesOriginal = await file.arrayBuffer();
-                const loadingTask = pdfjsLib.getDocument({data: new Uint8Array(pdfBytesOriginal)});
-                pdfDoc = await loadingTask.promise;
+                pdfDoc = await pdfjsLib.getDocument({data: new Uint8Array(pdfBytesOriginal)}).promise;
                 renderAllPages();
             }
         });
@@ -85,11 +84,10 @@
                 const viewport = page.getViewport({ scale });
                 const canvas = document.createElement('canvas');
                 canvas.className = 'pdf-page';
-                const ctx = canvas.getContext('2d');
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
                 container.appendChild(canvas);
-                await page.render({ canvasContext: ctx, viewport }).promise;
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
             }
         }
 
@@ -97,42 +95,37 @@
         function zoomOut() { scale = Math.max(0.5, scale - 0.2); renderAllPages(); }
         function openPad() { document.getElementById('signature-pad-modal').style.display = 'flex'; setTimeout(resizeCanvas, 50); }
         function closePad() { document.getElementById('signature-pad-modal').style.display = 'none'; }
-        function confirmSignature() { if(signaturePad.isEmpty()) return alert("Assine primeiro!"); closePad(); alert("Assinatura confirmada!"); }
+        function confirmSignature() { if(signaturePad.isEmpty()) return alert("Assine primeiro!"); closePad(); }
 
         async function savePdf() {
-            if (!pdfBytesOriginal || signaturePad.isEmpty()) return alert("Selecione um PDF e assine antes de salvar!");
-            
+            if (!pdfBytesOriginal || signaturePad.isEmpty()) return alert("Abra o PDF e assine antes.");
             try {
-                const { PDFDocument, rgb } = PDFLib;
+                const { PDFDocument } = PDFLib;
                 const pdfDocLib = await PDFDocument.load(pdfBytesOriginal);
                 const pages = pdfDocLib.getPages();
                 const lastPage = pages[pages.length - 1];
                 const { width, height } = lastPage.getSize();
                 
-                const sigData = signaturePad.toDataURL("image/png");
-                const sigImg = await pdfDocLib.embedPng(sigData);
+                const sigImg = await pdfDocLib.embedPng(signaturePad.toDataURL());
                 
-                // Dimensões da assinatura no papel
-                const sigWidth = 180;
-                const sigHeight = 90;
+                // Reduzi o tamanho e centralizei para garantir que apareça na folha
+                const sW = 150; 
+                const sH = 75;
 
-                // Desenha a assinatura na parte inferior central
                 lastPage.drawImage(sigImg, {
-                    x: (width / 2) - (sigWidth / 2),
-                    y: 50, 
-                    width: sigWidth,
-                    height: sigHeight,
+                    x: (width / 2) - (sW / 2),
+                    y: height / 4, // Coloca a 1/4 da altura (fácil de achar)
+                    width: sW,
+                    height: sH,
                 });
 
-                const resultBytes = await pdfDocLib.save();
-                const blob = new Blob([resultBytes], { type: "application/pdf" });
+                const result = await pdfDocLib.save();
                 const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = "documento_assinado.pdf";
+                link.href = URL.createObjectURL(new Blob([result], { type: "application/pdf" }));
+                link.download = "assinado_final.pdf";
                 link.click();
-            } catch (err) {
-                alert("Erro ao salvar: " + err.message);
-            }
+                alert("Salvo! Verifique o final do arquivo baixado.");
+            } catch (e) { alert("Erro: " + e.message); }
         }
 
         const appHeight = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
