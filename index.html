@@ -19,18 +19,17 @@
         canvas { display: block; width: 100% !important; height: auto !important; }
         .zoom-controls { position: fixed; right: 10px; top: 70px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
         .btn-zoom { width: 45px; height: 45px; border-radius: 10px; border: none; background: #ff6d00; color: #fff; font-size: 24px; font-weight: bold; }
-        .sig-box { position: absolute; border: 2px dashed #4169E1; z-index: 5000; touch-action: none; background: rgba(65, 105, 225, 0.05); min-width: 50px; min-height: 30px; display: flex; align-items: center; justify-content: center; }
-        .sig-box img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; transition: transform 0.2s; }
-        .sig-tools { position: absolute; top: -50px; left: 0; display: flex; gap: 8px; z-index: 9999; }
-        .btn-tool { width: 40px; height: 40px; border-radius: 8px; border: none; color: white; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-        .handle { position: absolute; width: 24px; height: 24px; background: #4169E1; border: 2px solid #fff; border-radius: 50%; z-index: 5001; bottom: -12px; right: -12px; }
+        .sig-box { position: absolute; border: 2px dashed #4169E1; z-index: 5000; touch-action: none; background: rgba(65, 105, 225, 0.05); min-width: 40px; min-height: 20px; display: flex; align-items: center; justify-content: center; }
+        .sig-box img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        .sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 5px; z-index: 9999; }
+        .btn-tool { width: 38px; height: 38px; border-radius: 6px; border: none; color: white; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .handle { position: absolute; width: 22px; height: 22px; background: #4169E1; border: 2px solid #fff; border-radius: 50%; z-index: 5001; bottom: -11px; right: -11px; }
         .bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; z-index: 9999; flex-shrink: 0; }
         .btn-action { flex: 1; height: 50px; border-radius: 12px; border: none; color: white; font-weight: bold; font-size: 14px; margin: 0 5px; }
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; background: #fdfdfd; touch-action: none; }
         .modal-btns { height: 70px; display: flex; padding: 10px; gap: 10px; background: #111; }
         .modal-btns button { flex: 1; border: none; border-radius: 8px; color: white; font-weight: bold; }
-        .cloning-mode { border: 3px solid #f1c40f !important; }
     </style>
 </head>
 <body>
@@ -57,73 +56,78 @@
         window.addEventListener('resize', setVH); setVH();
         const { pdfjsLib } = globalThis;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let signaturePad, pdfDoc = null, zoomScale = 1.0, pdfName = "assinado.pdf", activeClone = null;
+        let signaturePad, pdfDoc = null, zoomScale = 1.0, pdfName = "assinado.pdf";
 
         document.getElementById('file-in').onchange = async (e) => {
             const file = e.target.files[0]; if(!file) return;
             pdfName = file.name.replace(".pdf", "_assinado.pdf");
             const reader = new FileReader();
-            reader.onload = async function() { pdfDoc = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise; renderPages(); };
+            reader.onload = async function() { 
+                const data = new Uint8Array(this.result);
+                pdfDoc = await pdfjsLib.getDocument(data).promise; 
+                renderPages(); 
+            };
             reader.readAsArrayBuffer(file);
         };
 
         async function renderPages() {
             const wrapper = document.getElementById('pdf-wrapper'); wrapper.innerHTML = '';
-            const width = document.getElementById('scroll-cont').clientWidth - 20;
+            const screenW = document.getElementById('scroll-cont').clientWidth - 20;
             for (let i = 1; i <= pdfDoc.numPages; i++) {
                 const page = await pdfDoc.getPage(i);
-                const vp = page.getViewport({scale: (width / page.getViewport({scale:1}).width)});
+                const vp = page.getViewport({scale: (screenW / page.getViewport({scale:1}).width)});
                 const container = document.createElement('div');
                 container.className = 'page-container'; container.id = `page-${i}`;
-                container.onclick = (e) => handlePageClick(i, e);
-                const canvas = document.createElement('canvas'); canvas.width = vp.width; canvas.height = vp.height;
+                container.style.width = vp.width + 'px'; container.style.height = vp.height + 'px';
+                const canvas = document.createElement('canvas');
+                canvas.width = vp.width; canvas.height = vp.height;
                 container.appendChild(canvas); wrapper.appendChild(container);
                 await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
             }
-        }
-
-        function handlePageClick(pNum, e) {
-            if (!activeClone) return;
-            const page = document.getElementById(`page-${pNum}`);
-            const rect = page.getBoundingClientRect();
-            // Calcula a posição exata baseada no clique, descontando o zoom
-            const x = (e.clientX - rect.left) / zoomScale;
-            const y = (e.clientY - rect.top) / zoomScale;
-            addSigToPage(pNum, activeClone.src, y - 40, x - 90, activeClone.w, activeClone.h, activeClone.a);
-            desativarClonagem();
         }
 
         function abrirModal() {
             document.getElementById('sig-modal').style.display = 'flex';
             const canvas = document.getElementById('sig-pad');
             canvas.width = window.innerWidth; canvas.height = window.innerHeight - 70;
-            if (!signaturePad) { signaturePad = new SignaturePad(canvas, { minWidth: 1, maxWidth: 3.5, throttle: 0 }); }
+            if (!signaturePad) { signaturePad = new SignaturePad(canvas, { minWidth: 1.2, maxWidth: 3.8, throttle: 0 }); }
             else { signaturePad.clear(); }
         }
 
         function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
         function confirmSig() { if (signaturePad.isEmpty()) return; addSigToPage(1, signaturePad.toDataURL()); fecharModal(); }
 
-        function addSigToPage(pNum, src, top=80, left=50, w=180, h=90, angle=0) {
+        function addSigToPage(pNum, src, top=100, left=50, w=160, h=70, angle=0) {
             const page = document.getElementById(`page-${pNum}`); if (!page) return;
             const div = document.createElement('div');
             div.className = 'sig-box'; div.dataset.angle = angle;
-            div.style.cssText = `top:${top}px; left:${left}px; width:${w}px; height:${h}px;`;
-            div.innerHTML = `<div class="sig-tools"><button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button><button class="btn-tool" style="background:#27ae60" onclick="girarSig(this)">🔄</button><button class="btn-tool" style="background:#f1c40f" onclick="ativarClonagem(this)">📋</button></div><img src="${src}" style="transform: rotate(${angle}deg)"><div class="handle"></div>`;
+            div.style.top = top+'px'; div.style.left = left+'px'; div.style.width = w+'px'; div.style.height = h+'px';
+            div.innerHTML = `
+                <div class="sig-tools">
+                    <button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
+                    <button class="btn-tool" style="background:#27ae60" onclick="girarSig(this)">🔄</button>
+                    <button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
+                </div>
+                <img src="${src}" style="transform: rotate(${angle}deg)">
+                <div class="handle"></div>
+            `;
             page.appendChild(div);
             setupInteract(div);
         }
 
-        function ativarClonagem(btn) {
+        function clonarPosicao(btn) {
             const el = btn.closest('.sig-box');
-            activeClone = { src: el.querySelector('img').src, a: el.dataset.angle, w: el.offsetWidth, h: el.offsetHeight };
-            document.querySelectorAll('.page-container').forEach(p => p.classList.add('cloning-mode'));
-            alert("MODO CLONAR: Clique em qualquer página para colar a assinatura.");
-        }
-
-        function desativarClonagem() {
-            activeClone = null;
-            document.querySelectorAll('.page-container').forEach(p => p.classList.remove('cloning-mode'));
+            const src = el.querySelector('img').src;
+            const a = el.dataset.angle;
+            const w = el.offsetWidth, h = el.offsetHeight;
+            const t = parseFloat(el.style.top), l = parseFloat(el.style.left);
+            
+            // Replicar em todas as folhas exatamente na mesma posição da primeira
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                if (`page-${i}` === el.parentElement.id) continue;
+                addSigToPage(i, src, t, l, w, h, a);
+            }
+            alert("Assinatura replicada em todas as folhas na mesma posição!");
         }
 
         function girarSig(btn) {
@@ -134,13 +138,32 @@
 
         function setupInteract(el) {
             let x = 0, y = 0;
-            interact(el).draggable({ listeners: { move(e) { x += e.dx; y += e.dy; e.target.style.transform = `translate(${x}px, ${y}px)`; } } })
-            .resizable({ edges: { right: true, bottom: true }, listeners: { move(e) {
-                let { width, height } = e.rect; Object.assign(e.target.style, { width: `${width}px`, height: `${height}px` });
-            } } });
+            interact(el).draggable({
+                listeners: { move(e) {
+                    x += e.dx; y += e.dy;
+                    e.target.style.transform = `translate(${x}px, ${y}px)`;
+                    // Atualiza o estilo de top/left após soltar para manter a referência na clonagem
+                }, end(e) {
+                    const style = window.getComputedStyle(e.target);
+                    const matrix = new WebKitCSSMatrix(style.transform);
+                    e.target.style.top = (parseFloat(e.target.style.top) + matrix.m42) + "px";
+                    e.target.style.left = (parseFloat(e.target.style.left) + matrix.m41) + "px";
+                    e.target.style.transform = "translate(0px, 0px)";
+                    x = 0; y = 0;
+                }}
+            }).resizable({
+                edges: { right: true, bottom: true },
+                listeners: { move(e) {
+                    let { width, height } = e.rect;
+                    Object.assign(e.target.style, { width: `${width}px`, height: `${height}px` });
+                }}
+            });
         }
 
-        function changeZoom(s) { zoomScale = Math.max(0.4, Math.min(2.0, zoomScale + s)); document.getElementById('pdf-wrapper').style.transform = `scale(${zoomScale})`; }
+        function changeZoom(s) {
+            zoomScale = Math.max(0.4, Math.min(2.0, zoomScale + s));
+            document.getElementById('pdf-wrapper').style.transform = `scale(${zoomScale})`;
+        }
 
         async function gerarPDF() {
             const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'pt', 'a4');
@@ -151,9 +174,10 @@
                 doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 595, 842);
                 pages[i].querySelectorAll('.sig-box').forEach(sig => {
                     const rect = sig.getBoundingClientRect(); const pRect = pages[i].getBoundingClientRect();
-                    const x = ((rect.left - pRect.left) / (pRect.width)) * 595;
-                    const y = ((rect.top - pRect.top) / (pRect.height)) * 842;
-                    const w = (rect.width / pRect.width) * 595; const h = (rect.height / pRect.height) * 842;
+                    const x = ((rect.left - pRect.left) / pRect.width) * 595;
+                    const y = ((rect.top - pRect.top) / pRect.height) * 842;
+                    const w = (rect.width / pRect.width) * 595;
+                    const h = (rect.height / pRect.height) * 842;
                     doc.addImage(sig.querySelector('img').src, 'PNG', x, y, w, h, null, 'FAST', parseInt(sig.dataset.angle));
                 });
             }
