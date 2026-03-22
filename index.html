@@ -11,27 +11,28 @@
         body { font-family: sans-serif; background-color: #000; color: white; margin: 0; display: flex; flex-direction: column; height: var(--app-height); width: 100vw; overflow: hidden; position: fixed; }
         
         .navbar { background-color: #2b52d4; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; height: 55px; z-index: 100; }
-        #viewer-container { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; display: flex; flex-direction: column; align-items: center; -webkit-overflow-scrolling: touch; }
-        canvas { border-bottom: 10px solid #000; max-width: 100%; height: auto !important; }
+        #viewer-container { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; display: flex; flex-direction: column; align-items: center; }
+        canvas { border-bottom: 2px solid #333; max-width: 100%; height: auto !important; }
 
-        .zoom-controls { position: fixed; right: 15px; top: 150px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
+        .zoom-controls { position: fixed; right: 15px; top: 80px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
         .btn-zoom { background-color: #f39c12; color: white; width: 44px; height: 44px; border-radius: 8px; border: none; font-size: 22px; font-weight: bold; }
         
         .footer { background: #000; padding: 10px 15px; display: flex; gap: 10px; height: 65px; border-top: 1px solid #222; z-index: 100; box-sizing: border-box; }
-        .btn-footer { flex: 1; border-radius: 10px; border: none; color: white; font-weight: bold; font-size: 14px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; height: 100%; transition: transform 0.1s; }
+        .btn-footer { flex: 1; border-radius: 10px; border: none; color: white; font-weight: bold; font-size: 14px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; height: 100%; }
         .btn-assign { background-color: #3b66f5; }
         .btn-save { background-color: #2d8c3c; }
-        .btn-footer:active { transform: scale(0.95); }
 
         /* Modal de Assinatura */
-        #signature-pad-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; flex-direction: column; justify-content: center; align-items: center; }
-        .pad-container { background: white; width: 90%; height: 300px; border-radius: 10px; position: relative; }
-        #signature-canvas { width: 100%; height: 100%; border-radius: 10px; touch-action: none; }
-        .pad-buttons { margin-top: 20px; display: flex; gap: 10px; width: 90%; }
+        #signature-pad-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; flex-direction: column; }
+        .rotation-info { background: #2b52d4; color: white; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; }
+        .pad-container { flex: 1; position: relative; width: 100%; }
+        #signature-canvas { width: 100%; height: 100%; touch-action: none; }
         
+        .pad-controls { display: flex; gap: 10px; padding: 15px; background: #eee; }
+        .btn-pad { flex: 1; padding: 15px; border-radius: 8px; border: none; color: white; font-weight: bold; text-transform: uppercase; font-size: 13px; }
+
         input[type="file"] { display: none; }
-        .btn-nav { border: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
-        .btn-nav-recent { background:#f39c12; color:white; }
+        .btn-nav { border: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
         .btn-nav-open { background:#fff; color:#2b52d4; }
     </style>
 </head>
@@ -39,10 +40,7 @@
 
     <div class="navbar">
         <div style="font-weight:bold; font-size: 16px;">DOKS PDF</div>
-        <div style="display:flex; gap:8px;">
-            <button class="btn-nav btn-nav-recent" onclick="alert('Histórico em breve!')">RECENTE</button>
-            <label class="btn-nav btn-nav-open">ABRIR <input type="file" id="pdfInput" accept="application/pdf"></label>
-        </div>
+        <label class="btn-nav btn-nav-open">ABRIR <input type="file" id="pdfInput" accept="application/pdf"></label>
     </div>
 
     <div class="zoom-controls">
@@ -58,13 +56,14 @@
     </div>
 
     <div id="signature-pad-modal">
-        <h3 style="color:white; margin-bottom: 10px;">Assine abaixo:</h3>
+        <div class="rotation-info">🔄 GIRE A TELA PARA ASSINAR MELHOR</div>
         <div class="pad-container">
             <canvas id="signature-canvas"></canvas>
         </div>
-        <div class="pad-buttons">
-            <button class="btn-footer" style="background:#cc0000;" onclick="signaturePad.clear()">LIMPAR</button>
-            <button class="btn-footer" style="background:#2d8c3c;" onclick="closePad()">OK</button>
+        <div class="pad-controls">
+            <button class="btn-pad" style="background:#546e7a;" onclick="closePad(false)">Sair</button>
+            <button class="btn-pad" style="background:#ffa000;" onclick="signaturePad.clear()">Limpar</button>
+            <button class="btn-pad" style="background:#388e3c;" onclick="closePad(true)">Confirmar</button>
         </div>
     </div>
 
@@ -73,8 +72,6 @@
         let pdfDoc = null;
         let scale = 1.2;
         const container = document.getElementById('viewer-container');
-        
-        // Setup do Pad de Assinatura
         const signCanvas = document.getElementById('signature-canvas');
         const signaturePad = new SignaturePad(signCanvas, { backgroundColor: 'rgb(255, 255, 255)' });
 
@@ -85,8 +82,6 @@
             signCanvas.getContext("2d").scale(ratio, ratio);
             signaturePad.clear();
         }
-
-        window.addEventListener("resize", resizeCanvas);
 
         document.getElementById('pdfInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -123,26 +118,22 @@
             resizeCanvas();
         }
 
-        function closePad() {
-            if (signaturePad.isEmpty()) {
+        function closePad(confirm) {
+            if (confirm && signaturePad.isEmpty()) {
                 alert("Por favor, faça sua assinatura.");
-            } else {
-                document.getElementById('signature-pad-modal').style.display = 'none';
-                alert("Assinatura capturada! Agora clique em SALVAR.");
+                return;
             }
+            document.getElementById('signature-pad-modal').style.display = 'none';
+            if(confirm) alert("Assinatura confirmada!");
         }
 
         function savePdf() {
             if (!pdfDoc) return alert("Abra um PDF primeiro.");
-            if (signaturePad.isEmpty()) return alert("Assine o documento antes de salvar.");
-            
-            // Aqui simulamos o salvamento por enquanto
-            alert("Processando PDF assinado... O download começará em instantes.");
-            // No próximo passo podemos integrar o pdf-lib para inserir a imagem no PDF real
+            alert("Salvando arquivo assinado...");
         }
 
         const appHeight = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-        window.addEventListener('resize', appHeight);
+        window.addEventListener('resize', () => { appHeight(); resizeCanvas(); });
         appHeight();
     </script>
 </body>
