@@ -41,20 +41,20 @@
             padding: 0; letter-spacing: 1px;
         }
 
-        .btn-footer:active, .btn-nav-icon:active { transform: scale(0.95); opacity: 0.9; }
+        .btn-footer:active, .btn-nav:active { transform: scale(0.95); opacity: 0.9; }
         .btn-assign { background-color: #3b66f5; }
         .btn-save { background-color: #2d8c3c; }
 
         input[type="file"] { display: none; }
         
-        /* Botão RECENTE ajustado sem emoji */
-        .btn-nav-icon { 
-            background:#f39c12; color:white; border:none; padding:8px 12px; 
-            border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer; 
+        .btn-nav { 
+            border: none; padding: 8px 12px; border-radius: 5px; 
+            font-size: 12px; font-weight: bold; cursor: pointer; 
             text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; align-items: center; justify-content: center;
         }
-        
-        .btn-nav-open { background:#fff; color:#2b52d4; padding:8px 12px; border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer; text-transform: uppercase; }
+        .btn-nav-recent { background:#f39c12; color:white; }
+        .btn-nav-open { background:#fff; color:#2b52d4; }
     </style>
 </head>
 <body>
@@ -62,8 +62,8 @@
     <div class="navbar">
         <div style="font-weight:bold; font-size: 16px;">DOKS PDF</div>
         <div style="display:flex; gap:8px; align-items: center;">
-            <button class="btn-nav-icon" onclick="toggleHistory()">RECENTE</button>
-            <label class="btn-nav-open">
+            <button class="btn-nav btn-nav-recent" onclick="toggleHistory()">RECENTE</button>
+            <label class="btn-nav btn-nav-open">
                 ABRIR <input type="file" id="pdfInput" accept="application/pdf">
             </label>
         </div>
@@ -126,8 +126,8 @@
             const modal = document.getElementById('history-modal');
             const list = document.getElementById('history-list');
             const history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
-            list.innerHTML = history.length ? '' : 'Nenhum histórico encontrado.';
-            history.forEach(item => list.innerHTML += `<div style="padding:10px 0; border-bottom:1px solid #222">📄 ${item}</div>`);
+            list.innerHTML = history.length ? '' : '<div style="text-align:center; padding:10px;">Nenhum arquivo recente.</div>';
+            history.forEach(item => list.innerHTML += `<div style="padding:10px 0; border-bottom:1px solid #222; text-align:left;">📄 ${item}</div>`);
             modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
         }
     </script>
