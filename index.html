@@ -8,20 +8,117 @@
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
     <style>
-        :root { --app-height: 100vh; }
-        body { font-family: sans-serif; background-color: #000; color: white; margin: 0; display: flex; flex-direction: column; height: var(--app-height); width: 100vw; overflow: hidden; position: fixed; }
-        .navbar { background-color: #2b52d4; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; height: 55px; z-index: 100; }
-        #viewer-container { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; display: flex; flex-direction: column; align-items: center; }
-        canvas.pdf-page { border-bottom: 10px solid #000; max-width: 100%; height: auto !important; }
-        .zoom-controls { position: fixed; right: 15px; top: 80px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
-        .btn-zoom { background-color: #f39c12; color: white; width: 44px; height: 44px; border-radius: 8px; border: none; font-size: 22px; font-weight: bold; }
-        .footer { background: #000; padding: 10px 15px; display: flex; gap: 10px; height: 65px; border-top: 1px solid #222; }
-        .btn-footer { flex: 1; border-radius: 10px; border: none; color: white; font-weight: bold; font-size: 14px; text-transform: uppercase; }
-        #signature-pad-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; flex-direction: column; }
+        /* CORREÇÃO DA BARRA: Altura dinâmica real */
+        :root { --vh: 100vh; }
+        
+        body { 
+            font-family: sans-serif; 
+            background-color: #000; 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: var(--vh); 
+            width: 100vw; 
+            overflow: hidden; 
+            position: fixed; 
+        }
+
+        .navbar { 
+            background-color: #2b52d4; 
+            padding: 0 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 55px; 
+            flex-shrink: 0;
+        }
+
+        #viewer-container { 
+            flex: 1; 
+            width: 100%; 
+            background: #1a1a1a; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        canvas.pdf-page { 
+            border-bottom: 15px solid #000; 
+            max-width: 100%; 
+            height: auto !important; 
+        }
+
+        .zoom-controls { 
+            position: fixed; 
+            right: 15px; 
+            top: 70px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            z-index: 200; 
+        }
+
+        .btn-zoom { 
+            background-color: #f39c12; 
+            color: white; 
+            width: 45px; 
+            height: 45px; 
+            border-radius: 10px; 
+            border: none; 
+            font-size: 24px; 
+            font-weight: bold; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .footer { 
+            background: #000; 
+            padding: 10px 15px; 
+            display: flex; 
+            gap: 10px; 
+            height: 75px; 
+            border-top: 1px solid #333; 
+            flex-shrink: 0;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .btn-footer { 
+            flex: 1; 
+            border-radius: 12px; 
+            border: none; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 14px; 
+            text-transform: uppercase;
+        }
+
+        #signature-pad-modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: var(--vh); 
+            background: #fff; 
+            z-index: 500; 
+            flex-direction: column; 
+        }
+
         .pad-container { flex: 1; background: #fff; position: relative; }
         #signature-canvas { width: 100%; height: 100%; touch-action: none; }
-        .pad-controls { display: flex; gap: 10px; padding: 15px; background: #f0f0f0; }
-        .btn-pad { flex: 1; padding: 15px; border-radius: 8px; border: none; color: white; font-weight: bold; }
+        
+        .pad-controls { 
+            display: flex; 
+            gap: 10px; 
+            padding: 15px; 
+            background: #f0f0f0; 
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .btn-pad { flex: 1; padding: 18px; border-radius: 10px; border: none; color: white; font-weight: bold; }
         input[type="file"] { display: none; }
         .btn-nav { border: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; font-weight: bold; background:#fff; color:#2b52d4; }
     </style>
@@ -34,15 +131,21 @@
             <label class="btn-nav">ABRIR <input type="file" id="pdfInput" accept="application/pdf"></label>
         </div>
     </div>
-    <div class="zoom-controls"><button class="btn-zoom" onclick="zoomIn()">+</button><button class="btn-zoom" onclick="zoomOut()">-</button></div>
+
+    <div class="zoom-controls">
+        <button class="btn-zoom" onclick="zoomIn()">+</button>
+        <button class="btn-zoom" onclick="zoomOut()">-</button>
+    </div>
+
     <div id="viewer-container"></div>
+
     <div class="footer">
         <button class="btn-footer" style="background:#3b66f5;" onclick="openPad()">ASSINAR</button>
-        <button class="btn-footer" style="background:#2d8c3c;" onclick="savePdf()">SALVAR</button>
+        <button class="btn-footer" style="background:#2d8c3c;" onclick="savePdf()">SALVAR PDF</button>
     </div>
 
     <div id="signature-pad-modal">
-        <div style="background:#2b52d4; color:white; padding:10px; text-align:center;">ASSINE ABAIXO</div>
+        <div style="background:#2b52d4; color:white; padding:15px; text-align:center; font-weight:bold;">ASSINE ABAIXO</div>
         <div class="pad-container"><canvas id="signature-canvas"></canvas></div>
         <div class="pad-controls">
             <button class="btn-pad" style="background:#546e7a;" onclick="closePad()">SAIR</button>
@@ -51,10 +154,18 @@
     </div>
 
     <script>
+        // Ajuste de altura real para mobile
+        function updateHeight() {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
+        }
+        window.addEventListener('resize', updateHeight);
+        updateHeight();
+
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         let pdfDoc = null;
-        let pdfData = null; // Guardar os bytes originais
-        let scale = 1.2;
+        let pdfData = null;
+        let scale = 1.0;
         const signCanvas = document.getElementById('signature-canvas');
         const signaturePad = new SignaturePad(signCanvas);
 
@@ -105,11 +216,9 @@
                 const pages = pdfDocLib.getPages();
                 const lastPage = pages[pages.length - 1];
                 const { width, height } = lastPage.getSize();
-                
-                // Converter assinatura para PNG e inserir
                 const pngImage = await pdfDocLib.embedPng(signaturePad.toDataURL());
                 
-                // Colocar no centro da última página (Posição garantida)
+                // Grava no meio para teste de visibilidade
                 lastPage.drawImage(pngImage, {
                     x: (width / 2) - 100,
                     y: height / 2, 
@@ -121,9 +230,9 @@
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = "assinado.pdf";
+                link.download = "DOKS_ASSINADO.pdf";
                 link.click();
-            } catch (err) { alert("Erro ao salvar: " + err.message); }
+            } catch (err) { alert("Erro: " + err.message); }
         }
     </script>
 </body>
