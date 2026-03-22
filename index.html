@@ -12,40 +12,30 @@
         
         .navbar { background-color: #2b52d4; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; height: 55px; z-index: 100; }
         #viewer-container { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; display: flex; flex-direction: column; align-items: center; }
-        canvas { border-bottom: 2px solid #333; max-width: 100%; height: auto !important; }
-
-        .zoom-controls { position: fixed; right: 15px; top: 80px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
-        .btn-zoom { background-color: #f39c12; color: white; width: 44px; height: 44px; border-radius: 8px; border: none; font-size: 22px; font-weight: bold; }
         
         .footer { background: #000; padding: 10px 15px; display: flex; gap: 10px; height: 65px; border-top: 1px solid #222; z-index: 100; box-sizing: border-box; }
         .btn-footer { flex: 1; border-radius: 10px; border: none; color: white; font-weight: bold; font-size: 14px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; height: 100%; }
         .btn-assign { background-color: #3b66f5; }
         .btn-save { background-color: #2d8c3c; }
 
-        /* Modal de Assinatura */
+        /* Modal de Assinatura Corrigido */
         #signature-pad-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; flex-direction: column; }
-        .rotation-info { background: #2b52d4; color: white; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; }
-        .pad-container { flex: 1; position: relative; width: 100%; }
-        #signature-canvas { width: 100%; height: 100%; touch-action: none; }
+        .rotation-info { background: #2b52d4; color: white; padding: 12px; text-align: center; font-size: 13px; font-weight: bold; }
+        .pad-container { flex: 1; position: relative; width: 100%; background: #fff; }
+        #signature-canvas { width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
         
-        .pad-controls { display: flex; gap: 10px; padding: 15px; background: #eee; }
-        .btn-pad { flex: 1; padding: 15px; border-radius: 8px; border: none; color: white; font-weight: bold; text-transform: uppercase; font-size: 13px; }
+        .pad-controls { display: flex; gap: 10px; padding: 15px; background: #f0f0f0; border-top: 1px solid #ccc; }
+        .btn-pad { flex: 1; padding: 18px; border-radius: 8px; border: none; color: white; font-weight: bold; text-transform: uppercase; font-size: 14px; }
 
         input[type="file"] { display: none; }
-        .btn-nav { border: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .btn-nav-open { background:#fff; color:#2b52d4; }
+        .btn-nav { border: none; padding: 8px 15px; border-radius: 5px; font-size: 12px; font-weight: bold; text-transform: uppercase; background:#fff; color:#2b52d4; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
         <div style="font-weight:bold; font-size: 16px;">DOKS PDF</div>
-        <label class="btn-nav btn-nav-open">ABRIR <input type="file" id="pdfInput" accept="application/pdf"></label>
-    </div>
-
-    <div class="zoom-controls">
-        <button class="btn-zoom" onclick="zoomIn()">+</button>
-        <button class="btn-zoom" onclick="zoomOut()">-</button>
+        <label class="btn-nav">ABRIR PDF <input type="file" id="pdfInput" accept="application/pdf"></label>
     </div>
 
     <div id="viewer-container"></div>
@@ -61,9 +51,9 @@
             <canvas id="signature-canvas"></canvas>
         </div>
         <div class="pad-controls">
-            <button class="btn-pad" style="background:#546e7a;" onclick="closePad(false)">Sair</button>
-            <button class="btn-pad" style="background:#ffa000;" onclick="signaturePad.clear()">Limpar</button>
-            <button class="btn-pad" style="background:#388e3c;" onclick="closePad(true)">Confirmar</button>
+            <button class="btn-pad" style="background:#546e7a;" onclick="closePad(false)">SAIR</button>
+            <button class="btn-pad" style="background:#ffa000;" onclick="signaturePad.clear()">LIMPAR</button>
+            <button class="btn-pad" style="background:#388e3c;" onclick="closePad(true)">CONFIRMAR</button>
         </div>
     </div>
 
@@ -73,14 +63,35 @@
         let scale = 1.2;
         const container = document.getElementById('viewer-container');
         const signCanvas = document.getElementById('signature-canvas');
-        const signaturePad = new SignaturePad(signCanvas, { backgroundColor: 'rgb(255, 255, 255)' });
+        
+        // Inicializa o SignaturePad
+        const signaturePad = new SignaturePad(signCanvas, { 
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)',
+            throttle: 0
+        });
 
         function resizeCanvas() {
             const ratio = Math.max(window.devicePixelRatio || 1, 1);
             signCanvas.width = signCanvas.offsetWidth * ratio;
             signCanvas.height = signCanvas.offsetHeight * ratio;
-            signCanvas.getContext("2d").scale(ratio, ratio);
-            signaturePad.clear();
+            signCanvas.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+            signaturePad.clear(); // Limpa para evitar distorção
+        }
+
+        // Abre o modal e ajusta o tamanho do canvas
+        function openPad() {
+            document.getElementById('signature-pad-modal').style.display = 'flex';
+            setTimeout(resizeCanvas, 50); // Delay pequeno para garantir que o CSS aplicou
+        }
+
+        function closePad(confirm) {
+            if (confirm && signaturePad.isEmpty()) {
+                alert("Por favor, faça sua assinatura.");
+                return;
+            }
+            document.getElementById('signature-pad-modal').style.display = 'none';
+            if(confirm) alert("Assinatura salva na memória!");
         }
 
         document.getElementById('pdfInput').addEventListener('change', async (e) => {
@@ -110,30 +121,15 @@
             }
         }
 
-        function zoomIn() { scale += 0.2; if(pdfDoc) renderAllPages(); }
-        function zoomOut() { scale = Math.max(0.5, scale - 0.2); if(pdfDoc) renderAllPages(); }
-
-        function openPad() {
-            document.getElementById('signature-pad-modal').style.display = 'flex';
-            resizeCanvas();
-        }
-
-        function closePad(confirm) {
-            if (confirm && signaturePad.isEmpty()) {
-                alert("Por favor, faça sua assinatura.");
-                return;
-            }
-            document.getElementById('signature-pad-modal').style.display = 'none';
-            if(confirm) alert("Assinatura confirmada!");
-        }
-
         function savePdf() {
             if (!pdfDoc) return alert("Abra um PDF primeiro.");
-            alert("Salvando arquivo assinado...");
+            if (signaturePad.isEmpty()) return alert("Assine antes de salvar.");
+            alert("Preparando PDF final...");
         }
 
+        // Ajuste de altura para mobile
         const appHeight = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-        window.addEventListener('resize', () => { appHeight(); resizeCanvas(); });
+        window.addEventListener('resize', () => { appHeight(); });
         appHeight();
     </script>
 </body>
