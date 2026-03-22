@@ -2,142 +2,73 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DOKS PDF - Digital Signature</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>📄</text></svg>">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOKS PDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
-        * { box-sizing: border-box; tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body { font-family: sans-serif; background: #111; height: 100dvh; width: 100vw; display: flex; flex-direction: column; overflow: hidden; }
-        .header { height: 50px; background: #4169E1; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
-        .container { flex: 1; overflow-y: auto; background: #222; position: relative; display: flex; flex-direction: column; align-items: center; padding: 10px; }
-        #pdf-main-wrapper { position: relative; transform-origin: top center; display: flex; flex-direction: column; gap: 20px; padding-bottom: 150px; }
-        .page-container { position: relative; background: #fff; line-height: 0; box-shadow: 0 0 15px #000; margin-bottom: 10px; }
-        canvas { display: block; width: 100% !important; height: auto !important; }
-        .zoom-controls { position: fixed; right: 15px; top: 70px; display: flex; flex-direction: column; gap: 12px; z-index: 9999; }
-        .btn-zoom { width: 50px; height: 50px; border-radius: 12px; border: none; background: #ff6d00; color: #fff; font-size: 26px; font-weight: bold; }
-        .sig-container { position: absolute; border: 2px dashed #4169E1; z-index: 5000; touch-action: none; background: rgba(65, 105, 225, 0.05); padding: 0; }
-        .sig-container img { width: 100% !important; height: 100% !important; object-fit: fill !important; pointer-events: none; display: block; }
-        .sig-tools { position: absolute; top: -55px; left: 0; display: flex; gap: 10px; z-index: 99999; }
-        .btn-tool { width: 45px; height: 45px; border-radius: 10px; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-        .handle-tr, .handle-bl { position: absolute; width: 24px; height: 24px; background: #4169E1; border: 2px solid #fff; border-radius: 50%; z-index: 5001; }
-        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; z-index: 9999; }
-        .btn-action { flex: 1; height: 50px; border-radius: 25px; border: none; color: white; font-weight: bold; font-size: 16px; margin: 0 5px; }
-        #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
-        #sig-pad { flex: 1; width: 100%; background: #fdfdfd; touch-action: none; }
-        .modal-btns { height: 75px; display: flex; padding: 12px; gap: 12px; background: #222; }
-        .modal-btns button { flex: 1; border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; }
+        :root { --primary: #0070f3; --success: #0070f3; --bg: #000; --text: #fff; --card: #111; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .header { width: 100%; max-width: 500px; background: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: bold; }
+        .btn { width: 100%; max-width: 500px; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: white; transition: 0.2s; }
+        .btn-upload { background: #333; }
+        .btn-action { background: var(--success); }
+        input[type="file"] { display: none; }
+        .history { width: 100%; max-width: 500px; margin-top: 30px; }
+        .history h3 { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .history-item { background: var(--card); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; border: 1px solid #222; }
+        .history-date { color: #555; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div class="header"><strong>DOKS PDF</strong><label for="file-in" style="background:#fff; color:#4169E1; padding:5px 12px; border-radius:6px; font-weight:bold; cursor:pointer">📂 ABRIR</label><input type="file" id="file-in" style="display:none" accept="application/pdf"></div>
-    <div class="container" id="scroll-cont">
-        <div class="zoom-controls"><button class="btn-zoom" onclick="changeZoom(0.1)">+</button><button class="btn-zoom" onclick="changeZoom(-0.1)">-</button></div>
-        <div id="pdf-main-wrapper"></div>
+
+    <div class="header">📄 DOKS PDF</div>
+
+    <label class="btn btn-upload">
+        📁 SELECIONAR PDF
+        <input type="file" id="pdfInput" accept="application/pdf">
+    </label>
+
+    <button class="btn btn-action" onclick="alert('Funcionalidade de assinatura em breve!')">✍️ ASSINAR DOCUMENTO</button>
+
+    <div class="history">
+        <h3>Recentes</h3>
+        <div id="historyList">
+            </div>
     </div>
-    <div class="bottom-bar">
-        <button class="btn-action" style="background:#4169E1" onclick="abrirModal()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="gerarPDF()">✔ SALVAR</button>
-    </div>
-    <div id="sig-modal">
-        <canvas id="sig-pad"></canvas>
-        <div class="modal-btns">
-            <button onclick="fecharModal()" style="background:#546e7a">Sair</button>
-            <button onclick="signaturePad.clear()" style="background:#ffa000">Limpar</button>
-            <button onclick="confirmarAssinatura()" style="background:#2e7d32">Confirmar</button>
-        </div>
-    </div>
+
     <script>
-        const { pdfjsLib } = globalThis;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let signaturePad, pdfDoc = null, zoomBase = 1.0, pdfFileName = "DOKSPDF_assinado.pdf";
-        document.getElementById('file-in').onchange = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            pdfFileName = "DOKSPDF_" + file.name;
-            const reader = new FileReader();
-            reader.onload = async function() { pdfDoc = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise; renderPages(); };
-            reader.readAsArrayBuffer(file);
-        };
-        async function renderPages() {
-            const wrapper = document.getElementById('pdf-main-wrapper'); wrapper.innerHTML = '';
-            const width = document.getElementById('scroll-cont').clientWidth - 30;
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                const page = await pdfDoc.getPage(i);
-                const viewport = page.getViewport({scale: (width / page.getViewport({scale:1}).width) * 2});
-                const div = document.createElement('div'); div.className = 'page-container'; div.id = `page-${i}`;
-                const canvas = document.createElement('canvas'); canvas.height = viewport.height; canvas.width = viewport.width;
-                div.appendChild(canvas); wrapper.appendChild(div);
-                await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+        const pdfInput = document.getElementById('pdfInput');
+        const historyList = document.getElementById('historyList');
+
+        // Carrega histórico ao abrir
+        window.onload = displayHistory;
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                saveToHistory(file.name);
+                alert('Arquivo ' + file.name + ' carregado!');
             }
+        });
+
+        function saveToHistory(name) {
+            let history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
+            const newItem = { name, date: new Date().toLocaleDateString('pt-BR') };
+            history = [newItem, ...history.slice(0, 4)]; // Mantém os últimos 5
+            localStorage.setItem('pdf_history', JSON.stringify(history));
+            displayHistory();
         }
-        function abrirModal() { 
-            document.getElementById('sig-modal').style.display = 'flex';
-            ajustarCanvas();
-        }
-        function ajustarCanvas() {
-            const c = document.getElementById('sig-pad');
-            c.width = window.innerWidth;
-            c.height = window.innerHeight - 75;
-            if (!signaturePad) {
-                signaturePad = new SignaturePad(c, { penColor: "rgb(0, 0, 0)", minWidth: 1.5, maxWidth: 4, throttle: 0, minDistance: 0, velocityFilterWeight: 0.1 });
-            } else { signaturePad.clear(); }
-        }
-        window.addEventListener("resize", () => { if (document.getElementById('sig-modal').style.display === 'flex') ajustarCanvas(); });
-        function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
-        function confirmarAssinatura() { if (signaturePad.isEmpty()) return; addSig(1, signaturePad.toDataURL(), 200, 50, 240, 100); fecharModal(); }
-        function addSig(pNum, src, t, l, w, h, angle=0) {
-            const page = document.getElementById(`page-${pNum}`); if (!page) return;
-            const div = document.createElement('div'); div.className = 'sig-container';
-            div.dataset.angle = angle; div.style.top = t+'px'; div.style.left = l+'px'; div.style.width = w+'px'; div.style.height = h+'px';
-            div.style.transform = `translate(0px, 0px)`;
-            div.innerHTML = `<div class="handle-tr"></div><div class="handle-bl"></div><div class="sig-tools"><button class="btn-tool" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button><button class="btn-tool" style="background:#2e7d32" onclick="girar(this)">🔄</button><button class="btn-tool" style="background:#4169E1" onclick="replicar(this)">📋</button></div><img src="${src}" style="transform: rotate(${angle}deg);">`;
-            page.appendChild(div); setupInteract(div);
-        }
-        function girar(btn) {
-            const el = btn.parentElement.parentElement;
-            let angle = (parseInt(el.dataset.angle) || 0) + 90;
-            if (angle >= 360) angle = 0;
-            el.dataset.angle = angle; el.querySelector('img').style.transform = `rotate(${angle}deg)`;
-        }
-        function replicar(btn) {
-            const el = btn.parentElement.parentElement; const src = el.querySelector('img').src; const angle = el.dataset.angle;
-            const rect = el.getBoundingClientRect(); const pRect = el.parentElement.getBoundingClientRect();
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                if (`page-${i}` === el.parentElement.id) continue;
-                addSig(i, src, rect.top - pRect.top, rect.left - pRect.left, el.offsetWidth, el.offsetHeight, angle);
-            }
-            alert("Sincronizado!");
-        }
-        function setupInteract(el) {
-            let x = 0, y = 0;
-            interact(el).draggable({ listeners: { move(e) { x += e.dx; y += e.dy; e.target.style.transform = `translate(${x}px, ${y}px)`; } } })
-            .resizable({ edges: { left: true, right: true, bottom: true, top: true }, listeners: { move(e) {
-                let { width, height } = e.rect; x += e.deltaRect.left; y += e.deltaRect.top;
-                Object.assign(e.target.style, { width: `${width}px`, height: `${height}px`, transform: `translate(${x}px, ${y}px)` });
-            } } });
-        }
-        function changeZoom(s) { zoomBase += s; document.getElementById('pdf-main-wrapper').style.transform = `scale(${zoomBase})`; }
-        async function gerarPDF() {
-            if (!pdfDoc) return;
-            const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'pt', 'a4');
-            const pages = document.querySelectorAll('.page-container');
-            for (let i = 0; i < pages.length; i++) {
-                const pageDiv = pages[i]; const canvas = pageDiv.querySelector('canvas');
-                if (i > 0) doc.addPage();
-                doc.addImage(canvas.toVDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 595.28, 841.89);
-                pageDiv.querySelectorAll('.sig-container').forEach(sig => {
-                    const rect = sig.getBoundingClientRect(); const pRect = pageDiv.getBoundingClientRect();
-                    const x = ((rect.left - pRect.left) / pRect.width) * 595.28;
-                    const y = ((rect.top - pRect.top) / pRect.height) * 841.89;
-                    const w = (rect.width / pRect.width) * 595.28;
-                    const h = (rect.height / pRect.height) * 841.89;
-                    doc.addImage(sig.querySelector('img').src, 'PNG', x, y, w, h, null, 'FAST', parseInt(sig.dataset.angle));
-                });
-            }
-            doc.save(pdfFileName);
+
+        function displayHistory() {
+            const history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
+            historyList.innerHTML = history.length ? '' : '<p style="color:#444">Nenhum arquivo recente.</p>';
+            history.forEach(item => {
+                historyList.innerHTML += `
+                    <div class="history-item">
+                        <span>📄 ${item.name}</span>
+                        <span class="history-date">${item.date}</span>
+                    </div>`;
+            });
         }
     </script>
 </body>
