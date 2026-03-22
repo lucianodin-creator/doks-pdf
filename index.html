@@ -11,21 +11,16 @@
     <style>
         :root { --vh: 100vh; }
         body { font-family: sans-serif; background: #000; color: #fff; margin: 0; display: flex; flex-direction: column; height: var(--vh); width: 100vw; overflow: hidden; position: fixed; }
-        
         .navbar { background: #2b52d4; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; height: 55px; flex-shrink: 0; z-index: 100; }
         .btn-nav { border: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; font-weight: bold; background: #fff; color: #2b52d4; }
-        
         #viewer-wrapper { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .page-container { position: relative; margin-bottom: 10px; background: white; }
-        canvas.pdf-page { display: block; max-width: 100%; }
+        .page-container { position: relative; margin-bottom: 10px; background: white; line-height: 0; }
+        canvas.pdf-page { display: block; }
         .interaction-layer { position: absolute; top: 0; left: 0; z-index: 10; }
-
         .zoom-controls { position: fixed; right: 15px; top: 75px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
-        .btn-zoom { background: #f39c12; color: #fff; width: 45px; height: 45px; border-radius: 10px; border: none; font-size: 24px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-
+        .btn-zoom { background: #f39c12; color: #fff; width: 45px; height: 45px; border-radius: 10px; border: none; font-size: 24px; font-weight: bold; }
         .footer { background: #000; padding: 10px; display: flex; gap: 10px; height: 75px; border-top: 1px solid #333; flex-shrink: 0; z-index: 100; }
         .btn-footer { flex: 1; border-radius: 12px; border: none; color: #fff; font-weight: bold; font-size: 14px; text-transform: uppercase; }
-        
         #sig-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: var(--vh); background: #fff; z-index: 500; flex-direction: column; }
         .pad-btns { display: flex; gap: 10px; padding: 15px; background: #eee; }
         .btn-p { flex: 1; padding: 15px; border-radius: 8px; border: none; color: #fff; font-weight: bold; }
@@ -36,22 +31,16 @@
         <div style="font-weight:bold;">DOKS PDF</div>
         <div style="display:flex; gap:5px;">
             <button class="btn-nav" style="background:#f39c12; color:white;">RECENTE</button>
+            <button class="btn-nav" style="background:#e74c3c; color:white;" onclick="deleteSelected()">🗑️</button>
             <label class="btn-nav">ABRIR <input type="file" id="pdfIn" accept="application/pdf" style="display:none"></label>
         </div>
     </div>
-
-    <div class="zoom-controls">
-        <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
-        <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
-    </div>
-
+    <div class="zoom-controls"><button class="btn-zoom" onclick="changeZoom(0.15)">+</button><button class="btn-zoom" onclick="changeZoom(-0.15)">-</button></div>
     <div id="viewer-wrapper"></div>
-
     <div class="footer">
         <button class="btn-footer" style="background:#3b66f5;" onclick="openP()">ASSINAR</button>
         <button class="btn-footer" style="background:#2d8c3c;" onclick="saveP()">SALVAR PDF</button>
     </div>
-
     <div id="sig-modal">
         <div style="background:#2b52d4; color:#fff; padding:10px; text-align:center;">ASSINE ABAIXO</div>
         <div style="flex:1;"><canvas id="sig-canvas" style="width:100%; height:100%; touch-action:none;"></canvas></div>
@@ -65,91 +54,67 @@
     <script>
         function setH() { document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`); }
         window.addEventListener('resize', setH); setH();
-
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         
-        let pdfRaw = null;
-        let pdfDocJS = null;
-        let scale = 1.0;
-        let fabricCanvases = [];
-        const sCanvas = document.getElementById('sig-canvas');
-        const pad = new SignaturePad(sCanvas, { backgroundColor: 'rgba(255,255,255,0)' });
+        let pdfRaw = null, pdfDocJS = null, scale = 1.0, fabricCanvases = [];
+        const sCanvas = document.getElementById('sig-canvas'), pad = new SignaturePad(sCanvas);
 
         function openP() { document.getElementById('sig-modal').style.display = 'flex'; resPad(); }
         function closeP() { document.getElementById('sig-modal').style.display = 'none'; }
-        
         function resPad() {
             const r = window.devicePixelRatio || 1;
-            sCanvas.width = sCanvas.offsetWidth * r;
-            sCanvas.height = sCanvas.offsetHeight * r;
-            sCanvas.getContext("2d").scale(r, r);
-            pad.clear();
+            sCanvas.width = sCanvas.offsetWidth * r; sCanvas.height = sCanvas.offsetHeight * r;
+            sCanvas.getContext("2d").scale(r, r); pad.clear();
         }
 
         document.getElementById('pdfIn').onchange = async (e) => {
-            const f = e.target.files[0];
-            if (f) {
-                pdfRaw = await f.arrayBuffer();
-                pdfDocJS = await pdfjsLib.getDocument({data: new Uint8Array(pdfRaw.slice(0))}).promise;
-                
-                // AJUSTE INICIAL: Calcula escala para caber na largura da tela
-                const page = await pdfDocJS.getPage(1);
-                const viewport = page.getViewport({ scale: 1.0 });
-                scale = (window.innerWidth * 0.95) / viewport.width;
-                
-                render();
-            }
+            const f = e.target.files[0]; if (!f) return;
+            pdfRaw = await f.arrayBuffer();
+            pdfDocJS = await pdfjsLib.getDocument({data: new Uint8Array(pdfRaw.slice(0))}).promise;
+            const p = await pdfDocJS.getPage(1);
+            scale = (window.innerWidth * 0.98) / p.getViewport({scale:1}).width;
+            render();
         };
 
         async function render() {
-            const wrapper = document.getElementById('viewer-wrapper');
-            wrapper.innerHTML = '';
+            const wrapper = document.getElementById('viewer-wrapper'); wrapper.innerHTML = '';
             fabricCanvases = [];
-            
             for (let i = 1; i <= pdfDocJS.numPages; i++) {
-                const page = await pdfDocJS.getPage(i);
-                const vp = page.getViewport({ scale: scale });
-                
+                const page = await pdfDocJS.getPage(i), vp = page.getViewport({ scale });
                 const container = document.createElement('div');
                 container.className = 'page-container';
-                container.style.width = vp.width + 'px';
-                container.style.height = vp.height + 'px';
-                
+                container.style.width = vp.width + 'px'; container.style.height = vp.height + 'px';
                 const canvas = document.createElement('canvas');
-                canvas.className = 'pdf-page';
-                canvas.width = vp.width; canvas.height = vp.height;
+                canvas.className = 'pdf-page'; canvas.width = vp.width; canvas.height = vp.height;
                 container.appendChild(canvas);
                 await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-
-                // Camada interativa em cada página
                 const fCanvasEl = document.createElement('canvas');
                 fCanvasEl.className = 'interaction-layer';
                 container.appendChild(fCanvasEl);
-                
                 const fCanvas = new fabric.Canvas(fCanvasEl, { width: vp.width, height: vp.height });
-                fabricCanvases.push(fCanvas);
-                
-                wrapper.appendChild(container);
+                fabricCanvases.push(fCanvas); wrapper.appendChild(container);
             }
-        }
-
-        function changeZoom(d) {
-            scale = Math.max(0.2, scale + d);
-            render();
         }
 
         function confirmP() {
             if(pad.isEmpty()) return;
-            const dataUrl = pad.toDataURL();
-            // Adiciona a assinatura na última página por padrão
-            const targetCanvas = fabricCanvases[fabricCanvases.length - 1];
+            const dataUrl = pad.toDataURL('image/png');
             fabric.Image.fromURL(dataUrl, (img) => {
-                img.set({ left: 50, top: 50, scaleX: 0.4, scaleY: 0.4 });
-                targetCanvas.add(img);
-                targetCanvas.setActiveObject(img);
+                img.set({ left: 50, top: 50 });
+                img.scaleToWidth(150 * scale);
+                fabricCanvases[fabricCanvases.length - 1].add(img).setActiveObject(img);
             });
             closeP();
         }
+
+        function deleteSelected() {
+            fabricCanvases.forEach(fc => {
+                const active = fc.getActiveObject();
+                if(active) fc.remove(active);
+            });
+        }
+
+        function changeZoom(d) { scale = Math.max(0.2, scale + d); render(); }
 
         async function saveP() {
             if (!pdfRaw) return;
@@ -157,34 +122,22 @@
                 const { PDFDocument } = PDFLib;
                 const doc = await PDFDocument.load(pdfRaw.slice(0));
                 const pages = doc.getPages();
-                
                 for (let i = 0; i < pages.length; i++) {
-                    const fCanvas = fabricCanvases[i];
-                    const objects = fCanvas.getObjects('image');
-                    const page = pages[i];
+                    const fCanvas = fabricCanvases[i], objects = fCanvas.getObjects('image'), page = pages[i];
                     const { width, height } = page.getSize();
-                    
                     for (const obj of objects) {
-                        const imgData = obj.toDataURL();
-                        const pdfImg = await doc.embedPng(imgData);
-                        const sX = width / fCanvas.width;
-                        const sY = height / fCanvas.height;
-
+                        const pdfImg = await doc.embedPng(obj.toDataURL());
+                        const sX = width / fCanvas.width, sY = height / fCanvas.height;
                         page.drawImage(pdfImg, {
-                            x: obj.left * sX,
-                            y: height - (obj.top * sY) - (obj.height * obj.scaleY * sY),
-                            width: obj.width * obj.scaleX * sX,
-                            height: obj.height * obj.scaleY * sY,
+                            x: obj.left * sX, y: height - (obj.top * sY) - (obj.height * obj.scaleY * sY),
+                            width: obj.getScaledWidth() * sX, height: obj.getScaledHeight() * sY,
                             rotation: PDFLib.degrees(-obj.angle || 0)
                         });
                     }
                 }
-                const bytes = await doc.save();
-                const b = new Blob([bytes], { type: 'application/pdf' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(b);
-                a.download = "DOKS_FINAL.pdf";
-                a.click();
+                const b = new Blob([await doc.save()], { type: 'application/pdf' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+                a.download = "DOKS_FINAL.pdf"; a.click();
             } catch (err) { alert(err.message); }
         }
     </script>
