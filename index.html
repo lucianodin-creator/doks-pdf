@@ -13,18 +13,20 @@
         .btn-nav { background-color: #fff; color: #2b52d4; padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: bold; cursor: pointer; border: none; }
         .btn-history { background-color: #f39c12; color: white; }
         
-        /* Visualizador de PDF com fundo preto */
-        #pdf-viewer { flex: 1; width: 100%; border: none; background: #000; }
+        #viewer-container { flex: 1; width: 100%; position: relative; background: #000; overflow: auto; display: flex; justify-content: center; }
+        #pdf-viewer { width: 100%; border: none; background: #000; transition: transform 0.2s ease; transform-origin: top center; }
         
-        .footer { background: #000; padding: 15px; display: flex; gap: 10px; justify-content: center; border-top: 1px solid #222; }
-        .btn-footer { flex: 1; padding: 12px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+        /* Botões de Zoom Laranja Flutuantes */
+        .zoom-controls { position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 20; }
+        .btn-zoom { background-color: #f39c12; color: white; width: 45px; height: 45px; border-radius: 8px; border: none; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        
+        .footer { background: #000; padding: 15px; display: flex; gap: 10px; justify-content: center; border-top: 1px solid #222; z-index: 10; }
+        .btn-footer { flex: 1; padding: 12px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-assign { background-color: #3b66f5; }
         .btn-save { background-color: #2d8c3c; }
         input[type="file"] { display: none; }
         
         #history-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333; width: 80%; max-width: 300px; z-index: 100; }
-        .history-item { padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; }
-        .close-modal { margin-top: 15px; background: #cc0000; color: white; width: 100%; padding: 8px; border: none; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -40,7 +42,13 @@
         </div>
     </div>
 
-    <iframe id="pdf-viewer"></iframe>
+    <div id="viewer-container">
+        <div class="zoom-controls">
+            <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
+            <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
+        </div>
+        <iframe id="pdf-viewer"></iframe>
+    </div>
 
     <div class="footer">
         <button class="btn-footer btn-assign">🖋️ ASSINAR</button>
@@ -49,25 +57,30 @@
 
     <div id="history-modal">
         <h3 style="margin-top:0">Arquivos Recentes</h3>
-        <div id="history-list"></div>
-        <button class="close-modal" onclick="toggleHistory()">FECHAR</button>
+        <div id="history-list" style="color:#ccc"></div>
+        <button style="margin-top: 15px; background: #cc0000; color: white; width: 100%; padding: 8px; border: none; border-radius: 5px;" onclick="toggleHistory()">FECHAR</button>
     </div>
 
     <script>
-        const pdfInput = document.getElementById('pdfInput');
+        let currentZoom = 1.0;
         const pdfViewer = document.getElementById('pdf-viewer');
-        const historyList = document.getElementById('history-list');
-        const historyModal = document.getElementById('history-modal');
+        const pdfInput = document.getElementById('pdfInput');
 
-        pdfInput.addEventListener('change', async (e) => {
+        pdfInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                // Força o carregamento dos controles de zoom com #toolbar=1
-                const fileURL = URL.createObjectURL(file) + "#toolbar=1";
+                const fileURL = URL.createObjectURL(file);
                 pdfViewer.src = fileURL;
                 saveToHistory(file.name);
             }
         });
+
+        function changeZoom(delta) {
+            currentZoom += delta;
+            if (currentZoom < 0.5) currentZoom = 0.5;
+            pdfViewer.style.transform = `scale(${currentZoom})`;
+            pdfViewer.style.height = (100 / currentZoom) + "%";
+        }
 
         function saveToHistory(name) {
             let history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
@@ -78,12 +91,14 @@
         }
 
         function toggleHistory() {
+            const modal = document.getElementById('history-modal');
+            const list = document.getElementById('history-list');
             const history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
-            historyList.innerHTML = history.length ? '' : '<p style="color:#666">Nenhum histórico.</p>';
+            list.innerHTML = history.length ? '' : 'Nenhum histórico.';
             history.forEach(item => {
-                historyList.innerHTML += `<div class="history-item">📄 ${item}</div>`;
+                list.innerHTML += `<div style="padding:10px 0; border-bottom:1px solid #222">📄 ${item}</div>`;
             });
-            historyModal.style.display = historyModal.style.display === 'block' ? 'none' : 'block';
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
         }
     </script>
 </body>
