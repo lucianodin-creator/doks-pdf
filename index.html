@@ -33,37 +33,38 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* ALINHAMENTO DE TEXTO PURO */
         .btn-footer { 
             flex: 1; border-radius: 10px; border: none; color: white; 
             font-weight: bold; font-size: 14px; text-transform: uppercase;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            text-align: center;
-            height: 100%; 
-            transition: transform 0.1s;
-            padding: 0;
-            letter-spacing: 1px;
+            display: flex; align-items: center; justify-content: center; 
+            text-align: center; height: 100%; transition: transform 0.1s;
+            padding: 0; letter-spacing: 1px;
         }
 
-        .btn-footer:active { transform: scale(0.95); opacity: 0.9; }
+        .btn-footer:active, .btn-nav-icon:active { transform: scale(0.95); opacity: 0.9; }
         .btn-assign { background-color: #3b66f5; }
         .btn-save { background-color: #2d8c3c; }
 
         input[type="file"] { display: none; }
-        .btn-nav-icon { background:#f39c12; color:white; border:none; padding:6px 10px; border-radius:5px; font-size:16px; cursor:pointer; }
-        .btn-nav-open { background:#fff; color:#2b52d4; padding:6px 12px; border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer; }
+        
+        /* Botão RECENTE ajustado sem emoji */
+        .btn-nav-icon { 
+            background:#f39c12; color:white; border:none; padding:8px 12px; 
+            border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer; 
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        
+        .btn-nav-open { background:#fff; color:#2b52d4; padding:8px 12px; border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div style="font-weight:bold; font-size: 16px;">📄 DOKS PDF</div>
+        <div style="font-weight:bold; font-size: 16px;">DOKS PDF</div>
         <div style="display:flex; gap:8px; align-items: center;">
-            <button class="btn-nav-icon" onclick="toggleHistory()">🕒</button>
+            <button class="btn-nav-icon" onclick="toggleHistory()">RECENTE</button>
             <label class="btn-nav-open">
-                📂 ABRIR <input type="file" id="pdfInput" accept="application/pdf">
+                ABRIR <input type="file" id="pdfInput" accept="application/pdf">
             </label>
         </div>
     </div>
@@ -83,9 +84,9 @@
     </div>
 
     <div id="history-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; padding:20px; border-radius:12px; border:1px solid #333; width:80%; z-index:300;">
-        <h3 style="margin:0 0 10px 0; color:#f39c12; font-size:16px">Recentes</h3>
+        <h3 style="margin:0 0 10px 0; color:#f39c12; font-size:16px; text-align:center;">RECENTES</h3>
         <div id="history-list" style="font-size:13px; color:#ccc"></div>
-        <button onclick="toggleHistory()" style="margin-top:15px; width:100%; padding:8px; background:#cc0000; color:white; border:none; border-radius:5px">FECHAR</button>
+        <button onclick="toggleHistory()" style="margin-top:15px; width:100%; padding:10px; background:#cc0000; color:white; border:none; border-radius:5px; font-weight:bold;">FECHAR</button>
     </div>
 
     <script>
@@ -125,8 +126,8 @@
             const modal = document.getElementById('history-modal');
             const list = document.getElementById('history-list');
             const history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
-            list.innerHTML = history.length ? '' : 'Nenhum histórico.';
-            history.forEach(item => list.innerHTML += `<div style="padding:8px 0; border-bottom:1px solid #222">📄 ${item}</div>`);
+            list.innerHTML = history.length ? '' : 'Nenhum histórico encontrado.';
+            history.forEach(item => list.innerHTML += `<div style="padding:10px 0; border-bottom:1px solid #222">📄 ${item}</div>`);
             modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
         }
     </script>
