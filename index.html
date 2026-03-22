@@ -54,11 +54,11 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         let pdfDoc = null;
-        let pdfBytes = null;
+        let pdfBytesOriginal = null;
         let scale = 1.2;
         const container = document.getElementById('viewer-container');
         const signCanvas = document.getElementById('signature-canvas');
-        const signaturePad = new SignaturePad(signCanvas, { backgroundColor: 'rgba(255,255,255,0)' });
+        const signaturePad = new SignaturePad(signCanvas, { backgroundColor: 'rgba(255, 255, 255, 0)' });
 
         function resizeCanvas() {
             const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -71,8 +71,9 @@
         document.getElementById('pdfInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
-                pdfBytes = await file.arrayBuffer();
-                pdfDoc = await pdfjsLib.getDocument({data: new Uint8Array(pdfBytes)}).promise;
+                pdfBytesOriginal = await file.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({data: new Uint8Array(pdfBytesOriginal)});
+                pdfDoc = await loadingTask.promise;
                 renderAllPages();
             }
         });
@@ -96,39 +97,41 @@
         function zoomOut() { scale = Math.max(0.5, scale - 0.2); renderAllPages(); }
         function openPad() { document.getElementById('signature-pad-modal').style.display = 'flex'; setTimeout(resizeCanvas, 50); }
         function closePad() { document.getElementById('signature-pad-modal').style.display = 'none'; }
-        function confirmSignature() { if(signaturePad.isEmpty()) return alert("Assine primeiro!"); closePad(); alert("Assinatura pronta!"); }
+        function confirmSignature() { if(signaturePad.isEmpty()) return alert("Assine primeiro!"); closePad(); alert("Assinatura confirmada!"); }
 
         async function savePdf() {
-            if (!pdfBytes || signaturePad.isEmpty()) return alert("Erro: Documento ou assinatura ausente.");
+            if (!pdfBytesOriginal || signaturePad.isEmpty()) return alert("Selecione um PDF e assine antes de salvar!");
             
             try {
-                const { PDFDocument } = PDFLib;
-                const pdfDocLib = await PDFDocument.load(pdfBytes);
+                const { PDFDocument, rgb } = PDFLib;
+                const pdfDocLib = await PDFDocument.load(pdfBytesOriginal);
                 const pages = pdfDocLib.getPages();
                 const lastPage = pages[pages.length - 1];
                 const { width, height } = lastPage.getSize();
                 
-                // Converte assinatura para PNG
                 const sigData = signaturePad.toDataURL("image/png");
                 const sigImg = await pdfDocLib.embedPng(sigData);
                 
-                // Tenta desenhar em uma posição central bem visível
+                // Dimensões da assinatura no papel
+                const sigWidth = 180;
+                const sigHeight = 90;
+
+                // Desenha a assinatura na parte inferior central
                 lastPage.drawImage(sigImg, {
-                    x: (width / 2) - 100,
-                    y: 100, 
-                    width: 200,
-                    height: 80,
-                    opacity: 1
+                    x: (width / 2) - (sigWidth / 2),
+                    y: 50, 
+                    width: sigWidth,
+                    height: sigHeight,
                 });
 
                 const resultBytes = await pdfDocLib.save();
                 const blob = new Blob([resultBytes], { type: "application/pdf" });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = "assinado.pdf";
+                link.download = "documento_assinado.pdf";
                 link.click();
             } catch (err) {
-                alert("Erro ao gravar assinatura: " + err.message);
+                alert("Erro ao salvar: " + err.message);
             }
         }
 
