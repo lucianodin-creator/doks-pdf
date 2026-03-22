@@ -12,7 +12,7 @@
         body { font-family: sans-serif; background: #000; color: #fff; margin: 0; display: flex; flex-direction: column; height: var(--vh); width: 100vw; overflow: hidden; position: fixed; }
         .navbar { background: #2b52d4; padding: 0 10px; display: flex; justify-content: space-between; align-items: center; height: 55px; flex-shrink: 0; }
         .btn-nav { border: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; font-weight: bold; background: #fff; color: #2b52d4; }
-        #viewer-container { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; display: flex; flex-direction: column; align-items: center; }
+        #viewer-container { flex: 1; width: 100%; background: #1a1a1a; overflow: auto; display: flex; flex-direction: column; align-items: center; position: relative; }
         canvas.pdf-page { border-bottom: 10px solid #000; max-width: 100%; height: auto !important; margin-top: 5px; }
         .zoom-controls { position: fixed; right: 15px; top: 75px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
         .btn-zoom { background: #f39c12; color: #fff; width: 48px; height: 48px; border-radius: 12px; border: none; font-size: 24px; font-weight: bold; }
@@ -21,7 +21,9 @@
         #signature-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: var(--vh); background: #fff; z-index: 500; flex-direction: column; }
         #signature-canvas { width: 100%; height: 100%; touch-action: none; background: #fff; }
         .pad-btns { display: flex; gap: 10px; padding: 15px; background: #eee; }
-        .btn-p { flex: 1; padding: 15px; border-radius: 8px; border: none; color: #fff; font-weight: bold; font-size: 14px; }
+        .btn-p { flex: 1; padding: 15px; border-radius: 8px; border: none; color: #fff; font-weight: bold; }
+        /* Estilo da Prévia Visual */
+        .sig-preview { position: absolute; pointer-events: none; border: 1px dashed #3b66f5; background: rgba(59, 102, 245, 0.1); }
     </style>
 </head>
 <body>
@@ -32,21 +34,17 @@
             <label class="btn-nav">ABRIR <input type="file" id="pdfIn" accept="application/pdf" style="display:none"></label>
         </div>
     </div>
-
     <div class="zoom-controls">
         <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
         <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
     </div>
-
     <div id="viewer-container"></div>
-
     <div class="footer">
         <button class="btn-footer" style="background:#3b66f5;" onclick="openP()">ASSINAR</button>
         <button class="btn-footer" style="background:#2d8c3c;" onclick="saveP()">SALVAR PDF</button>
     </div>
-
     <div id="signature-modal">
-        <div style="background:#2b52d4; color:#fff; padding:10px; text-align:center; font-size:12px;">🔄 GIRE A TELA PARA ASSINAR MELHOR</div>
+        <div style="background:#2b52d4; color:#fff; padding:10px; text-align:center; font-size:12px;">ASSINE ABAIXO</div>
         <div style="flex:1; position:relative;"><canvas id="signature-canvas"></canvas></div>
         <div class="pad-btns">
             <button class="btn-p" style="background:#546e7a;" onclick="closeP()">Sair</button>
@@ -61,21 +59,26 @@
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         
-        let pdfDataForSaving = null;
+        let pdfDataBackup = null;
         let pdfDocJS = null;
         let scale = 1.0;
-        const canvas = document.getElementById('signature-canvas');
-        const signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgba(255,255,255,0)' });
+        const canvasPad = document.getElementById('signature-canvas');
+        const signaturePad = new SignaturePad(canvasPad, { backgroundColor: 'rgba(255,255,255,0)' });
 
         function openP() { document.getElementById('signature-modal').style.display = 'flex'; resPad(); }
         function closeP() { document.getElementById('signature-modal').style.display = 'none'; }
-        function confirmP() { if(signaturePad.isEmpty()) return alert("Assine primeiro"); closeP(); }
+        
+        function confirmP() { 
+            if(signaturePad.isEmpty()) return alert("Assine primeiro");
+            showPreviewOnCanvas(); // MOSTRA A ASSINATURA NA TELA
+            closeP(); 
+        }
 
         function resPad() {
             const r = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * r;
-            canvas.height = canvas.offsetHeight * r;
-            canvas.getContext("2d").setTransform(r, 0, 0, r, 0, 0);
+            canvasPad.width = canvasPad.offsetWidth * r;
+            canvasPad.height = canvasPad.offsetHeight * r;
+            canvasPad.getContext("2d").setTransform(r, 0, 0, r, 0, 0);
             signaturePad.clear();
         }
 
@@ -83,8 +86,7 @@
             const f = e.target.files[0];
             if (f) {
                 const buffer = await f.arrayBuffer();
-                // CORREÇÃO: Cria uma cópia independente para salvar depois
-                pdfDataForSaving = buffer.slice(0); 
+                pdfDataBackup = buffer.slice(0);
                 pdfDocJS = await pdfjsLib.getDocument({data: new Uint8Array(buffer)}).promise;
                 render();
             }
@@ -92,46 +94,58 @@
 
         async function render() {
             if (!pdfDocJS) return;
-            const v = document.getElementById('viewer-container');
-            v.innerHTML = '';
+            const container = document.getElementById('viewer-container');
+            container.innerHTML = '';
             for (let i = 1; i <= pdfDocJS.numPages; i++) {
                 const p = await pdfDocJS.getPage(i);
                 const vp = p.getViewport({ scale: scale });
                 const c = document.createElement('canvas');
                 c.className = 'pdf-page';
+                c.id = 'page-' + i;
                 c.width = vp.width; c.height = vp.height;
-                v.appendChild(c);
+                container.appendChild(c);
                 await p.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
             }
+        }
+
+        function showPreviewOnCanvas() {
+            const lastCanvas = document.querySelector('.pdf-page:last-child');
+            if (!lastCanvas) return;
+            const ctx = lastCanvas.getContext('2d');
+            const img = new Image();
+            img.onload = function() {
+                // Desenha a prévia no canvas de visualização (escala proporcional ao zoom)
+                const w = 200 * scale;
+                const h = 80 * scale;
+                ctx.drawImage(img, (lastCanvas.width / 2) - (w / 2), lastCanvas.height - h - (50 * scale), w, h);
+            };
+            img.src = signaturePad.toDataURL();
         }
 
         function changeZoom(d) { scale = Math.max(0.4, scale + d); render(); }
 
         async function saveP() {
-            if (!pdfDataForSaving || signaturePad.isEmpty()) return alert("Abra o PDF e assine.");
+            if (!pdfDataBackup || signaturePad.isEmpty()) return alert("Abra o PDF e assine.");
             try {
                 const { PDFDocument } = PDFLib;
-                // Usa a cópia de segurança
-                const doc = await PDFDocument.load(pdfDataForSaving.slice(0));
+                const doc = await PDFDocument.load(pdfDataBackup.slice(0));
                 const pgs = doc.getPages();
                 const last = pgs[pgs.length - 1];
                 const { width, height } = last.getSize();
-
                 const img = await doc.embedPng(signaturePad.toDataURL());
                 
-                // Grava no meio para garantir que você veja
                 last.drawImage(img, {
-                    x: (width / 2) - 100,
-                    y: height / 2, 
+                    x: width / 2 - 100,
+                    y: 70, // Posição no PDF final
                     width: 200,
-                    height: 100
+                    height: 80
                 });
 
                 const bytes = await doc.save();
                 const b = new Blob([bytes], { type: 'application/pdf' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(b);
-                a.download = "DOKS_FINAL.pdf";
+                a.download = "assinado.pdf";
                 a.click();
             } catch (err) { alert("Erro ao salvar: " + err.message); }
         }
