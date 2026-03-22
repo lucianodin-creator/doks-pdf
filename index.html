@@ -6,69 +6,81 @@
     <title>DOKS PDF</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
-        :root { --primary: #0070f3; --success: #0070f3; --bg: #000; --text: #fff; --card: #111; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .header { width: 100%; max-width: 500px; background: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: bold; }
-        .btn { width: 100%; max-width: 500px; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: white; transition: 0.2s; }
-        .btn-upload { background: #333; }
-        .btn-action { background: var(--success); }
+        body { font-family: sans-serif; background-color: #1a1a1a; color: white; margin: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        .navbar { background-color: #2b52d4; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; }
+        .logo { font-weight: bold; font-size: 18px; }
+        .nav-buttons { display: flex; gap: 8px; }
+        .btn-nav { background-color: #fff; color: #2b52d4; padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: bold; cursor: pointer; text-decoration: none; border: none; }
+        .btn-history { background-color: #f39c12; color: white; }
+        #pdf-viewer { flex-grow: 1; width: 100%; border: none; background: #333; }
+        .footer { background: #1a1a1a; padding: 15px; display: flex; gap: 10px; justify-content: center; }
+        .btn-footer { flex: 1; padding: 15px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-assign { background-color: #3b66f5; }
+        .btn-save { background-color: #2d8c3c; }
         input[type="file"] { display: none; }
-        .history { width: 100%; max-width: 500px; margin-top: 30px; }
-        .history h3 { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .history-item { background: var(--card); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; border: 1px solid #222; }
-        .history-date { color: #555; font-size: 12px; }
+        
+        /* Modal Simples para Histórico */
+        #history-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; padding: 20px; border-radius: 10px; border: 1px solid #444; width: 80%; max-width: 300px; z-index: 100; }
+        .history-item { padding: 10px 0; border-bottom: 1px solid #333; font-size: 14px; }
+        .close-modal { margin-top: 15px; background: #cc0000; color: white; width: 100%; padding: 8px; border: none; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="header">📄 DOKS PDF</div>
+    <div class="navbar">
+        <div class="logo">📄 DOKS PDF</div>
+        <div class="nav-buttons">
+            <button class="btn-nav btn-history" onclick="toggleHistory()">🕒 RECENTES</button>
+            <label class="btn-nav">
+                📂 ABRIR PDF
+                <input type="file" id="pdfInput" accept="application/pdf">
+            </label>
+        </div>
+    </div>
 
-    <label class="btn btn-upload">
-        📁 SELECIONAR PDF
-        <input type="file" id="pdfInput" accept="application/pdf">
-    </label>
+    <iframe id="pdf-viewer"></iframe>
 
-    <button class="btn btn-action" onclick="alert('Funcionalidade de assinatura em breve!')">✍️ ASSINAR DOCUMENTO</button>
+    <div class="footer">
+        <button class="btn-footer btn-assign">🖋️ ASSINAR</button>
+        <button class="btn-footer btn-save">✔️ SALVAR</button>
+    </div>
 
-    <div class="history">
-        <h3>Recentes</h3>
-        <div id="historyList">
-            </div>
+    <div id="history-modal">
+        <h3 style="margin-top:0">Arquivos Recentes</h3>
+        <div id="history-list"></div>
+        <button class="close-modal" onclick="toggleHistory()">FECHAR</button>
     </div>
 
     <script>
         const pdfInput = document.getElementById('pdfInput');
-        const historyList = document.getElementById('historyList');
-
-        // Carrega histórico ao abrir
-        window.onload = displayHistory;
+        const pdfViewer = document.getElementById('pdf-viewer');
+        const historyList = document.getElementById('history-list');
+        const historyModal = document.getElementById('history-modal');
 
         pdfInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
+                const fileURL = URL.createObjectURL(file);
+                pdfViewer.src = fileURL;
                 saveToHistory(file.name);
-                alert('Arquivo ' + file.name + ' carregado!');
             }
         });
 
         function saveToHistory(name) {
             let history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
-            const newItem = { name, date: new Date().toLocaleDateString('pt-BR') };
-            history = [newItem, ...history.slice(0, 4)]; // Mantém os últimos 5
-            localStorage.setItem('pdf_history', JSON.stringify(history));
-            displayHistory();
+            if (!history.includes(name)) {
+                history = [name, ...history.slice(0, 4)];
+                localStorage.setItem('pdf_history', JSON.stringify(history));
+            }
         }
 
-        function displayHistory() {
+        function toggleHistory() {
             const history = JSON.parse(localStorage.getItem('pdf_history') || '[]');
-            historyList.innerHTML = history.length ? '' : '<p style="color:#444">Nenhum arquivo recente.</p>';
+            historyList.innerHTML = history.length ? '' : '<p style="color:#666">Nenhum histórico.</p>';
             history.forEach(item => {
-                historyList.innerHTML += `
-                    <div class="history-item">
-                        <span>📄 ${item.name}</span>
-                        <span class="history-date">${item.date}</span>
-                    </div>`;
+                historyList.innerHTML += `<div class="history-item">📄 ${item}</div>`;
             });
+            historyModal.style.display = historyModal.style.display === 'block' ? 'none' : 'block';
         }
     </script>
 </body>
