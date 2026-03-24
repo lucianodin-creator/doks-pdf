@@ -172,16 +172,21 @@
         <p>🔄 Gire o celular para assinar</p>
     </div>
 
-<div class="header">
-    <div style="display:flex; align-items:center; gap:10px;">
-        <strong style="font-size:18px;">DoksPDF</strong>
-        <button onclick="mostrarRecentes()" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🕒 RECENTES</button>
-    </div>
+<div class="header" style="height: 60px; background: #4169E1; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 1000;">
     
-    <label for="file-in" style="background:#fff; color:#4169E1; padding:8px 15px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; display: flex; align-items: center; gap: 5px;">
-        📂 ABRIR PDF
-    </label>
-    <input type="file" id="file-in" style="display:none" accept="application/pdf">
+    <strong style="font-size: 18px;">DoksPDF</strong>
+    
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <button onclick="mostrarRecentes()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; height: 35px;">
+            🕒 RECENTES
+        </button>
+        
+        <label for="file-in" style="background: #fff; color: #4169E1; padding: 0 15px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; height: 35px;">
+            📂 ABRIR PDF
+        </label>
+        <input type="file" id="file-in" style="display: none" accept="application/pdf">
+    </div>
+
 </div>
 
 <div class="container" id="scroll-cont">
