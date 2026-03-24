@@ -18,10 +18,11 @@
         :root { --vh: 100vh; --primary: #4169E1; --accent: #ff8c00; --success: #2e7d32; }
         
         body { 
+margin-bottom: 75px;
             font-family: sans-serif; 
             background: #111; 
-            height: var(--vh); 
-            width: 100vw; 
+            height: var(100dvh); 
+            width: 100%; 
             display: flex; 
             flex-direction: column; 
             overflow: hidden; 
@@ -44,14 +45,17 @@
 
         /* MÓDULO CSS: BARRA INFERIOR */
         .bottom-bar { 
-            height: 75px; 
-            background: #000; 
-            display: flex; 
-            align-items: center; 
-            padding: 0 15px; 
-            gap: 10px; 
-            position: relative; 
-            z-index: 20000; 
+    height: 75px; 
+    background: #000; 
+    display: flex; 
+    align-items: center; 
+    padding: 0 15px; 
+    gap: 10px;
+    position: fixed; /* Fixa a barra sempre no rodapé */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20000;
         }
 
         /* MÓDULO CSS: BOTÕES DA BARRA INFERIOR (CENTRALIZADOS) */
@@ -300,6 +304,16 @@ function clonarPosicao(btn) {
         window.addEventListener('resize', atualizarAltura);
         window.addEventListener('orientationchange', () => setTimeout(atualizarAltura, 300));
         atualizarAltura();
+
+/* --- MÓDULO: AJUSTE DE TELA DINÂMICO --- */
+function ajustarLayout() {
+    // Garante que o corpo da página ocupe a altura visível real
+    document.body.style.height = window.innerHeight + "px";
+}
+window.addEventListener('resize', ajustarLayout);
+window.addEventListener('orientationchange', () => setTimeout(ajustarLayout, 300));
+ajustarLayout();
+
     </script>
 </body>
 </html>
