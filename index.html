@@ -3,38 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MEUPDF PRO</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        * { box-sizing: border-box; tap-highlight-color: transparent; margin: 0; padding: 0; }
-        :root { --vh: 100vh; }
-        body { font-family: sans-serif; background: #111; height: var(--vh); width: 100vw; display: flex; flex-direction: column; overflow: hidden; position: fixed; }
-        .header { height: 50px; background: #4169E1; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
-        .container { flex: 1; overflow-y: auto; background: #222; position: relative; display: flex; flex-direction: column; align-items: center; padding: 10px; }
-        #pdf-wrapper { position: relative; transform-origin: top center; display: flex; flex-direction: column; gap: 15px; padding-bottom: 120px; }
-        .page-container { position: relative; background: #fff; box-shadow: 0 0 15px #000; margin-bottom: 10px; line-height: 0; }
-        canvas { display: block; width: 100% !important; height: auto !important; }
-        .sig-box { position: absolute; border: 1.5px dashed #4169E1; z-index: 5000; touch-action: none; background: transparent; display: flex; align-items: center; justify-content: center; }
-        .sig-box img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-        .sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 6px; z-index: 9999; }
-        .btn-tool { width: 38px; height: 38px; border-radius: 8px; border: none; color: white; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
-        .handle { position: absolute; width: 22px; height: 22px; background: #4169E1; border: 2px solid #fff; border-radius: 50%; z-index: 5001; bottom: -11px; right: -11px; }
-        .bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; }
-        .btn-action { flex: 1; height: 50px; border-radius: 12px; border: none; color: white; font-weight: bold; font-size: 14px; }
-        #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
-        #sig-pad { flex: 1; width: 100%; background: #f9f9f9; touch-action: none; }
-        .modal-btns { height: 70px; display: flex; padding: 10px; gap: 10px; background: #111; }
-        .modal-btns button { flex: 1; border: none; border-radius: 8px; color: white; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div class="header"><strong>MEUPDF PRO</strong><label for="file-in" style="background:#fff; color:#4169E1; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:12px;">📂 ABRIR PDF</label><input type="file" id="file-in" style="display:none" accept="application/pdf"></div>
-    <div class="container" id="scroll-cont">
-        <div id="pdf-wrapper"></div>
-    </div>
+<title>DoksPDF</title>
+
+<div class="header">
+    <strong>DoksPDF</strong>
+    <label for="file-in" style="background:#fff; color:#4169E1; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:12px;">📂 ABRIR PDF</label>
+    <input type="file" id="file-in" style="display:none" accept="application/pdf">
+</div>
     <div class="bottom-bar">
         <button class="btn-action" style="background:#4169E1" onclick="abrirModal()">🖋️ ASSINAR</button>
         <button class="btn-action" style="background:#2e7d32" onclick="gerarPDF()">✔ SALVAR PDF</button>
