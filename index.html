@@ -1,174 +1,190 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>DoksPDF</title>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; tap-highlight-color: transparent; margin: 0; padding: 0; }
+:root { --vh: 100vh; }
+body { font-family: sans-serif; background: #111; height: var(--vh); width: 100vw; display: flex; flex-direction: column; overflow: hidden; position: fixed; }
+.header { height: 50px; background: #4169E1; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
+.container { flex: 1; overflow-y: auto; background: #222; position: relative; display: flex; flex-direction: column; align-items: center; padding: 10px; }
+#pdf-wrapper { position: relative; transform-origin: top center; display: flex; flex-direction: column; gap: 15px; padding-bottom: 120px; }
+.page-container { position: relative; background: #fff; box-shadow: 0 0 15px #000; margin-bottom: 10px; line-height: 0; }
+canvas { display: block; width: 100% !important; height: auto !important; }
+.sig-box { position: absolute; border: 1.5px dashed #4169E1; z-index: 5000; touch-action: none; background: transparent; display: flex; align-items: center; justify-content: center; }
+.sig-box img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 6px; z-index: 9999; }
+.btn-tool { width: 38px; height: 38px; border-radius: 8px; border: none; color: white; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
+.handle { position: absolute; width: 22px; height: 22px; background: #4169E1; border: 2px solid #fff; border-radius: 50%; z-index: 5001; bottom: -11px; right: -11px; }
+.bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; }
+.btn-action { flex: 1; height: 50px; border-radius: 12px; border: none; color: white; font-weight: bold; font-size: 14px; }
+#sig-modal { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; flex-direction: column; }
+#sig-pad { flex: 1; width: 100%; background: #f9f9f9; touch-action: none; }
+.modal-btns { height: 70px; display: flex; padding: 10px; gap: 10px; background: #111; }
+.modal-btns button { flex: 1; border: none; border-radius: 8px; color: white; font-weight: bold; }
+</style>
+</head>
+<body>
 <div class="header">
-    <strong>DoksPDF</strong>
-    <label for="file-in" style="background:#fff; color:#4169E1; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:12px;">📂 ABRIR PDF</label>
-    <input type="file" id="file-in" style="display:none" accept="application/pdf">
+<strong>DoksPDF</strong>
+<label for="file-in" style="background:#fff; color:#4169E1; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:12px;">📂 ABRIR PDF</label>
+<input type="file" id="file-in" style="display:none" accept="application/pdf">
 </div>
-    <div class="bottom-bar">
-        <button class="btn-action" style="background:#4169E1" onclick="abrirModal()">🖋️ ASSINAR</button>
-        <button class="btn-action" style="background:#2e7d32" onclick="gerarPDF()">✔ SALVAR PDF</button>
-    </div>
-    <div id="sig-modal">
-        <canvas id="sig-pad"></canvas>
-        <div class="modal-btns">
-            <button onclick="fecharModal()" style="background:#444">SAIR</button>
-            <button onclick="signaturePad.clear()" style="background:#e67e22">LIMPAR</button>
-            <button onclick="confirmSig()" style="background:#2e7d32">CONFIRMAR</button>
-        </div>
-    </div>
-
-    <script>
-        const setVH = () => document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
-        window.addEventListener('resize', setVH); setVH();
-        const { pdfjsLib } = globalThis;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let signaturePad, pdfDoc = null, pdfName = "documento.pdf";
-
-        document.getElementById('file-in').onchange = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            pdfName = file.name.replace(".pdf", "_assinado.pdf");
-            const reader = new FileReader();
-            reader.onload = async function() { 
-                pdfDoc = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise; 
-                renderPages(); 
-            };
-            reader.readAsArrayBuffer(file);
-        };
-
-        async function renderPages() {
-            const wrapper = document.getElementById('pdf-wrapper'); wrapper.innerHTML = '';
-            const screenW = document.getElementById('scroll-cont').clientWidth - 20;
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                const page = await pdfDoc.getPage(i);
-                const vp = page.getViewport({scale: (screenW / page.getViewport({scale:1}).width)});
-                const container = document.createElement('div');
-                container.className = 'page-container'; container.id = `page-${i}`;
-                container.style.width = vp.width + 'px'; container.style.height = vp.height + 'px';
-                const canvas = document.createElement('canvas');
-                canvas.width = vp.width; canvas.height = vp.height;
-                container.appendChild(canvas); wrapper.appendChild(container);
-                await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
-            }
-        }
-
-        function abrirModal() {
-            document.getElementById('sig-modal').style.display = 'flex';
-            const canvas = document.getElementById('sig-pad');
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight - 70;
-            if (!signaturePad) signaturePad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 4 });
-            signaturePad.clear();
-        }
-
-        function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
-
-        function trimCanvas(canvas) {
-            const ctx = canvas.getContext('2d');
-            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let bound = { top: null, left: null, right: null, bottom: null };
-            for (let i = 0; i < pixels.data.length; i += 4) {
-                if (pixels.data[i + 3] !== 0) {
-                    const x = (i / 4) % canvas.width, y = ~~((i / 4) / canvas.width);
-                    if (bound.top === null || y < bound.top) bound.top = y;
-                    if (bound.left === null || x < bound.left) bound.left = x;
-                    if (bound.right === null || x > bound.right) bound.right = x;
-                    if (bound.bottom === null || y > bound.bottom) bound.bottom = y;
-                }
-            }
-            if (bound.top === null) return null;
-            const trimW = bound.right - bound.left, trimH = bound.bottom - bound.top;
-            const trimmed = document.createElement('canvas');
-            trimmed.width = trimW; trimmed.height = trimH;
-            trimmed.getContext('2d').drawImage(canvas, bound.left, bound.top, trimW, trimH, 0, 0, trimW, trimH);
-            return { data: trimmed.toDataURL(), ratio: trimW / trimH };
-        }
-
-        function confirmSig() {
-            const result = trimCanvas(document.getElementById('sig-pad'));
-            if (!result) return;
-            const baseW = 120;
-            addSigToPage(1, result.data, 200, 50, baseW, baseW / result.ratio, 0);
-            fecharModal();
-        }
-
-        function addSigToPage(pNum, src, top, left, w, h, angle) {
-            const page = document.getElementById(`page-${pNum}`); if (!page) return;
-            const div = document.createElement('div');
-            div.className = 'sig-box'; div.dataset.angle = angle;
-            div.style.top = top+'px'; div.style.left = left+'px'; div.style.width = w+'px'; div.style.height = h+'px';
-            div.innerHTML = `
-                <div class="sig-tools">
-                    <button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
-                    <button class="btn-tool" style="background:#2ecc71" onclick="girarSig(this)">🔄</button>
-                    <button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
-                </div>
-                <img src="${src}" style="transform: rotate(${angle}deg)">
-                <div class="handle"></div>
-            `;
-            page.appendChild(div);
-            setupInteract(div);
-        }
-
-        function girarSig(btn) {
-            const el = btn.closest('.sig-box');
-            let angle = (parseInt(el.dataset.angle) + 90) % 360;
-            el.dataset.angle = angle;
-            el.querySelector('img').style.transform = `rotate(${angle}deg)`;
-        }
-
-        function clonarPosicao(btn) {
-            const el = btn.closest('.sig-box');
-            const src = el.querySelector('img').src, a = parseInt(el.dataset.angle);
-            const w = el.offsetWidth, h = el.offsetHeight, t = parseFloat(el.style.top), l = parseFloat(el.style.left);
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                if (`page-${i}` === el.parentElement.id) continue;
-                addSigToPage(i, src, t, l, w, h, a);
-            }
-        }
-
-        function setupInteract(el) {
-            let x = 0, y = 0;
-            interact(el).draggable({
-                listeners: { move(e) { x += e.dx; y += e.dy; e.target.style.transform = `translate(${x}px, ${y}px)`; },
-                end(e) {
-                    const rect = e.target.getBoundingClientRect();
-                    const parentRect = e.target.parentElement.getBoundingClientRect();
-                    e.target.style.top = (rect.top - parentRect.top) + "px";
-                    e.target.style.left = (rect.left - parentRect.left) + "px";
-                    e.target.style.transform = "translate(0,0)"; x = 0; y = 0;
-                }}
-            }).resizable({
-                edges: { right: true, bottom: true },
-                listeners: { move(e) { Object.assign(e.target.style, { width: `${e.rect.width}px`, height: `${e.rect.height}px` }); }}
-            });
-        }
-
-        async function gerarPDF() {
-            const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'pt', 'a4');
-            const pages = document.querySelectorAll('.page-container');
-            for (let i = 0; i < pages.length; i++) {
-                if (i > 0) doc.addPage();
-                const canvas = pages[i].querySelector('canvas');
-                doc.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 595, 842);
-                pages[i].querySelectorAll('.sig-box').forEach(sig => {
-                    const img = sig.querySelector('img');
-                    const pW = pages[i].offsetWidth, pH = pages[i].offsetHeight;
-                    const x = (parseFloat(sig.style.left) / pW) * 595;
-                    const y = (parseFloat(sig.style.top) / pH) * 842;
-                    const w = (parseFloat(sig.style.width) / pW) * 595;
-                    const h = (parseFloat(sig.style.height) / pH) * 842;
-                    const angle = parseInt(sig.dataset.angle);
-                    doc.addImage(img.src, 'PNG', x, y, w, h, null, 'FAST', angle);
-                });
-            }
-            doc.save(pdfName);
-        }
-    </script>
+<div class="container" id="scroll-cont">
+<div id="pdf-wrapper"></div>
+</div>
+<div class="bottom-bar">
+<button class="btn-action" style="background:#4169E1" onclick="abrirModal()">🖋️ ASSINAR</button>
+<button class="btn-action" style="background:#2e7d32" onclick="gerarPDF()">✔ SALVAR PDF</button>
+</div>
+<div id="sig-modal">
+<canvas id="sig-pad"></canvas>
+<div class="modal-btns">
+<button onclick="fecharModal()" style="background:#444">SAIR</button>
+<button onclick="signaturePad.clear()" style="background:#e67e22">LIMPAR</button>
+<button onclick="confirmSig()" style="background:#2e7d32">CONFIRMAR</button>
+</div>
+</div>
+<script>
+const setVH = () => document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
+window.addEventListener('resize', setVH); setVH();
+const { pdfjsLib } = globalThis;
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+let signaturePad, pdfDoc = null, pdfName = "documento.pdf";
+document.getElementById('file-in').onchange = async (e) => {
+const file = e.target.files[0]; if(!file) return;
+pdfName = file.name.replace(".pdf", "_assinado.pdf");
+const reader = new FileReader();
+reader.onload = async function() { 
+pdfDoc = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise; 
+renderPages(); 
+};
+reader.readAsArrayBuffer(file);
+};
+async function renderPages() {
+const wrapper = document.getElementById('pdf-wrapper'); wrapper.innerHTML = '';
+const screenW = document.getElementById('scroll-cont').clientWidth - 20;
+for (let i = 1; i <= pdfDoc.numPages; i++) {
+const page = await pdfDoc.getPage(i);
+const vp = page.getViewport({scale: (screenW / page.getViewport({scale:1}).width)});
+const container = document.createElement('div');
+container.className = 'page-container'; container.id = `page-${i}`;
+container.style.width = vp.width + 'px'; container.style.height = vp.height + 'px';
+const canvas = document.createElement('canvas');
+canvas.width = vp.width; canvas.height = vp.height;
+container.appendChild(canvas); wrapper.appendChild(container);
+await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+}
+}
+function abrirModal() {
+document.getElementById('sig-modal').style.display = 'flex';
+const canvas = document.getElementById('sig-pad');
+canvas.width = window.innerWidth; canvas.height = window.innerHeight - 70;
+if (!signaturePad) signaturePad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 4 });
+signaturePad.clear();
+}
+function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
+function trimCanvas(canvas) {
+const ctx = canvas.getContext('2d');
+const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+let bound = { top: null, left: null, right: null, bottom: null };
+for (let i = 0; i < pixels.data.length; i += 4) {
+if (pixels.data[i + 3] !== 0) {
+const x = (i / 4) % canvas.width, y = ~~((i / 4) / canvas.width);
+if (bound.top === null || y < bound.top) bound.top = y;
+if (bound.left === null || x < bound.left) bound.left = x;
+if (bound.right === null || x > bound.right) bound.right = x;
+if (bound.bottom === null || y > bound.bottom) bound.bottom = y;
+}
+}
+if (bound.top === null) return null;
+const trimW = bound.right - bound.left, trimH = bound.bottom - bound.top;
+const trimmed = document.createElement('canvas');
+trimmed.width = trimW; trimmed.height = trimH;
+trimmed.getContext('2d').drawImage(canvas, bound.left, bound.top, trimW, trimH, 0, 0, trimW, trimH);
+return { data: trimmed.toDataURL(), ratio: trimW / trimH };
+}
+function confirmSig() {
+const result = trimCanvas(document.getElementById('sig-pad'));
+if (!result) return;
+const baseW = 120;
+addSigToPage(1, result.data, 200, 50, baseW, baseW / result.ratio, 0);
+fecharModal();
+}
+function addSigToPage(pNum, src, top, left, w, h, angle) {
+const page = document.getElementById(`page-${pNum}`); if (!page) return;
+const div = document.createElement('div');
+div.className = 'sig-box'; div.dataset.angle = angle;
+div.style.top = top+'px'; div.style.left = left+'px'; div.style.width = w+'px'; div.style.height = h+'px';
+div.innerHTML = `
+<div class="sig-tools">
+<button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
+<button class="btn-tool" style="background:#2ecc71" onclick="girarSig(this)">🔄</button>
+<button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
+</div>
+<img src="${src}" style="transform: rotate(${angle}deg)">
+<div class="handle"></div>
+`;
+page.appendChild(div);
+setupInteract(div);
+}
+function girarSig(btn) {
+const el = btn.closest('.sig-box');
+let angle = (parseInt(el.dataset.angle) + 90) % 360;
+el.dataset.angle = angle;
+el.querySelector('img').style.transform = `rotate(${angle}deg)`;
+}
+function clonarPosicao(btn) {
+const el = btn.closest('.sig-box');
+const src = el.querySelector('img').src, a = parseInt(el.dataset.angle);
+const w = el.offsetWidth, h = el.offsetHeight, t = parseFloat(el.style.top), l = parseFloat(el.style.left);
+for (let i = 1; i <= pdfDoc.numPages; i++) {
+if (`page-${i}` === el.parentElement.id) continue;
+addSigToPage(i, src, t, l, w, h, a);
+}
+}
+function setupInteract(el) {
+let x = 0, y = 0;
+interact(el).draggable({
+listeners: { move(e) { x += e.dx; y += e.dy; e.target.style.transform = `translate(${x}px, ${y}px)`; },
+end(e) {
+const rect = e.target.getBoundingClientRect();
+const parentRect = e.target.parentElement.getBoundingClientRect();
+e.target.style.top = (rect.top - parentRect.top) + "px";
+e.target.style.left = (rect.left - parentRect.left) + "px";
+e.target.style.transform = "translate(0,0)"; x = 0; y = 0;
+}}
+}).resizable({
+edges: { right: true, bottom: true },
+listeners: { move(e) { Object.assign(e.target.style, { width: `${e.rect.width}px`, height: `${e.rect.height}px` }); }}
+});
+}
+async function gerarPDF() {
+const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'pt', 'a4');
+const pages = document.querySelectorAll('.page-container');
+for (let i = 0; i < pages.length; i++) {
+if (i > 0) doc.addPage();
+const canvas = pages[i].querySelector('canvas');
+doc.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 595, 842);
+pages[i].querySelectorAll('.sig-box').forEach(sig => {
+const img = sig.querySelector('img');
+const pW = pages[i].offsetWidth, pH = pages[i].offsetHeight;
+const x = (parseFloat(sig.style.left) / pW) * 595;
+const y = (parseFloat(sig.style.top) / pH) * 842;
+const w = (parseFloat(sig.style.width) / pW) * 595;
+const h = (parseFloat(sig.style.height) / pH) * 842;
+const angle = parseInt(sig.dataset.angle);
+doc.addImage(img.src, 'PNG', x, y, w, h, null, 'FAST', angle);
+});
+}
+doc.save(pdfName);
+}
+</script>
 </body>
 </html>
-
