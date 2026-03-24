@@ -43,7 +43,10 @@
         /* MÓDULO CSS: BARRA INFERIOR */
         .bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 20000;
 position: relative; }
-        .btn-action { flex: 1; height: 50px; border-radius: 12px; border: none; color: white; font-weight: bold; }
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px; (Isso dá um espacinho elegante entre a caneta e a palavra ASSINAR).
 
 /* --- GARANTIR QUE O MODAL FIQUE POR CIMA DE TUDO --- */
 #sig-modal {
@@ -112,7 +115,7 @@ position: relative; }
     </div>
 
     <div class="bottom-bar">
-        <button class="btn-action" style="background:var(--primary)" onclick="abrirModal()">🖋️ ASSINAR</button>
+        <button class="btn-action" style="background:var(--primary)" onclick="abrirModal()">🖋️ASSINAR</button>
         <button class="btn-action" style="background:var(--success)" onclick="gerarPDF()">✔ SALVAR PDF</button>
     </div>
 
