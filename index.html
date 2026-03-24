@@ -184,7 +184,7 @@
     <input type="file" id="file-in" style="display:none" accept="application/pdf">
 </div>
 
----
+​--- ### **2. TROCA DE MÓDULO: CONTAINER (Área do PDF)** **Importante:** Vá até a sua div class="container"e verifique se não tem nenhumlabelouinput sobrando lá dentro. Ela deve estar limpa, assim: html
 <div class="container" id="scroll-cont">
     <div class="zoom-controls">
         <button class="btn-zoom" onclick="ajustarZoom(1.1)">+</button>
@@ -222,96 +222,73 @@
     </div>
 
     <script>
-        /* MÓDULO: JS - CONFIGURAÇÃO PDF.JS */
-        var pdfjsLib = window['pdfjs-dist/build/pdf'];
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+/* ============================================================== */
+/* MÓDULO: ASSINATURA DIGITAL (FIX DESALINHAMENTO)               */
+/* ============================================================== */
+let signaturePad;
 
-        let signaturePad, pdfDoc = null, pdfName = "documento.pdf";
-
-        /* MÓDULO: JS - ABRIR PDF */
-        document.getElementById('file-in').onchange = function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            pdfName = file.name.replace(".pdf", "_assinado.pdf");
-            const reader = new FileReader();
-            reader.onload = function() {
-                const typedarray = new Uint8Array(this.result);
-                pdfjsLib.getDocument(typedarray).promise.then(pdf => {
-                    pdfDoc = pdf;
-                    renderPages();
-                });
-            };
-            reader.readAsArrayBuffer(file);
-        };
-
-        async function renderPages() {
-            const wrapper = document.getElementById('pdf-wrapper');
-            wrapper.innerHTML = '';
-            const screenW = document.getElementById('scroll-cont').clientWidth - 20;
-
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                const page = await pdfDoc.getPage(i);
-                const vp = page.getViewport({ scale: (screenW / page.getViewport({scale:1}).width) });
-                
-                const div = document.createElement('div');
-                div.className = 'page-container';
-                div.id = `page-${i}`;
-                div.style.width = vp.width + 'px';
-                div.style.height = vp.height + 'px';
-                
-                const canvas = document.createElement('canvas');
-                canvas.width = vp.width;
-                canvas.height = vp.height;
-                div.appendChild(canvas);
-                wrapper.appendChild(div);
-
-                await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+function abrirModal() {
+    // Força o overlay de rotação se estiver em pé
+    if (window.innerHeight > window.innerWidth) {
+        document.getElementById('rotation-overlay').style.display = 'flex';
+        const aguardarRotacao = () => {
+            if (window.innerWidth > window.innerHeight) {
+                document.getElementById('rotation-overlay').style.display = 'none';
+                window.removeEventListener('resize', aguardarRotacao);
+                iniciarPad();
             }
-        }
+        };
+        window.addEventListener('resize', aguardarRotacao);
+    } else {
+        iniciarPad();
+    }
+}
 
-        /* MÓDULO: JS - LÓGICA ASSINATURA */
-        function abrirModal() {
-            if (window.innerHeight > window.innerWidth) {
-                document.getElementById('rotation-overlay').style.display = 'flex';
-                const check = () => {
-                    if (window.innerWidth > window.innerHeight) {
-                        document.getElementById('rotation-overlay').style.display = 'none';
-                        window.removeEventListener('resize', check);
-                        iniciarPad();
-                    }
-                };
-                window.addEventListener('resize', check);
-            } else { iniciarPad(); }
-        }
+function iniciarPad() {
+    document.getElementById('sig-modal').style.display = 'flex';
+    const canvas = document.getElementById('sig-pad');
+    
+    // IMPORTANTE: Pequeno delay para o navegador estabilizar o layout deitado
+    setTimeout(() => {
+        // 1. Pega o tamanho real que o canvas ocupa na tela
+        const rect = canvas.getBoundingClientRect();
+        
+        // 2. Define o tamanho interno do canvas com base no rect
+        canvas.width = rect.width;
+        canvas.height = rect.height;
 
-        function iniciarPad() {
-            document.getElementById('sig-modal').style.display = 'flex';
-            const canvas = document.getElementById('sig-pad');
-            setTimeout(() => {
-                const ratio = Math.max(window.devicePixelRatio || 1, 1);
-                canvas.width = canvas.offsetWidth * ratio;
-                canvas.height = canvas.offsetHeight * ratio;
-                canvas.getContext("2d").scale(ratio, ratio);
-                if (signaturePad) signaturePad.off();
-                signaturePad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 4 });
-            }, 400);
-        }
+        // 3. Inicializa o SignaturePad
+        if (signaturePad) signaturePad.off(); // Limpa instância anterior
+        signaturePad = new SignaturePad(canvas, {
+            minWidth: 1.5,
+            maxWidth: 4.5,
+            penColor: "rgb(0, 0, 0)" // Preto puro
+        });
 
-        function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
+        // 4. CORREÇÃO VITAL: Força a re-sincronização das coordenadas
+        signaturePad.clear(); // Limpa qualquer resíduo
+        
+        console.log("SignaturePad inicializado com alinhamento corrigido.");
+    }, 350); // Delay de estabilização
+}
+
+function fecharModal() {
+    document.getElementById('sig-modal').style.display = 'none';
+}
 
 function confirmSig() {
-    const canvas = document.getElementById('sig-pad');
     if (signaturePad && !signaturePad.isEmpty()) {
-        // Gera a imagem e já aplica o corte de espaços vazios
-        const data = signaturePad.toDataURL(); 
+        // Gera a imagem da assinatura recortada
+        const data = signaturePad.toDataURL('image/png');
         
-        // Adiciona na primeira página visível (pode ser ajustado)
-        addSigToPage(1, data, 150, 50, 160, 90, 0);
+        // Adiciona na primeira página do PDF (posição padrão)
+        // Você pode ajustar o 150, 50, 160, 90 conforme preferir
+        addSigToPage(1, data, 150, 50, 160, 90);
         
         fecharModal();
-        console.log("Assinatura confirmada e recortada.");
+        console.log("Assinatura confirmada.");
     } else {
-        alert("O quadro está vazio! Por favor, faça sua assinatura.");
+        alert("Por favor, faça sua assinatura antes de confirmar!");
     }
 }
 
