@@ -37,20 +37,30 @@
             z-index: 1000;
         }
 
-        /* MÓDULO: ÁREA DO PDF (CONTAINER) */
-        .container { 
-            flex: 1; 
-            overflow-y: auto; 
-            background: #222; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 10px;
-            padding-bottom: 90px; /* Espaço para a barra inferior */
-        }
-        #pdf-wrapper { position: relative; display: flex; flex-direction: column; gap: 15px; }
-        .page-container { position: relative; background: #fff; box-shadow: 0 0 10px #000; line-height: 0; }
-        canvas { display: block; width: 100% !important; height: auto !important; }
+/* ============================================================== */
+/* MÓDULO CSS: CONTAINER DE EXIBIÇÃO                             */
+/* ============================================================== */
+.container { 
+    flex: 1; 
+    width: 100%;
+    overflow-y: auto; 
+    background: #222; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    padding: 10px;
+    padding-bottom: 100px;
+    position: relative;
+    /* Remove qualquer barra ou botão que não seja do PDF */
+}
+
+#pdf-wrapper { 
+    position: relative; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+    z-index: 10;
+}
 
         /* MÓDULO: BARRA INFERIOR (FIXA) */
         .bottom-bar { 
@@ -151,15 +161,15 @@
 </div>
 
 <div class="container" id="scroll-cont">
-    <div style="position: fixed; right: 15px; top: 150px; display: flex; flex-direction: column; gap: 5px; z-index: 3000;">
-        <button onclick="ajustarZoom(1.1)" style="width: 45px; height: 45px; background: #ff8c00; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer;">+</button>
-        <button onclick="ajustarZoom(0.9)" style="width: 45px; height: 45px; background: #ff8c00; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer;">-</button>
+    <div class="zoom-controls">
+        <button class="btn-zoom" onclick="ajustarZoom(1.1)">+</button>
         <div id="zoom-val" style="background: rgba(0,0,0,0.7); color: white; font-size: 10px; text-align: center; padding: 2px;">100%</div>
+        <button class="btn-zoom" onclick="ajustarZoom(0.9)">-</button>
     </div>
 
     <div id="pdf-wrapper"></div>
 </div>
-    
+
     <div style="display:flex; align-items:center; gap:8px;">
         <div style="display:flex; background:rgba(0,0,0,0.2); border-radius:8px; padding:2px;">
             <button onclick="ajustarZoom(0.9)" style="background:none; border:none; color:white; padding:5px 10px; cursor:pointer; font-weight:bold;">-</button>
