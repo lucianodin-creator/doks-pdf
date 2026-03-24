@@ -195,21 +195,27 @@
             window.removeEventListener('resize', checkRotation);
         }
 
-/* --- FUNÇÃO: CONFIRMAR ASSINATURA (CORREÇÃO) --- */
-function confirmSig() {
-    console.log("Tentando confirmar assinatura...");
-    const canvas = document.getElementById('sig-pad');
-    const result = trimCanvas(canvas);
+    console.log("Iniciando confirmação...");
+    try {
+        const canvas = document.getElementById('sig-pad');
+        const result = trimCanvas(canvas);
 
-    if (result) {
-        console.log("Assinatura processada com sucesso.");
-        // Adiciona na página 1 por padrão (pode mudar para pNum se tiver controle de página)
-        addSigToPage(1, result.data, 100, 50, 150, 150 / result.ratio, 0);
-        fecharModal();
-    } else {
-        alert("O quadro está vazio. Por favor, assine antes de confirmar.");
+        if (result) {
+            console.log("Assinatura detectada. Enviando para o PDF...");
+            // Garante que pNum seja 1 caso o pdfDoc ainda não tenha carregado totalmente
+            const pNum = (pdfDoc && pdfDoc.numPages > 0) ? 1 : 1;
+            
+            addSigToPage(pNum, result.data, 100, 50, 150, 150 / result.ratio, 0);
+            
+            console.log("Sucesso! Fechando janela...");
+            fecharModal();
+        } else {
+            alert("O quadro está vazio! Desenhe sua assinatura primeiro.");
+        }
+    } catch (error) {
+        console.error("Erro no processo de confirmação:", error);
+        alert("Erro técnico ao confirmar. Verifique o console.");
     }
-}
 
 /* --- FUNÇÃO: FECHAR MODAL E LIMPAR ESTADOS --- */
 function fecharModal() {
