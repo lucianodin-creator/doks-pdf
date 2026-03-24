@@ -150,24 +150,30 @@
         <p>🔄 Gire o celular para assinar</p>
     </div>
 
-<div class="header">
+<div class="header" style="height: 60px; background: #4169E1; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 1000;">
     <div style="display:flex; align-items:center; gap:10px;">
         <strong style="font-size:18px;">DoksPDF</strong>
         <button onclick="mostrarRecentes()" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🕒 RECENTES</button>
     </div>
     
-    <label for="file-in" style="background:#fff; color:var(--primary); padding:8px 15px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">📂 ABRIR PDF</label>
+    <label for="file-in" style="background:#fff; color:#4169E1; padding:8px 15px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; display: flex; align-items: center; gap: 5px;">
+        📂 ABRIR PDF
+    </label>
     <input type="file" id="file-in" style="display:none" accept="application/pdf">
 </div>
 
-<div class="container" id="scroll-cont">
-    <div class="zoom-controls">
-        <button class="btn-zoom" onclick="ajustarZoom(1.1)">+</button>
+<div class="container" id="scroll-cont" style="flex: 1; width: 100%; overflow-y: auto; background: #222; display: flex; flex-direction: column; align-items: center; padding: 10px; padding-bottom: 100px; position: relative;">
+    
+    <div class="zoom-controls" style="position: fixed; right: 15px; top: 150px; display: flex; flex-direction: column; gap: 5px; z-index: 3000;">
+        <button class="btn-zoom" onclick="ajustarZoom(1.1)" style="width: 45px; height: 45px; background: #ff8c00; border: none; color: white; font-size: 22px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">+</button>
         <div id="zoom-val" style="background: rgba(0,0,0,0.7); color: white; font-size: 10px; text-align: center; padding: 2px;">100%</div>
-        <button class="btn-zoom" onclick="ajustarZoom(0.9)">-</button>
+        <button class="btn-zoom" onclick="ajustarZoom(0.9)" style="width: 45px; height: 45px; background: #ff8c00; border: none; color: white; font-size: 22px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">-</button>
     </div>
 
-    <div id="pdf-wrapper"></div>
+    <div id="pdf-wrapper" style="position: relative; display: flex; flex-direction: column; gap: 15px; transition: transform 0.2s ease; transform-origin: top center;">
+        </div>
+</div>
+
 </div>
 
     <div style="display:flex; align-items:center; gap:8px;">
