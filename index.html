@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
 
     <style>
         /* ============================================================== */
@@ -131,61 +131,62 @@ margin-bottom: 75px;
         /* MÓDULO JS: LÓGICA DE ABRIR E RENDERIZAR PDF */
 /* --- ATUALIZAÇÃO NO SELETOR DE ARQUIVOS --- */
 document.getElementById('file-in').onchange = async (e) => {
-    const file = e.target.files[0]; 
-    if(!file) return;
-    
-    console.log("Arquivo selecionado:", file.name);
+    const file = e.target.files[0];
+    if (!file) return;
+
     pdfName = file.name.replace(".pdf", "_assinado.pdf");
-    
     const reader = new FileReader();
-    reader.onload = async function() { 
+
+    reader.onload = async function() {
         try {
-            const typedarray = new Uint8Array(this.result);
-            pdfDoc = await pdfjsLib.getDocument(typedarray).promise; 
-            console.log("PDF Carregado com", pdfDoc.numPages, "páginas.");
-            renderPages(); 
+            // Limpa o documento anterior antes de carregar o novo
+            pdfDoc = null; 
+            const loadingTask = pdfjsLib.getDocument({data: new Uint8Array(this.result)});
+            pdfDoc = await loadingTask.promise;
+            console.log("PDF carregado!");
+            renderPages();
         } catch (err) {
-            console.error("Erro ao ler PDF:", err);
-            alert("Erro ao abrir o PDF. Verifique se o arquivo não está protegido.");
+            alert("Erro ao processar PDF: " + err.message);
         }
     };
     reader.readAsArrayBuffer(file);
 };
 
+
 /* --- FUNÇÃO DE RENDERIZAÇÃO CORRIGIDA --- */
 async function renderPages() {
-    const wrapper = document.getElementById('pdf-wrapper'); 
-    const container = document.getElementById('scroll-cont');
-    wrapper.innerHTML = ''; // Limpa tudo antes de começar
+    const wrapper = document.getElementById('pdf-wrapper');
+    const scrollCont = document.getElementById('scroll-cont');
+    wrapper.innerHTML = '<p style="color:white; padding:20px;">Carregando páginas...</p>';
     
-    // Pega a largura real disponível para o PDF caber na tela
-    const screenW = container.clientWidth - 30;
+    const availableWidth = scrollCont.clientWidth - 20;
 
-    for (let i = 1; i <= pdfDoc.numPages; i++) {
-        const page = await pdfDoc.getPage(i);
-        const originalVp = page.getViewport({scale: 1});
-        const scale = screenW / originalVp.width;
-        const vp = page.getViewport({scale: scale});
+    try {
+        wrapper.innerHTML = ''; // Limpa o "Carregando..."
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const viewport = page.getViewport({ scale: (availableWidth / page.getViewport({scale:1}).width) });
 
-        const pageDiv = document.createElement('div');
-        pageDiv.className = 'page-container'; 
-        pageDiv.id = `page-${i}`;
-        pageDiv.style.width = vp.width + 'px'; 
-        pageDiv.style.height = vp.height + 'px';
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page-container';
+            pageDiv.id = `page-${i}`;
+            pageDiv.style.width = Math.floor(viewport.width) + 'px';
+            pageDiv.style.height = Math.floor(viewport.height) + 'px';
 
-        const canvas = document.createElement('canvas');
-        canvas.width = vp.width; 
-        canvas.height = vp.height;
-        
-        pageDiv.appendChild(canvas); 
-        wrapper.appendChild(pageDiv);
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            pageDiv.appendChild(canvas);
+            wrapper.appendChild(pageDiv);
 
-        const renderCtx = {
-            canvasContext: canvas.getContext('2d'),
-            viewport: vp
-        };
-        await page.render(renderCtx).promise;
-        console.log("Página", i, "renderizada.");
+            await page.render({
+                canvasContext: canvas.getContext('2d'),
+                viewport: viewport
+            }).promise;
+        }
+    } catch (e) {
+        alert("Erro na renderização: " + e.message);
     }
 }
 
