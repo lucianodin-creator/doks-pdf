@@ -3,87 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>DoksPDF - Moraes Shop</title>
+    <title>DoksPDF - Personalizado</title>
     
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<script>
-    // Configuração vital para o motor do PDF funcionar
-    var pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        /* ============================================================== */
-        /* MÓDULO: CSS (ESTILOS GERAIS E ESTRUTURA)                       */
-        /* ============================================================== */
-        * { box-sizing: border-box; tap-highlight-color: transparent; margin: 0; padding: 0; }
-        :root { --vh: 100vh; --primary: #4169E1; --accent: #ff8c00; --success: #2e7d32; }
+        /* MÓDULO: CSS GLOBAL */
+        * { box-sizing: border-box; margin: 0; padding: 0; tap-highlight-color: transparent; }
+        :root { --primary: #4169E1; --success: #2e7d32; --accent: #ff8c00; }
         
         body { 
-margin-bottom: 75px;
             font-family: sans-serif; 
             background: #111; 
-            height: var(100dvh); 
-            width: 100%; 
+            height: 100vh; 
             display: flex; 
             flex-direction: column; 
             overflow: hidden; 
-            position: fixed; 
         }
 
-        /* MÓDULO CSS: BARRA SUPERIOR */
-        .header { height: 60px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
-        
-        /* MÓDULO CSS: ÁREA DO PDF */
-/* --- MÓDULO CSS: ÁREA DE EXIBIÇÃO DO PDF (NOVO) --- */
-.container { 
-    flex: 1; 
-    width: 100%;
-    overflow-y: auto; 
-    background: #222; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    padding-bottom: 100px;
-    -webkit-overflow-scrolling: touch;
-}
+        /* MÓDULO: HEADER */
+        .header { 
+            height: 60px; 
+            background: var(--primary); 
+            color: white; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 0 15px; 
+            z-index: 1000;
+        }
 
-/* --- MÓDULO CSS: ORGANIZADOR DE PÁGINAS --- */
-#pdf-wrapper { 
-    position: relative; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 15px; 
-    padding: 10px 0;
-}
+        /* MÓDULO: ÁREA DO PDF (CONTAINER) */
+        .container { 
+            flex: 1; 
+            overflow-y: auto; 
+            background: #222; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 10px;
+            padding-bottom: 90px; /* Espaço para a barra inferior */
+        }
+        #pdf-wrapper { position: relative; display: flex; flex-direction: column; gap: 15px; }
+        .page-container { position: relative; background: #fff; box-shadow: 0 0 10px #000; line-height: 0; }
+        canvas { display: block; width: 100% !important; height: auto !important; }
 
-
-        /* MÓDULO CSS: OVERLAY DE ROTAÇÃO */
-        #rotation-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 50000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; }
-        .phone-icon { width: 50px; height: 80px; border: 3px solid #fff; border-radius: 8px; margin-bottom: 20px; animation: rotatePhone 2s infinite; }
-        @keyframes rotatePhone { 0% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(90deg); } }
-
-        /* MÓDULO CSS: BARRA INFERIOR */
+        /* MÓDULO: BARRA INFERIOR (FIXA) */
         .bottom-bar { 
-    height: 75px; 
-    background: #000; 
-    display: flex; 
-    align-items: center; 
-    padding: 0 15px; 
-    gap: 10px;
-    position: fixed; /* Fixa a barra sempre no rodapé */
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 20000;
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            height: 75px; 
+            background: #000; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 15px; 
+            gap: 10px; 
+            z-index: 2000; 
         }
 
-        /* MÓDULO CSS: BOTÕES DA BARRA INFERIOR (CENTRALIZADOS) */
         .btn-action { 
             flex: 1; 
             height: 50px; 
@@ -95,33 +78,34 @@ margin-bottom: 75px;
             align-items: center; 
             justify-content: center; 
             gap: 8px; 
+            cursor: pointer;
         }
 
-        /* MÓDULO CSS: JANELA DE ASSINATURA (MODAL) */
-        #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 60000; display: none; flex-direction: column; }
+        /* MÓDULO: JANELA DE ASSINATURA (MODAL) */
+        #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 5000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; background: #f9f9f9; touch-action: none; }
-
-        /* MÓDULO CSS: FERRAMENTAS DA ASSINATURA NO PDF */
-        .sig-box { position: absolute; border: 1.5px dashed var(--primary); z-index: 5000; touch-action: none; }
+        
+        /* MÓDULO: CAIXA DE ASSINATURA NO PDF */
+        .sig-box { position: absolute; border: 1.5px dashed var(--primary); z-index: 100; touch-action: none; }
         .sig-box img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-        .sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 6px; z-index: 10000; }
-        .btn-tool { width: 38px; height: 38px; border-radius: 8px; border: none; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
-        .handle { position: absolute; width: 22px; height: 22px; background: var(--primary); border: 2px solid #fff; border-radius: 50%; bottom: -11px; right: -11px; }
+        .sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 5px; }
+        .btn-tool { width: 34px; height: 34px; border-radius: 6px; border: none; color: white; display: flex; align-items: center; justify-content: center; }
+        .handle { position: absolute; width: 20px; height: 20px; background: var(--primary); border: 2px solid #fff; border-radius: 50%; bottom: -10px; right: -10px; cursor: nwse-resize; }
+
+        /* OVERLAY ROTAÇÃO */
+        #rotation-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
     </style>
 </head>
 <body>
 
     <div id="rotation-overlay">
-        <div class="phone-icon"></div>
-        <p>Gire o celular para o lado</p>
-        <p style="font-size: 12px; opacity: 0.7; margin-top: 5px;">Melhor posição para assinar</p>
+        <p>🔄 Gire o celular para assinar</p>
     </div>
 
     <div class="header">
         <strong>DoksPDF</strong>
-        <div style="display:flex; gap:8px;">
-            <button onclick="mostrarRecentes()" style="background:#f1c40f; padding:8px; border-radius:6px; border:none; font-size:11px; font-weight:bold;">🕒 RECENTES</button>
-            <label for="file-in" style="background:#fff; color:var(--primary); padding:8px; border-radius:6px; font-weight:bold; font-size:11px;">📂 ABRIR PDF</label>
+        <div style="display:flex; gap:10px;">
+            <label for="file-in" style="background:#fff; color:var(--primary); padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">📂 ABRIR PDF</label>
             <input type="file" id="file-in" style="display:none" accept="application/pdf">
         </div>
     </div>
@@ -138,99 +122,76 @@ margin-bottom: 75px;
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
         <div style="height:70px; display:flex; padding:10px; gap:10px; background:#111;">
-            <button onclick="fecharModal()" style="flex:1; background:#444; color:white; border:none; border-radius:8px; font-weight:bold;">SAIR</button>
-            <button onclick="signaturePad.clear()" style="flex:1; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold;">LIMPAR</button>
-            <button onclick="confirmSig()" style="flex:1; background:var(--success); color:white; border:none; border-radius:8px; font-weight:bold;">CONFIRMAR</button>
+            <button onclick="fecharModal()" style="flex:1; background:#444; color:white; border:none; border-radius:8px;">SAIR</button>
+            <button onclick="signaturePad.clear()" style="flex:1; background:var(--accent); color:white; border:none; border-radius:8px;">LIMPAR</button>
+            <button onclick="confirmSig()" style="flex:1; background:var(--success); color:white; border:none; border-radius:8px;">CONFIRMAR</button>
         </div>
     </div>
 
     <script>
-        /* ============================================================== */
-        /* MÓDULO: JS (LÓGICA E FUNCIONALIDADES)                          */
-        /* ============================================================== */
-        
-        let signaturePad, pdfDoc = null, pdfName = "documento.pdf", checkRotation;
-        const { pdfjsLib } = globalThis;
+        /* MÓDULO: JS - CONFIGURAÇÃO PDF.JS */
+        var pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        /* MÓDULO JS: LÓGICA DE ABRIR E RENDERIZAR PDF */
-/* --- ATUALIZAÇÃO NO SELETOR DE ARQUIVOS --- */
-document.getElementById('file-in').onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+        let signaturePad, pdfDoc = null, pdfName = "documento.pdf";
 
-    pdfName = file.name.replace(".pdf", "_assinado.pdf");
-    const reader = new FileReader();
+        /* MÓDULO: JS - ABRIR PDF */
+        document.getElementById('file-in').onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            pdfName = file.name.replace(".pdf", "_assinado.pdf");
+            const reader = new FileReader();
+            reader.onload = function() {
+                const typedarray = new Uint8Array(this.result);
+                pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+                    pdfDoc = pdf;
+                    renderPages();
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        };
 
-    reader.onload = async function() {
-        try {
-            // Limpa o documento anterior antes de carregar o novo
-            pdfDoc = null; 
-            const loadingTask = pdfjsLib.getDocument({data: new Uint8Array(this.result)});
-            pdfDoc = await loadingTask.promise;
-            console.log("PDF carregado!");
-            renderPages();
-        } catch (err) {
-            alert("Erro ao processar PDF: " + err.message);
+        async function renderPages() {
+            const wrapper = document.getElementById('pdf-wrapper');
+            wrapper.innerHTML = '';
+            const screenW = document.getElementById('scroll-cont').clientWidth - 20;
+
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const vp = page.getViewport({ scale: (screenW / page.getViewport({scale:1}).width) });
+                
+                const div = document.createElement('div');
+                div.className = 'page-container';
+                div.id = `page-${i}`;
+                div.style.width = vp.width + 'px';
+                div.style.height = vp.height + 'px';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = vp.width;
+                canvas.height = vp.height;
+                div.appendChild(canvas);
+                wrapper.appendChild(div);
+
+                await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+            }
         }
-    };
-    reader.readAsArrayBuffer(file);
-};
 
-
-/* --- FUNÇÃO DE RENDERIZAÇÃO CORRIGIDA --- */
-async function renderPages() {
-    const wrapper = document.getElementById('pdf-wrapper');
-    const scrollCont = document.getElementById('scroll-cont');
-    wrapper.innerHTML = '<p style="color:white; padding:20px;">Carregando páginas...</p>';
-    
-    const availableWidth = scrollCont.clientWidth - 20;
-
-    try {
-        wrapper.innerHTML = ''; // Limpa o "Carregando..."
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const viewport = page.getViewport({ scale: (availableWidth / page.getViewport({scale:1}).width) });
-
-            const pageDiv = document.createElement('div');
-            pageDiv.className = 'page-container';
-            pageDiv.id = `page-${i}`;
-            pageDiv.style.width = Math.floor(viewport.width) + 'px';
-            pageDiv.style.height = Math.floor(viewport.height) + 'px';
-
-            const canvas = document.createElement('canvas');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            
-            pageDiv.appendChild(canvas);
-            wrapper.appendChild(pageDiv);
-
-            await page.render({
-                canvasContext: canvas.getContext('2d'),
-                viewport: viewport
-            }).promise;
-        }
-    } catch (e) {
-        alert("Erro na renderização: " + e.message);
-    }
-}
-
-        /* MÓDULO JS: LÓGICA DE ROTAÇÃO E MODAL */
+        /* MÓDULO: JS - LÓGICA ASSINATURA */
         function abrirModal() {
             if (window.innerHeight > window.innerWidth) {
                 document.getElementById('rotation-overlay').style.display = 'flex';
-                checkRotation = () => {
+                const check = () => {
                     if (window.innerWidth > window.innerHeight) {
                         document.getElementById('rotation-overlay').style.display = 'none';
-                        window.removeEventListener('resize', checkRotation);
-                        iniciarAssinatura();
+                        window.removeEventListener('resize', check);
+                        iniciarPad();
                     }
                 };
-                window.addEventListener('resize', checkRotation);
-            } else { iniciarAssinatura(); }
+                window.addEventListener('resize', check);
+            } else { iniciarPad(); }
         }
 
-        function iniciarAssinatura() {
+        function iniciarPad() {
             document.getElementById('sig-modal').style.display = 'flex';
             const canvas = document.getElementById('sig-pad');
             setTimeout(() => {
@@ -243,136 +204,90 @@ async function renderPages() {
             }, 400);
         }
 
-        function fecharModal() {
-            document.getElementById('sig-modal').style.display = 'none';
-            document.getElementById('rotation-overlay').style.display = 'none';
-            window.removeEventListener('resize', checkRotation);
-        }
+        function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
 
         function confirmSig() {
             if (signaturePad && !signaturePad.isEmpty()) {
-                const result = trimCanvas(document.getElementById('sig-pad'));
-                if (result) {
-                    addSigToPage(1, result.data, 100, 50, 150, 150 / result.ratio, 0);
-                    fecharModal();
-                }
-            } else { alert("Por favor, assine antes de confirmar."); }
+                const canvas = document.getElementById('sig-pad');
+                const data = canvas.toDataURL(); // Simplificado para garantir o corte
+                addSigToPage(1, data, 100, 50, 150, 80);
+                fecharModal();
+            } else { alert("Assine antes de confirmar!"); }
         }
 
-        /* MÓDULO JS: MANIPULAÇÃO DA ASSINATURA */
-        function trimCanvas(canvas) {
-            const ctx = canvas.getContext('2d');
-            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let b = { t: null, l: null, r: null, bot: null };
-            for (let i = 0; i < pixels.data.length; i += 4) {
-                if (pixels.data[i + 3] !== 0) {
-                    const x = (i / 4) % canvas.width, y = ~~((i / 4) / canvas.width);
-                    if (b.t === null || y < b.t) b.t = y; if (b.l === null || x < b.l) b.l = x;
-                    if (b.r === null || x > b.r) b.r = x; if (b.bot === null || y > b.bot) b.bot = y;
-                }
-            }
-            if (b.t === null) return null;
-            const tw = b.r - b.l, th = b.bot - b.t, trimmed = document.createElement('canvas');
-            trimmed.width = tw; trimmed.height = th;
-            trimmed.getContext('2d').drawImage(canvas, b.l, b.t, tw, th, 0, 0, tw, th);
-            return { data: trimmed.toDataURL(), ratio: tw / th };
-        }
-
-        function addSigToPage(pNum, src, t, l, w, h, a) {
-            const p = document.getElementById(`page-${pNum}`); if (!p) return;
+        /* MÓDULO: JS - MANIPULAÇÃO (CLONAGEM CORRIGIDA) */
+        function addSigToPage(pNum, src, t, l, w, h) {
+            const p = document.getElementById(`page-${pNum}`);
+            if (!p) return;
             const div = document.createElement('div');
-            div.className = 'sig-box'; div.dataset.angle = a || 0;
+            div.className = 'sig-box';
             div.style.cssText = `top:${t}px; left:${l}px; width:${w}px; height:${h}px;`;
             div.innerHTML = `
                 <div class="sig-tools">
                     <button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
-                    <button class="btn-tool" style="background:#2ecc71" onclick="girarSig(this)">🔄</button>
                     <button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
                 </div>
-                <img src="${src}" style="transform: rotate(${a || 0}deg)">
+                <img src="${src}">
                 <div class="handle"></div>`;
             p.appendChild(div);
             setupInteract(div);
         }
 
-        function girarSig(btn) {
+        function clonarPosicao(btn) {
             const el = btn.closest('.sig-box');
-            let angle = (parseInt(el.dataset.angle) + 90) % 360;
-            el.dataset.angle = angle;
-            el.querySelector('img').style.transform = `rotate(${angle}deg)`;
-        }
+            const src = el.querySelector('img').src;
+            const baseT = parseFloat(el.style.top) || 0;
+            const baseL = parseFloat(el.style.left) || 0;
+            const moveX = parseFloat(el.getAttribute('data-x')) || 0;
+            const moveY = parseFloat(el.getAttribute('data-y')) || 0;
+            
+            const finalT = baseT + moveY;
+            const finalL = baseL + moveX;
 
-function clonarPosicao(btn) {
-    const el = btn.closest('.sig-box');
-    const src = el.querySelector('img').src;
-    const a = parseInt(el.dataset.angle);
-    
-    // CAPTURA A POSIÇÃO REAL (Base + Arraste)
-    const baseTop = parseFloat(el.style.top) || 0;
-    const baseLeft = parseFloat(el.style.left) || 0;
-    const moveX = parseFloat(el.getAttribute('data-x')) || 0;
-    const moveY = parseFloat(el.getAttribute('data-y')) || 0;
-
-    const realTop = baseTop + moveY;
-    const realLeft = baseLeft + moveX;
-    const w = el.offsetWidth;
-    const h = el.offsetHeight;
-
-    // Percorre todas as páginas e aplica a posição corrigida
-    for (let i = 1; i <= pdfDoc.numPages; i++) {
-        if (`page-${i}` === el.parentElement.id) continue;
-        addSigToPage(i, src, realTop, realLeft, w, h, a);
-    }
-}
-
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                if (`page-${i}` === el.parentElement.id) continue;
+                addSigToPage(i, src, finalT, finalL, el.offsetWidth, el.offsetHeight);
+            }
         }
 
         function setupInteract(el) {
-            interact(el).draggable({ listeners: { move(e) { 
-                let x = (parseFloat(e.target.getAttribute('data-x')) || 0) + e.dx;
-                let y = (parseFloat(e.target.getAttribute('data-y')) || 0) + e.dy;
-                e.target.style.transform = `translate(${x}px, ${y}px)`;
-                e.target.setAttribute('data-x', x); e.target.setAttribute('data-y', y);
-            }}}).resizable({ edges: { right: true, bottom: true },
-                listeners: { move(e) { Object.assign(e.target.style, { width: `${e.rect.width}px`, height: `${e.rect.height}px` }); }}
+            interact(el).draggable({
+                listeners: { move(e) {
+                    let x = (parseFloat(e.target.getAttribute('data-x')) || 0) + e.dx;
+                    let y = (parseFloat(e.target.getAttribute('data-y')) || 0) + e.dy;
+                    e.target.style.transform = `translate(${x}px, ${y}px)`;
+                    e.target.setAttribute('data-x', x); e.target.setAttribute('data-y', y);
+                }}
+            }).resizable({
+                edges: { right: true, bottom: true },
+                listeners: { move(e) {
+                    Object.assign(e.target.style, { width: `${e.rect.width}px`, height: `${e.rect.height}px` });
+                }}
             });
         }
 
-        /* MÓDULO JS: GERAR PDF E AJUSTES DE TELA */
+        /* MÓDULO: JS - GERAR PDF FINAL */
         async function gerarPDF() {
-            const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'pt', 'a4');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'a4');
             const pages = document.querySelectorAll('.page-container');
+
             for (let i = 0; i < pages.length; i++) {
                 if (i > 0) doc.addPage();
                 const canvas = pages[i].querySelector('canvas');
                 doc.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 595, 842);
+                
                 pages[i].querySelectorAll('.sig-box').forEach(sig => {
                     const img = sig.querySelector('img');
                     const r = sig.getBoundingClientRect(), pr = pages[i].getBoundingClientRect();
-                    const x = ((r.left - pr.left) / pr.width) * 595, y = ((r.top - pr.top) / pr.height) * 842;
+                    const x = ((r.left - pr.left) / pr.width) * 595;
+                    const y = ((r.top - pr.top) / pr.height) * 842;
                     const w = (r.width / pr.width) * 595, h = (r.height / pr.height) * 842;
-                    doc.addImage(img.src, 'PNG', x, y, w, h, null, 'FAST', parseInt(sig.dataset.angle));
+                    doc.addImage(img.src, 'PNG', x, y, w, h);
                 });
             }
             doc.save(pdfName);
         }
-
-        function mostrarRecentes() { alert("Histórico de arquivos salvo localmente."); }
-
-        const atualizarAltura = () => { document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`); };
-        window.addEventListener('resize', atualizarAltura);
-        window.addEventListener('orientationchange', () => setTimeout(atualizarAltura, 300));
-        atualizarAltura();
-
-/* --- MÓDULO: AJUSTE DE TELA DINÂMICO --- */
-function ajustarLayout() {
-    // Garante que o corpo da página ocupe a altura visível real
-    document.body.style.height = window.innerHeight + "px";
-}
-window.addEventListener('resize', ajustarLayout);
-window.addEventListener('orientationchange', () => setTimeout(ajustarLayout, 300));
-ajustarLayout();
-
     </script>
 </body>
 </html>
