@@ -47,6 +47,31 @@
         /* MÓDULO CSS: JANELA DE ASSINATURA (MODAL) */
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 40000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; background: #f9f9f9; touch-action: none; }
+
+/* --- ESTILO DOS BOTÕES DE FERRAMENTAS (GIRAR, CLONAR, APAGAR) --- */
+.sig-tools {
+    position: absolute;
+    top: -45px;
+    left: 0;
+    display: flex;
+    gap: 6px;
+    z-index: 10000;
+}
+
+.btn-tool {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    cursor: pointer;
+}
+
     </style>
 </head>
 <body>
@@ -186,23 +211,55 @@
             return { data: trimmed.toDataURL(), ratio: tw / th };
         }
 
-        function addSigToPage(pNum, src, t, l, w, h, a) {
-            const p = document.getElementById(`page-${pNum}`); if (!p) return;
-            const div = document.createElement('div');
-            div.className = 'sig-box'; div.style.cssText = `top:${t}px; left:${l}px; width:${w}px; height:${h}px;`;
-            div.innerHTML = `<div class="sig-tools">
-                <button onclick="this.closest('.sig-box').remove()" style="background:#e74c3c; color:white; border:none; border-radius:4px; padding:5px;">🗑️</button>
-            </div><img src="${src}"><div class="handle"></div>`;
-            p.appendChild(div);
-            interact(div).draggable({ listeners: { move(e) { 
-                let x = (parseFloat(e.target.getAttribute('data-x')) || 0) + e.dx;
-                let y = (parseFloat(e.target.getAttribute('data-y')) || 0) + e.dy;
-                e.target.style.transform = `translate(${x}px, ${y}px)`;
-                e.target.setAttribute('data-x', x); e.target.setAttribute('data-y', y);
-            }}}).resizable({ edges: { right: true, bottom: true },
-                listeners: { move(e) { Object.assign(e.target.style, { width: `${e.rect.width}px`, height: `${e.rect.height}px` }); }}
-            });
-        }
+/* --- FUNÇÃO: ADICIONAR ASSINATURA COM TODAS AS FERRAMENTAS --- */
+function addSigToPage(pNum, src, t, l, w, h, a) {
+    const p = document.getElementById(`page-${pNum}`); 
+    if (!p) return;
+
+    const div = document.createElement('div');
+    div.className = 'sig-box'; 
+    div.dataset.angle = a || 0;
+    div.style.cssText = `top:${t}px; left:${l}px; width:${w}px; height:${h}px;`;
+
+    // Inserção dos botões de Ferramentas
+    div.innerHTML = `
+        <div class="sig-tools">
+            <button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
+            <button class="btn-tool" style="background:#2ecc71" onclick="girarSig(this)">🔄</button>
+            <button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
+        </div>
+        <img src="${src}" style="transform: rotate(${a || 0}deg); width:100%; height:100%;">
+        <div class="handle"></div>
+    `;
+
+    p.appendChild(div);
+    setupInteract(div); // Chama a função de arrastar e redimensionar
+}
+
+/* --- FUNÇÃO: GIRAR ASSINATURA --- */
+function girarSig(btn) {
+    const el = btn.closest('.sig-box');
+    let angle = (parseInt(el.dataset.angle) + 90) % 360;
+    el.dataset.angle = angle;
+    el.querySelector('img').style.transform = `rotate(${angle}deg)`;
+}
+
+/* --- FUNÇÃO: CLONAR PARA TODAS AS PÁGINAS --- */
+function clonarPosicao(btn) {
+    const el = btn.closest('.sig-box');
+    const src = el.querySelector('img').src;
+    const a = parseInt(el.dataset.angle);
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    const t = parseFloat(el.style.top);
+    const l = parseFloat(el.style.left);
+
+    // Percorre todas as páginas do PDF e adiciona a assinatura na mesma posição
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+        if (`page-${i}` === el.parentElement.id) continue; // Pula a página atual
+        addSigToPage(i, src, t, l, w, h, a);
+    }
+}
 
         /* MÓDULO JS: GERAR PDF FINAL */
         async function gerarPDF() {
