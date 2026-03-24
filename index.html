@@ -140,13 +140,23 @@
         <p>🔄 Gire o celular para assinar</p>
     </div>
 
-    <div class="header">
-        <strong>DoksPDF</strong>
-        <div style="display:flex; gap:10px;">
-            <label for="file-in" style="background:#fff; color:var(--primary); padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer;">📂 ABRIR PDF</label>
-            <input type="file" id="file-in" style="display:none" accept="application/pdf">
-        </div>
+<div class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <strong style="font-size:18px;">DoksPDF</strong>
+        <button onclick="mostrarRecentes()" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:5px 10px; border-radius:6px; font-size:11px; cursor:pointer;">🕒 RECENTES</button>
     </div>
+    
+    <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; background:rgba(0,0,0,0.2); border-radius:8px; padding:2px;">
+            <button onclick="ajustarZoom(0.9)" style="background:none; border:none; color:white; padding:5px 10px; cursor:pointer; font-weight:bold;">-</button>
+            <span id="zoom-val" style="font-size:12px; display:flex; align-items:center; padding:0 5px;">100%</span>
+            <button onclick="ajustarZoom(1.1)" style="background:none; border:none; color:white; padding:5px 10px; cursor:pointer; font-weight:bold;">+</button>
+        </div>
+
+        <label for="file-in" style="background:#fff; color:var(--primary); padding:8px 12px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">📂 ABRIR</label>
+        <input type="file" id="file-in" style="display:none" accept="application/pdf">
+    </div>
+</div>
 
     <div class="container" id="scroll-cont">
         <div id="pdf-wrapper"></div>
@@ -355,6 +365,37 @@ function setupInteract(el) {
             }
             doc.save(pdfName);
         }
+/* ============================================================== */
+/* MÓDULO JS: ZOOM E HISTÓRICO                                   */
+/* ============================================================== */
+let zoomAtual = 1.0;
+
+function ajustarZoom(fator) {
+    if (!pdfDoc) return;
+    zoomAtual *= fator;
+    
+    // Limita o zoom para não quebrar o layout
+    if (zoomAtual < 0.5) zoomAtual = 0.5;
+    if (zoomAtual > 3.0) zoomAtual = 3.0;
+
+    document.getElementById('zoom-val').innerText = Math.round(zoomAtual * 100) + "%";
+    
+    // Aplica o zoom visualmente no wrapper
+    const wrapper = document.getElementById('pdf-wrapper');
+    wrapper.style.transform = `scale(${zoomAtual})`;
+    wrapper.style.transformOrigin = 'top center';
+transition: transform 0.2s ease;
+    
+    // Ajusta o padding inferior para não esconder o PDF no zoom alto
+    const container = document.getElementById('scroll-cont');
+    container.style.paddingBottom = (200 * zoomAtual) + "px";
+}
+
+function mostrarRecentes() {
+    // Por enquanto mostra um alerta, mas podemos conectar ao LocalStorage depois
+    alert("Lista de arquivos recentes (Em breve): \n1. " + pdfName);
+}
+
     </script>
 </body>
 </html>
