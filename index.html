@@ -177,7 +177,13 @@ justify-content: center; gap: 8px; (Isso dá um espacinho elegante entre a canet
                         iniciarAssinatura();
                     }
                 };
-                window.addEventListener('resize', checkRotation);
+const atualizarAltura = () => {
+    document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
+};
+window.addEventListener('resize', atualizarAltura);
+window.addEventListener('orientationchange', () => setTimeout(atualizarAltura, 200));
+atualizarAltura();
+
             } else { iniciarAssinatura(); }
         }
 
