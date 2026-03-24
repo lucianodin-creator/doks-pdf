@@ -12,6 +12,27 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
+
+.zoom-controls {
+    position: fixed; 
+    right: 15px; 
+    top: 150px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 5px; 
+    z-index: 3000;
+}
+.btn-zoom {
+    width: 45px; 
+    height: 45px; 
+    background: #ff8c00 !important; /* Laranja forte */
+    border: none; 
+    color: white; 
+    font-size: 22px; 
+    font-weight: bold; 
+    cursor: pointer;
+}
+
         /* MÓDULO: CSS GLOBAL */
         * { box-sizing: border-box; margin: 0; padding: 0; tap-highlight-color: transparent; }
         :root { --primary: #4169E1; --success: #2e7d32; --accent: #ff8c00; }
@@ -142,6 +163,7 @@
 
         /* OVERLAY ROTAÇÃO */
         #rotation-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+
     </style>
 </head>
 <body>
@@ -150,37 +172,29 @@
         <p>🔄 Gire o celular para assinar</p>
     </div>
 
-<div class="header" style="height: 60px; background: #4169E1; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 1000; position: relative;">
-    
+<div class="header">
     <div style="display:flex; align-items:center; gap:10px;">
         <strong style="font-size:18px;">DoksPDF</strong>
         <button onclick="mostrarRecentes()" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🕒 RECENTES</button>
     </div>
     
-    <div style="display:flex; align-items:center;">
-        <label for="file-in" style="background:#fff; color:#4169E1; padding:8px 15px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; display: flex; align-items: center; gap: 5px;">
-            📂 ABRIR PDF
-        </label>
-        <input type="file" id="file-in" style="display:none" accept="application/pdf">
-    </div>
-
-</div> ```
+    <label for="file-in" style="background:#fff; color:#4169E1; padding:8px 15px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; display: flex; align-items: center; gap: 5px;">
+        📂 ABRIR PDF
+    </label>
+    <input type="file" id="file-in" style="display:none" accept="application/pdf">
+</div>
 
 ---
-
-### **2. TROCA DE MÓDULO: CONTAINER (Área do PDF)**
-**Importante:** Vá até a sua `div class="container"` e verifique se não tem nenhum `label` ou `input` sobrando lá dentro. Ela deve estar limpa, assim:
-
-html
 <div class="container" id="scroll-cont">
     <div class="zoom-controls">
         <button class="btn-zoom" onclick="ajustarZoom(1.1)">+</button>
-        <div id="zoom-val">100%</div>
+        <div id="zoom-val" style="background: rgba(0,0,0,0.7); color: white; font-size: 10px; text-align: center; padding: 2px;">100%</div>
         <button class="btn-zoom" onclick="ajustarZoom(0.9)">-</button>
     </div>
 
     <div id="pdf-wrapper"></div>
 </div>
+
     <div style="display:flex; align-items:center; gap:8px;">
         <div style="display:flex; background:rgba(0,0,0,0.2); border-radius:8px; padding:2px;">
             <button onclick="ajustarZoom(0.9)" style="background:none; border:none; color:white; padding:5px 10px; cursor:pointer; font-weight:bold;">-</button>
