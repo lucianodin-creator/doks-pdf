@@ -41,16 +41,14 @@
         .handle { position: absolute; width: 22px; height: 22px; background: var(--primary); border: 2px solid #fff; border-radius: 50%; bottom: -11px; right: -11px; }
 
         /* MÓDULO CSS: BARRA INFERIOR */
-        .bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px;
-position: relative; }
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 8px; (Isso dá um espacinho elegante entre a caneta e a palavra ASSINAR).
+        .bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 20000;
+position: relative; display: flex; align-items: center;
+justify-content: center; gap: 8px; (Isso dá um espacinho elegante entre a caneta e a palavra ASSINAR).
+}
 
 /* --- GARANTIR QUE O MODAL FIQUE POR CIMA DE TUDO --- */
 #sig-modal {
-    z-index: 20000 !important; /* Valor maior que o do overlay de rotação */
+    z-index: 60000 !important; /* Valor maior que o do overlay de rotação */
 }
 
 /* Garante que os botões dentro do modal sejam clicáveis */
