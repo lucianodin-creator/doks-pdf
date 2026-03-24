@@ -25,25 +25,17 @@
             overflow: hidden; 
         }
 
-<div class="header">
-    <div style="display:flex; align-items:center; gap:10px;">
-        <strong style="font-size:18px;">DoksPDF</strong>
-        <button onclick="mostrarRecentes()" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🕒 RECENTES</button>
-    </div>
-    
-    <label for="file-in" style="background:#fff; color:var(--primary); padding:8px 15px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">📂 ABRIR PDF</label>
-    <input type="file" id="file-in" style="display:none" accept="application/pdf">
-</div>
-
-<div class="container" id="scroll-cont">
-    <div style="position: fixed; right: 15px; top: 150px; display: flex; flex-direction: column; gap: 5px; z-index: 3000;">
-        <button onclick="ajustarZoom(1.1)" style="width: 45px; height: 45px; background: #ff8c00; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer;">+</button>
-        <button onclick="ajustarZoom(0.9)" style="width: 45px; height: 45px; background: #ff8c00; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer;">-</button>
-        <div id="zoom-val" style="background: rgba(0,0,0,0.7); color: white; font-size: 10px; text-align: center; padding: 2px;">100%</div>
-    </div>
-
-    <div id="pdf-wrapper"></div>
-</div>
+   /* MÓDULO: HEADER */
+        .header { 
+            height: 60px; 
+            background: var(--primary); 
+            color: white; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 0 15px; 
+            z-index: 1000;
+        }
 
         /* MÓDULO: ÁREA DO PDF (CONTAINER) */
         .container { 
@@ -151,8 +143,22 @@
 <div class="header">
     <div style="display:flex; align-items:center; gap:10px;">
         <strong style="font-size:18px;">DoksPDF</strong>
-        <button onclick="mostrarRecentes()" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:5px 10px; border-radius:6px; font-size:11px; cursor:pointer;">🕒 RECENTES</button>
+        <button onclick="mostrarRecentes()" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">🕒 RECENTES</button>
     </div>
+    
+    <label for="file-in" style="background:#fff; color:var(--primary); padding:8px 15px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">📂 ABRIR PDF</label>
+    <input type="file" id="file-in" style="display:none" accept="application/pdf">
+</div>
+
+<div class="container" id="scroll-cont">
+    <div style="position: fixed; right: 15px; top: 150px; display: flex; flex-direction: column; gap: 5px; z-index: 3000;">
+        <button onclick="ajustarZoom(1.1)" style="width: 45px; height: 45px; background: #ff8c00; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer;">+</button>
+        <button onclick="ajustarZoom(0.9)" style="width: 45px; height: 45px; background: #ff8c00; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer;">-</button>
+        <div id="zoom-val" style="background: rgba(0,0,0,0.7); color: white; font-size: 10px; text-align: center; padding: 2px;">100%</div>
+    </div>
+
+    <div id="pdf-wrapper"></div>
+</div>
     
     <div style="display:flex; align-items:center; gap:8px;">
         <div style="display:flex; background:rgba(0,0,0,0.2); border-radius:8px; padding:2px;">
@@ -279,26 +285,64 @@ function confirmSig() {
 }
 
 /* ============================================================== */
-/* MÓDULO: MANIPULAÇÃO DE ASSINATURA (VERSÃO PRO)                */
+/* MÓDULO JS: MOTOR DE RENDERIZAÇÃO (FIX CONFLITO)               */
 /* ============================================================== */
-function addSigToPage(pNum, src, t, l, w, h, a = 0) {
-    const p = document.getElementById(`page-${pNum}`);
-    if (!p) return;
-    const div = document.createElement('div');
-    div.className = 'sig-box';
-    div.dataset.angle = a;
-    // t e l são as coordenadas iniciais
-    div.style.cssText = `top:${t}px; left:${l}px; width:${w}px; height:${h}px;`;
-    div.innerHTML = `
-        <div class="sig-tools">
-            <button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
-            <button class="btn-tool" style="background:#2ecc71" onclick="girarSig(this)">🔄</button>
-            <button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
-        </div>
-        <img src="${src}" style="transform: rotate(${a}deg)">
-        <div class="handle"></div>`;
-    p.appendChild(div);
-    setupInteract(div);
+document.getElementById('file-in').onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    pdfName = file.name.replace(".pdf", "_assinado.pdf");
+    const reader = new FileReader();
+    
+    reader.onload = function() {
+        const typedarray = new Uint8Array(this.result);
+        // Garante que o worker está configurado antes de chamar
+        pdfjsLib.getDocument({data: typedarray}).promise.then(function(pdf) {
+            pdfDoc = pdf;
+            zoomAtual = 1.0; // Reseta o zoom ao abrir novo arquivo
+            document.getElementById('zoom-val').innerText = "100%";
+            renderPages();
+        }).catch(err => {
+            console.error("Erro PDF:", err);
+            alert("Não foi possível processar este PDF.");
+        });
+    };
+    reader.readAsArrayBuffer(file);
+};
+
+async function renderPages() {
+    const wrapper = document.getElementById('pdf-wrapper');
+    const scrollCont = document.getElementById('scroll-cont');
+    if (!wrapper || !scrollCont) return;
+
+    wrapper.innerHTML = '<p style="color:white; padding:20px;">Carregando...</p>';
+    const screenW = scrollCont.clientWidth - 30;
+
+    try {
+        wrapper.innerHTML = '';
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const vp = page.getViewport({ scale: (screenW / page.getViewport({scale:1}).width) });
+
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page-container';
+            pageDiv.id = `page-${i}`;
+            pageDiv.style.width = Math.floor(vp.width) + 'px';
+            pageDiv.style.height = Math.floor(vp.height) + 'px';
+            pageDiv.style.marginBottom = "15px";
+
+            const canvas = document.createElement('canvas');
+            canvas.width = vp.width;
+            canvas.height = vp.height;
+            
+            pageDiv.appendChild(canvas);
+            wrapper.appendChild(pageDiv);
+
+            await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+        }
+    } catch (e) {
+        console.error("Erro render:", e);
+    }
 }
 
 function clonarPosicao(btn) {
@@ -377,26 +421,19 @@ function setupInteract(el) {
 /* MÓDULO JS: ZOOM E HISTÓRICO                                   */
 /* ============================================================== */
 let zoomAtual = 1.0;
-
 function ajustarZoom(fator) {
     if (!pdfDoc) return;
     zoomAtual *= fator;
-    
-    // Limita o zoom para não quebrar o layout
-    if (zoomAtual < 0.5) zoomAtual = 0.5;
-    if (zoomAtual > 3.0) zoomAtual = 3.0;
+    if (zoomAtual < 0.4) zoomAtual = 0.4;
+    if (zoomAtual > 2.5) zoomAtual = 2.5;
 
     document.getElementById('zoom-val').innerText = Math.round(zoomAtual * 100) + "%";
-    
-    // Aplica o zoom visualmente no wrapper
     const wrapper = document.getElementById('pdf-wrapper');
     wrapper.style.transform = `scale(${zoomAtual})`;
     wrapper.style.transformOrigin = 'top center';
-transition: transform 0.2s ease;
     
-    // Ajusta o padding inferior para não esconder o PDF no zoom alto
-    const container = document.getElementById('scroll-cont');
-    container.style.paddingBottom = (200 * zoomAtual) + "px";
+    // Ajusta a altura do container para o scroll funcionar com zoom
+    wrapper.style.marginBottom = (zoomAtual > 1) ? (500 * zoomAtual) + "px" : "100px";
 }
 
 function mostrarRecentes() {
