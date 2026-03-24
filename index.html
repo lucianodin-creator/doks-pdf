@@ -15,7 +15,9 @@ body { font-family: sans-serif; background: #111; height: var(--vh); width: 100v
 .header { height: 60px; background: #4169E1; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 10000; }
 .header-btns { display: flex; gap: 8px; align-items: center; }
 .container { flex: 1; overflow-y: auto; background: #222; position: relative; display: flex; flex-direction: column; align-items: center; padding: 10px; }
-#pdf-wrapper { position: relative; transform-origin: top center; display: flex; flex-direction: column; gap: 15px; padding-bottom: 120px; }
+#pdf-wrapper { position: relative; transform-origin: top center; display: flex; flex-direction: column; gap: 15px; padding-bottom: 120px; transition: transform 0.2s ease; }
+.zoom-controls { position: fixed; right: 15px; top: 75px; display: flex; flex-direction: column; gap: 10px; z-index: 15000; }
+.btn-zoom { width: 45px; height: 45px; background: rgba(65, 105, 225, 0.8); color: white; border: 2px solid #fff; border-radius: 50%; font-size: 20px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
 .page-container { position: relative; background: #fff; box-shadow: 0 0 15px #000; margin-bottom: 10px; line-height: 0; }
 canvas { display: block; width: 100% !important; height: auto !important; }
 .sig-box { position: absolute; border: 1.5px dashed #4169E1; z-index: 5000; touch-action: none; background: transparent; display: flex; align-items: center; justify-content: center; }
@@ -40,6 +42,10 @@ canvas { display: block; width: 100% !important; height: auto !important; }
 <input type="file" id="file-in" style="display:none" accept="application/pdf">
 </div>
 </div>
+<div class="zoom-controls">
+<button class="btn-zoom" onclick="alterarZoom(0.1)">+</button>
+<button class="btn-zoom" onclick="alterarZoom(-0.1)">-</button>
+</div>
 <div class="container" id="scroll-cont">
 <div id="pdf-wrapper"></div>
 </div>
@@ -60,13 +66,19 @@ const setVH = () => document.documentElement.style.setProperty('--vh', `${window
 window.addEventListener('resize', setVH); setVH();
 const { pdfjsLib } = globalThis;
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-let signaturePad, pdfDoc = null, pdfName = "documento.pdf";
+let signaturePad, pdfDoc = null, pdfName = "documento.pdf", currentZoom = 1.0;
+function alterarZoom(delta) {
+currentZoom = Math.min(Math.max(0.5, currentZoom + delta), 3.0);
+document.getElementById('pdf-wrapper').style.transform = `scale(${currentZoom})`;
+}
 document.getElementById('file-in').onchange = async (e) => {
 const file = e.target.files[0]; if(!file) return;
 pdfName = file.name.replace(".pdf", "_assinado.pdf");
 const reader = new FileReader();
 reader.onload = async function() { 
 pdfDoc = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise; 
+currentZoom = 1.0;
+document.getElementById('pdf-wrapper').style.transform = `scale(1)`;
 renderPages(); 
 };
 reader.readAsArrayBuffer(file);
