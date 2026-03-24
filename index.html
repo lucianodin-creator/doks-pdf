@@ -13,7 +13,7 @@
     <style>
         /* MÓDULO: RESET E CORES BASE */
         * { box-sizing: border-box; tap-highlight-color: transparent; margin: 0; padding: 0; }
-        :root { --vh: 100vh; --primary: #4169E1; --accent: #ff8c00; --success: #2e7d32; }
+        :root { --vh: 100dvh; --primary: #4169E1; --accent: #ff8c00; --success: #2e7d32; }
         body { font-family: sans-serif; background: #111; height: var(--vh); width: 100vw; display: flex; flex-direction: column; overflow: hidden; position: fixed; }
 
         /* MÓDULO CSS: BARRA SUPERIOR (HEADER) */
@@ -41,7 +41,8 @@
         .handle { position: absolute; width: 22px; height: 22px; background: var(--primary); border: 2px solid #fff; border-radius: 50%; bottom: -11px; right: -11px; }
 
         /* MÓDULO CSS: BARRA INFERIOR */
-        .bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; }
+        .bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 20000;
+position: relative; }
         .btn-action { flex: 1; height: 50px; border-radius: 12px; border: none; color: white; font-weight: bold; }
 
 /* --- GARANTIR QUE O MODAL FIQUE POR CIMA DE TUDO --- */
@@ -179,14 +180,20 @@
             } else { iniciarAssinatura(); }
         }
 
-        function iniciarAssinatura() {
-            document.getElementById('sig-modal').style.display = 'flex';
-            const canvas = document.getElementById('sig-pad');
-            setTimeout(() => {
-                canvas.width = window.innerWidth; canvas.height = window.innerHeight - 70;
-                if (signaturePad) signaturePad.off();
-                signaturePad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 4 });
-            }, 300);
+    document.getElementById('sig-modal').style.display = 'flex';
+    const canvas = document.getElementById('sig-pad');
+    
+    // Pequeno atraso para o navegador terminar de girar a tela
+    setTimeout(() => {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        
+        if (signaturePad) signaturePad.off();
+        signaturePad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 4 });
+        signaturePad.clear(); // Limpa para evitar o erro de "quadro vazio" falso
+    }, 400);
         }
 
         function fecharModal() {
@@ -330,7 +337,46 @@ function clonarPosicao(btn) {
         /* MÓDULO JS: HISTÓRICO */
         function mostrarRecentes() { alert("Funcionalidade de histórico ativa. Liste seus arquivos aqui."); }
 
-        window.addEventListener('resize', () => document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`));
+const atualizarAltura = () => {
+    document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
+};
+window.addEventListener('resize', atualizarAltura);
+window.addEventListener('orientationchange', () => setTimeout(atualizarAltura, 200));
+atualizarAltura();
+
+/* --- FUNÇÃO: CONFIRMAR ASSINATURA (OPÇÃO 3) --- */
+function confirmSig() {
+    console.log("Iniciando confirmação...");
+    try {
+        const canvas = document.getElementById('sig-pad');
+        
+        // Verifica se o SignaturePad detectou algum movimento
+        if (signaturePad && !signaturePad.isEmpty()) {
+            const result = trimCanvas(canvas); // Corta os espaços em branco
+            
+            if (result) {
+                console.log("Assinatura detectada. Enviando para o PDF...");
+                
+                // Define em qual página colocar (por padrão na 1)
+                const pNum = (pdfDoc && pdfDoc.numPages > 0) ? 1 : 1;
+                
+                // Insere a imagem na página
+                addSigToPage(pNum, result.data, 100, 50, 150, 150 / result.ratio, 0);
+                
+                console.log("Sucesso! Fechando janela...");
+                fecharModal();
+            }
+        } else {
+            // Se o SignaturePad estiver vazio, mostra o aviso que apareceu no seu print
+            alert("O sistema não detectou tinta no quadro. Tente riscar com mais firmeza.");
+        }
+    } catch (error) {
+        console.error("Erro técnico:", error);
+        alert("Erro ao confirmar. Verifique o console.");
+    }
+}
+
     </script>
 </body>
 </html>
+
