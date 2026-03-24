@@ -44,7 +44,14 @@ canvas { display: block; width: 100% !important; height: auto !important; }
 <button class="btn-action" style="background:#2e7d32" onclick="gerarPDF()">✔ SALVAR PDF</button>
 </div>
 <div id="sig-modal">
-<canvas id="sig-pad"></canvas>
+<canvas id="sig-pad"></canvas><div class="header">
+<strong>DoksPDF</strong>
+<div style="display: flex; gap: 8px; align-items: center;">
+<button onclick="mostrarRecentes()" style="background:#f1c40f; color:#000; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:12px; border:none;">🕒 RECENTES</button>
+<label for="file-in" style="background:#fff; color:#4169E1; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:12px;">📂 ABRIR PDF</label>
+<input type="file" id="file-in" style="display:none" accept="application/pdf">
+</div>
+</div>
 <div class="modal-btns">
 <button onclick="fecharModal()" style="background:#444">SAIR</button>
 <button onclick="signaturePad.clear()" style="background:#e67e22">LIMPAR</button>
@@ -170,6 +177,26 @@ const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'pt', 'a4');
 const pages = document.querySelectorAll('.page-container');
 for (let i = 0; i < pages.length; i++) {
 if (i > 0) doc.addPage();
+        // Função para salvar o nome do arquivo no histórico
+        function salvarNoHistorico(nome) {
+            let historico = JSON.parse(localStorage.getItem('pdf_docs') || "[]");
+            if (!historico.includes(nome)) {
+                historico.push(nome);
+                if (historico.length > 5) historico.shift(); // Mantém apenas os últimos 5
+                localStorage.setItem('pdf_docs', JSON.stringify(historico));
+            }
+        }
+
+        // Função para exibir o alerta com os nomes dos arquivos
+        function mostrarRecentes() {
+            let historico = JSON.parse(localStorage.getItem('pdf_docs') || "[]");
+            if (historico.length === 0) {
+                alert("Nenhum PDF recente encontrado.");
+            } else {
+                alert("Arquivos editados recentemente:\n\n" + historico.join("\n"));
+            }
+        }
+
 const canvas = pages[i].querySelector('canvas');
 doc.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 595, 842);
 pages[i].querySelectorAll('.sig-box').forEach(sig => {
@@ -183,6 +210,7 @@ const angle = parseInt(sig.dataset.angle);
 doc.addImage(img.src, 'PNG', x, y, w, h, null, 'FAST', angle);
 });
 }
+salvarNoHistorico(pdfName);
 doc.save(pdfName);
 }
 </script>
