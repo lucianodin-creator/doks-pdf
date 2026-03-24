@@ -85,12 +85,50 @@
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 5000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; background: #f9f9f9; touch-action: none; }
         
-        /* MÓDULO: CAIXA DE ASSINATURA NO PDF */
-        .sig-box { position: absolute; border: 1.5px dashed var(--primary); z-index: 100; touch-action: none; }
-        .sig-box img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-        .sig-tools { position: absolute; top: -45px; left: 0; display: flex; gap: 5px; }
-        .btn-tool { width: 34px; height: 34px; border-radius: 6px; border: none; color: white; display: flex; align-items: center; justify-content: center; }
-        .handle { position: absolute; width: 20px; height: 20px; background: var(--primary); border: 2px solid #fff; border-radius: 50%; bottom: -10px; right: -10px; cursor: nwse-resize; }
+/* ============================================================== */
+/* MÓDULO CSS: FERRAMENTAS DA ASSINATURA                         */
+/* ============================================================== */
+.sig-box { position: absolute; border: 1.5px dashed var(--primary); z-index: 100; touch-action: none; }
+.sig-box img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; transition: transform 0.2s; }
+
+.sig-tools { 
+    position: absolute; 
+    top: -42px; 
+    left: 0; 
+    display: flex; 
+    gap: 8px; 
+    padding: 4px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+}
+
+.btn-tool { 
+    width: 32px; 
+    height: 32px; 
+    border-radius: 6px; 
+    border: none; 
+    color: white; 
+    font-size: 16px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.handle { 
+    position: absolute; 
+    width: 24px; 
+    height: 24px; 
+    background: var(--primary); 
+    border: 2px solid #fff; 
+    border-radius: 50%; 
+    bottom: -12px; 
+    right: -12px; 
+    cursor: nwse-resize; 
+    z-index: 110;
+}
 
         /* OVERLAY ROTAÇÃO */
         #rotation-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
@@ -206,65 +244,94 @@
 
         function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
 
-        function confirmSig() {
-            if (signaturePad && !signaturePad.isEmpty()) {
-                const canvas = document.getElementById('sig-pad');
-                const data = canvas.toDataURL(); // Simplificado para garantir o corte
-                addSigToPage(1, data, 100, 50, 150, 80);
-                fecharModal();
-            } else { alert("Assine antes de confirmar!"); }
-        }
+function confirmSig() {
+    const canvas = document.getElementById('sig-pad');
+    if (signaturePad && !signaturePad.isEmpty()) {
+        // Gera a imagem e já aplica o corte de espaços vazios
+        const data = signaturePad.toDataURL(); 
+        
+        // Adiciona na primeira página visível (pode ser ajustado)
+        addSigToPage(1, data, 150, 50, 160, 90, 0);
+        
+        fecharModal();
+        console.log("Assinatura confirmada e recortada.");
+    } else {
+        alert("O quadro está vazio! Por favor, faça sua assinatura.");
+    }
+}
 
-        /* MÓDULO: JS - MANIPULAÇÃO (CLONAGEM CORRIGIDA) */
-        function addSigToPage(pNum, src, t, l, w, h) {
-            const p = document.getElementById(`page-${pNum}`);
-            if (!p) return;
-            const div = document.createElement('div');
-            div.className = 'sig-box';
-            div.style.cssText = `top:${t}px; left:${l}px; width:${w}px; height:${h}px;`;
-            div.innerHTML = `
-                <div class="sig-tools">
-                    <button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
-                    <button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
-                </div>
-                <img src="${src}">
-                <div class="handle"></div>`;
-            p.appendChild(div);
-            setupInteract(div);
-        }
+/* ============================================================== */
+/* MÓDULO: MANIPULAÇÃO DE ASSINATURA (VERSÃO PRO)                */
+/* ============================================================== */
+function addSigToPage(pNum, src, t, l, w, h, a = 0) {
+    const p = document.getElementById(`page-${pNum}`);
+    if (!p) return;
+    const div = document.createElement('div');
+    div.className = 'sig-box';
+    div.dataset.angle = a;
+    // t e l são as coordenadas iniciais
+    div.style.cssText = `top:${t}px; left:${l}px; width:${w}px; height:${h}px;`;
+    div.innerHTML = `
+        <div class="sig-tools">
+            <button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
+            <button class="btn-tool" style="background:#2ecc71" onclick="girarSig(this)">🔄</button>
+            <button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
+        </div>
+        <img src="${src}" style="transform: rotate(${a}deg)">
+        <div class="handle"></div>`;
+    p.appendChild(div);
+    setupInteract(div);
+}
 
-        function clonarPosicao(btn) {
-            const el = btn.closest('.sig-box');
-            const src = el.querySelector('img').src;
-            const baseT = parseFloat(el.style.top) || 0;
-            const baseL = parseFloat(el.style.left) || 0;
-            const moveX = parseFloat(el.getAttribute('data-x')) || 0;
-            const moveY = parseFloat(el.getAttribute('data-y')) || 0;
-            
-            const finalT = baseT + moveY;
-            const finalL = baseL + moveX;
+function clonarPosicao(btn) {
+    const el = btn.closest('.sig-box');
+    const src = el.querySelector('img').src;
+    const angle = parseInt(el.dataset.angle) || 0;
+    
+    // Captura a posição base + o deslocamento do arrasto (data-x/y)
+    const baseT = parseFloat(el.style.top) || 0;
+    const baseL = parseFloat(el.style.left) || 0;
+    const moveX = parseFloat(el.getAttribute('data-x')) || 0;
+    const moveY = parseFloat(el.getAttribute('data-y')) || 0;
+    
+    const finalT = baseT + moveY;
+    const finalL = baseL + moveX;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
 
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                if (`page-${i}` === el.parentElement.id) continue;
-                addSigToPage(i, src, finalT, finalL, el.offsetWidth, el.offsetHeight);
-            }
-        }
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+        if (`page-${i}` === el.parentElement.id) continue;
+        addSigToPage(i, src, finalT, finalL, w, h, angle);
+    }
+    alert("Assinatura clonada em todas as páginas!");
+}
 
-        function setupInteract(el) {
-            interact(el).draggable({
-                listeners: { move(e) {
-                    let x = (parseFloat(e.target.getAttribute('data-x')) || 0) + e.dx;
-                    let y = (parseFloat(e.target.getAttribute('data-y')) || 0) + e.dy;
-                    e.target.style.transform = `translate(${x}px, ${y}px)`;
-                    e.target.setAttribute('data-x', x); e.target.setAttribute('data-y', y);
-                }}
-            }).resizable({
-                edges: { right: true, bottom: true },
-                listeners: { move(e) {
-                    Object.assign(e.target.style, { width: `${e.rect.width}px`, height: `${e.rect.height}px` });
-                }}
+function girarSig(btn) {
+    const el = btn.closest('.sig-box');
+    let angle = (parseInt(el.dataset.angle) + 90) % 360;
+    el.dataset.angle = angle;
+    el.querySelector('img').style.transform = `rotate(${angle}deg)`;
+}
+
+function setupInteract(el) {
+    interact(el).draggable({
+        listeners: { move(e) {
+            let x = (parseFloat(e.target.getAttribute('data-x')) || 0) + e.dx;
+            let y = (parseFloat(e.target.getAttribute('data-y')) || 0) + e.dy;
+            e.target.style.transform = `translate(${x}px, ${y}px)`;
+            e.target.setAttribute('data-x', x); 
+            e.target.setAttribute('data-y', y);
+        }}
+    }).resizable({
+        edges: { right: true, bottom: true },
+        listeners: { move(e) {
+            Object.assign(e.target.style, { 
+                width: `${e.rect.width}px`, 
+                height: `${e.rect.height}px` 
             });
-        }
+        }}
+    });
+}
 
         /* MÓDULO: JS - GERAR PDF FINAL */
         async function gerarPDF() {
