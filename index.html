@@ -44,9 +44,57 @@
         #sig-pad { flex: 1; width: 100%; background: #f9f9f9; touch-action: none; }
         .modal-btns { height: 70px; display: flex; padding: 10px; gap: 10px; background: #111; }
         .modal-btns button { flex: 1; border: none; border-radius: 8px; color: white; font-weight: bold; }
+
+/* --- OVERLAY INTERATIVO DE ROTAÇÃO --- */
+#rotation-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 40000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.phone-icon {
+    width: 60px;
+    height: 100px;
+    border: 3px solid #fff;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    animation: rotatePhone 2s infinite ease-in-out;
+    position: relative;
+}
+
+.phone-icon::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+@keyframes rotatePhone {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+    100% { transform: rotate(90deg); }
+}
     </style>
 </head>
 <body>
+<div id="rotation-overlay">
+    <div class="phone-icon"></div>
+    <p style="font-size: 18px; font-weight: bold;">Gire o celular para o lado</p>
+    <p style="font-size: 14px; opacity: 0.8; margin-top: 10px;">Melhor posição para assinar</p>
+</div>
 
     <div class="header">
         <strong>DoksPDF</strong>
@@ -126,67 +174,39 @@
             }
         }
 
-        /* --- LÓGICA DE ASSINATURA E ORIENTAÇÃO --- */
-        async function abrirModal() {
-            alert("Por favor, vire o celular de lado (horizontal) para assinar melhor.");
-            
-            // Tenta forçar a orientação para paisagem
-            try {
-                if (screen.orientation && screen.orientation.lock) {
-                    await screen.orientation.lock('landscape');
-                }
-            } catch (e) { console.log("Bloqueio de orientação não suportado."); }
-
-            document.getElementById('sig-modal').style.display = 'flex';
-            const canvas = document.getElementById('sig-pad');
-            
-            // Pequeno delay para o navegador processar a rotação antes de medir o tamanho
-            setTimeout(() => {
-                canvas.width = window.innerWidth; 
-                canvas.height = window.innerHeight - 70;
-                if (!signaturePad) signaturePad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 4 });
-                signaturePad.clear();
-            }, 300);
-        }
-
-        async function fecharModal() {
-            document.getElementById('sig-modal').style.display = 'none';
-            // Volta para a orientação vertical
-            try {
-                if (screen.orientation && screen.orientation.unlock) {
-                    screen.orientation.unlock();
-                }
-            } catch (e) {}
-        }
-
-        function trimCanvas(canvas) {
-            const ctx = canvas.getContext('2d');
-            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let bound = { top: null, left: null, right: null, bottom: null };
-            for (let i = 0; i < pixels.data.length; i += 4) {
-                if (pixels.data[i + 3] !== 0) {
-                    const x = (i / 4) % canvas.width, y = ~~((i / 4) / canvas.width);
-                    if (bound.top === null || y < bound.top) bound.top = y;
-                    if (bound.left === null || x < bound.left) bound.left = x;
-                    if (bound.right === null || x > bound.right) bound.right = x;
-                    if (bound.bottom === null || y > bound.bottom) bound.bottom = y;
-                }
+/* --- LÓGICA DE ASSINATURA COM VERIFICAÇÃO DE ROTAÇÃO --- */
+async function abrirModal() {
+    const overlay = document.getElementById('rotation-overlay');
+    
+    // Se já estiver deitado, abre direto. Se não, mostra o informativo.
+    if (window.innerHeight > window.innerWidth) {
+        overlay.style.display = 'flex';
+        
+        // Listener para detectar quando o usuário girar
+        const checkRotation = () => {
+            if (window.innerWidth > window.innerHeight) {
+                overlay.style.display = 'none';
+                window.removeEventListener('resize', checkRotation);
+                iniciarAssinatura();
             }
-            if (bound.top === null) return null;
-            const trimW = bound.right - bound.left, trimH = bound.bottom - bound.top;
-            const trimmed = document.createElement('canvas');
-            trimmed.width = trimW; trimmed.height = trimH;
-            trimmed.getContext('2d').drawImage(canvas, bound.left, bound.top, trimW, trimH, 0, 0, trimW, trimH);
-            return { data: trimmed.toDataURL(), ratio: trimW / trimH };
-        }
+        };
+        window.addEventListener('resize', checkRotation);
+    } else {
+        iniciarAssinatura();
+    }
+}
 
-        function confirmSig() {
-            const result = trimCanvas(document.getElementById('sig-pad'));
-            if (!result) return;
-            const baseW = 120;
-            addSigToPage(1, result.data, 200, 50, baseW, baseW / result.ratio, 0);
-            fecharModal();
-        }
+function iniciarAssinatura() {
+    document.getElementById('sig-modal').style.display = 'flex';
+    const canvas = document.getElementById('sig-pad');
+    
+    setTimeout(() => {
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight - 70;
+        if (!signaturePad) signaturePad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 4 });
+        signaturePad.clear();
+    }, 300);
+}
 
         /* --- FERRAMENTAS DA ASSINATURA --- */
         function addSigToPage(pNum, src, top, left, w, h, angle) {
