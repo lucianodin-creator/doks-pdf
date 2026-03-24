@@ -171,7 +171,7 @@
 ### **2. TROCA DE MÓDULO: CONTAINER (Área do PDF)**
 **Importante:** Vá até a sua `div class="container"` e verifique se não tem nenhum `label` ou `input` sobrando lá dentro. Ela deve estar limpa, assim:
 
-```html
+html
 <div class="container" id="scroll-cont">
     <div class="zoom-controls">
         <button class="btn-zoom" onclick="ajustarZoom(1.1)">+</button>
@@ -181,7 +181,6 @@
 
     <div id="pdf-wrapper"></div>
 </div>
-
     <div style="display:flex; align-items:center; gap:8px;">
         <div style="display:flex; background:rgba(0,0,0,0.2); border-radius:8px; padding:2px;">
             <button onclick="ajustarZoom(0.9)" style="background:none; border:none; color:white; padding:5px 10px; cursor:pointer; font-weight:bold;">-</button>
