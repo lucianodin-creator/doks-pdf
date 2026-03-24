@@ -239,14 +239,29 @@
             el.querySelector('img').style.transform = `rotate(${angle}deg)`;
         }
 
-        function clonarPosicao(btn) {
-            const el = btn.closest('.sig-box');
-            const src = el.querySelector('img').src, a = parseInt(el.dataset.angle);
-            const w = el.offsetWidth, h = el.offsetHeight, t = parseFloat(el.style.top), l = parseFloat(el.style.left);
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                if (`page-${i}` === el.parentElement.id) continue;
-                addSigToPage(i, src, t, l, w, h, a);
-            }
+function clonarPosicao(btn) {
+    const el = btn.closest('.sig-box');
+    const src = el.querySelector('img').src;
+    const a = parseInt(el.dataset.angle);
+    
+    // CAPTURA A POSIÇÃO REAL (Base + Arraste)
+    const baseTop = parseFloat(el.style.top) || 0;
+    const baseLeft = parseFloat(el.style.left) || 0;
+    const moveX = parseFloat(el.getAttribute('data-x')) || 0;
+    const moveY = parseFloat(el.getAttribute('data-y')) || 0;
+
+    const realTop = baseTop + moveY;
+    const realLeft = baseLeft + moveX;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+
+    // Percorre todas as páginas e aplica a posição corrigida
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+        if (`page-${i}` === el.parentElement.id) continue;
+        addSigToPage(i, src, realTop, realLeft, w, h, a);
+    }
+}
+
         }
 
         function setupInteract(el) {
