@@ -129,32 +129,65 @@ margin-bottom: 75px;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         /* MÓDULO JS: LÓGICA DE ABRIR E RENDERIZAR PDF */
-        document.getElementById('file-in').onchange = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            pdfName = file.name.replace(".pdf", "_assinado.pdf");
-            const reader = new FileReader();
-            reader.onload = async function() { 
-                pdfDoc = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise; 
-                renderPages(); 
-            };
-            reader.readAsArrayBuffer(file);
-        };
-
-        async function renderPages() {
-            const wrapper = document.getElementById('pdf-wrapper'); wrapper.innerHTML = '';
-            const screenW = document.getElementById('scroll-cont').clientWidth - 20;
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                const page = await pdfDoc.getPage(i);
-                const vp = page.getViewport({scale: (screenW / page.getViewport({scale:1}).width)});
-                const container = document.createElement('div');
-                container.className = 'page-container'; container.id = `page-${i}`;
-                container.style.width = vp.width + 'px'; container.style.height = vp.height + 'px';
-                const canvas = document.createElement('canvas');
-                canvas.width = vp.width; canvas.height = vp.height;
-                container.appendChild(canvas); wrapper.appendChild(container);
-                await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
-            }
+/* --- ATUALIZAÇÃO NO SELETOR DE ARQUIVOS --- */
+document.getElementById('file-in').onchange = async (e) => {
+    const file = e.target.files[0]; 
+    if(!file) return;
+    
+    console.log("Arquivo selecionado:", file.name);
+    pdfName = file.name.replace(".pdf", "_assinado.pdf");
+    
+    const reader = new FileReader();
+    reader.onload = async function() { 
+        try {
+            const typedarray = new Uint8Array(this.result);
+            pdfDoc = await pdfjsLib.getDocument(typedarray).promise; 
+            console.log("PDF Carregado com", pdfDoc.numPages, "páginas.");
+            renderPages(); 
+        } catch (err) {
+            console.error("Erro ao ler PDF:", err);
+            alert("Erro ao abrir o PDF. Verifique se o arquivo não está protegido.");
         }
+    };
+    reader.readAsArrayBuffer(file);
+};
+
+/* --- FUNÇÃO DE RENDERIZAÇÃO CORRIGIDA --- */
+async function renderPages() {
+    const wrapper = document.getElementById('pdf-wrapper'); 
+    const container = document.getElementById('scroll-cont');
+    wrapper.innerHTML = ''; // Limpa tudo antes de começar
+    
+    // Pega a largura real disponível para o PDF caber na tela
+    const screenW = container.clientWidth - 30;
+
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const originalVp = page.getViewport({scale: 1});
+        const scale = screenW / originalVp.width;
+        const vp = page.getViewport({scale: scale});
+
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page-container'; 
+        pageDiv.id = `page-${i}`;
+        pageDiv.style.width = vp.width + 'px'; 
+        pageDiv.style.height = vp.height + 'px';
+
+        const canvas = document.createElement('canvas');
+        canvas.width = vp.width; 
+        canvas.height = vp.height;
+        
+        pageDiv.appendChild(canvas); 
+        wrapper.appendChild(pageDiv);
+
+        const renderCtx = {
+            canvasContext: canvas.getContext('2d'),
+            viewport: vp
+        };
+        await page.render(renderCtx).promise;
+        console.log("Página", i, "renderizada.");
+    }
+}
 
         /* MÓDULO JS: LÓGICA DE ROTAÇÃO E MODAL */
         function abrirModal() {
