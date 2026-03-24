@@ -44,6 +44,17 @@
         .bottom-bar { height: 75px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; }
         .btn-action { flex: 1; height: 50px; border-radius: 12px; border: none; color: white; font-weight: bold; }
 
+/* --- GARANTIR QUE O MODAL FIQUE POR CIMA DE TUDO --- */
+#sig-modal {
+    z-index: 60000 !important; /* Valor maior que o do overlay de rotação */
+}
+
+/* Garante que os botões dentro do modal sejam clicáveis */
+#sig-modal button {
+    cursor: pointer;
+    pointer-events: auto;
+}
+
         /* MÓDULO CSS: JANELA DE ASSINATURA (MODAL) */
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 40000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; background: #f9f9f9; touch-action: none; }
@@ -104,14 +115,14 @@
         <button class="btn-action" style="background:var(--success)" onclick="gerarPDF()">✔ SALVAR PDF</button>
     </div>
 
-    <div id="sig-modal">
-        <canvas id="sig-pad"></canvas>
-        <div style="height:70px; display:flex; padding:10px; gap:10px; background:#111;">
-            <button onclick="fecharModal()" style="flex:1; background:#444; color:white; border:none; border-radius:8px;">SAIR</button>
-            <button onclick="signaturePad.clear()" style="flex:1; background:var(--accent); color:white; border:none; border-radius:8px;">LIMPAR</button>
-            <button onclick="confirmSig()" style="flex:1; background:var(--success); color:white; border:none; border-radius:8px;">CONFIRMAR</button>
-        </div>
+<div id="sig-modal">
+    <canvas id="sig-pad"></canvas>
+    <div style="height:70px; display:flex; padding:10px; gap:10px; background:#111;">
+        <button onclick="fecharModal()" style="flex:1; background:#444; color:white; border:none; border-radius:8px;">SAIR</button>
+        <button onclick="signaturePad.clear()" style="flex:1; background:#ff8c00; color:white; border:none; border-radius:8px;">LIMPAR</button>
+        <button onclick="confirmSig()" style="flex:1; background:#2e7d32; color:white; border:none; border-radius:8px;">CONFIRMAR</button>
     </div>
+</div>
 
     <script>
         /* MÓDULO JS: VARIÁVEIS GLOBAIS */
@@ -184,13 +195,41 @@
             window.removeEventListener('resize', checkRotation);
         }
 
-        function confirmSig() {
-            const result = trimCanvas(document.getElementById('sig-pad'));
-            if (result) {
-                addSigToPage(1, result.data, 100, 50, 150, 150 / result.ratio, 0);
-                fecharModal();
-            } else { alert("Assine antes de confirmar!"); }
+/* --- FUNÇÃO: CONFIRMAR ASSINATURA (CORREÇÃO) --- */
+function confirmSig() {
+    console.log("Tentando confirmar assinatura...");
+    const canvas = document.getElementById('sig-pad');
+    const result = trimCanvas(canvas);
+
+    if (result) {
+        console.log("Assinatura processada com sucesso.");
+        // Adiciona na página 1 por padrão (pode mudar para pNum se tiver controle de página)
+        addSigToPage(1, result.data, 100, 50, 150, 150 / result.ratio, 0);
+        fecharModal();
+    } else {
+        alert("O quadro está vazio. Por favor, assine antes de confirmar.");
+    }
+}
+
+/* --- FUNÇÃO: FECHAR MODAL E LIMPAR ESTADOS --- */
+function fecharModal() {
+    // Esconde o modal e o aviso de rotação
+    document.getElementById('sig-modal').style.display = 'none';
+    const overlay = document.getElementById('rotation-overlay');
+    if (overlay) overlay.style.display = 'none';
+    
+    // Remove o monitor de rotação se ele ainda estiver ativo
+    if (checkRotation) {
+        window.removeEventListener('resize', checkRotation);
+    }
+    
+    // Destrava a orientação (importante para o celular voltar ao normal)
+    try {
+        if (screen.orientation && screen.orientation.unlock) {
+            screen.orientation.unlock();
         }
+    } catch (e) { console.log("Não foi possível destravar orientação."); }
+}
 
         /* MÓDULO JS: MANIPULAÇÃO DA ASSINATURA (TRIM, ADD, INTERACT) */
         function trimCanvas(canvas) {
