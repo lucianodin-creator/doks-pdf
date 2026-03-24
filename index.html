@@ -122,7 +122,7 @@
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
         <div class="modal-btns">
-            <button onclick="fecharModal()" style="background:#444">SAIR</button>
+<button onclick="fecharModal()" style="background:#444">SAIR</button>
             <button onclick="signaturePad.clear()" style="background:#e67e22">LIMPAR</button>
             <button onclick="confirmSig()" style="background:#2e7d32">CONFIRMAR</button>
         </div>
@@ -208,58 +208,67 @@ function iniciarAssinatura() {
     }, 300);
 }
 
-        /* --- FERRAMENTAS DA ASSINATURA --- */
-        function addSigToPage(pNum, src, top, left, w, h, angle) {
-            const page = document.getElementById(`page-${pNum}`); if (!page) return;
-            const div = document.createElement('div');
-            div.className = 'sig-box'; div.dataset.angle = angle;
-            div.style.top = top+'px'; div.style.left = left+'px'; div.style.width = w+'px'; div.style.height = h+'px';
-            div.innerHTML = `
-                <div class="sig-tools">
-                    <button class="btn-tool" style="background:#e74c3c" onclick="this.closest('.sig-box').remove()">🗑️</button>
-                    <button class="btn-tool" style="background:#2ecc71" onclick="girarSig(this)">🔄</button>
-                    <button class="btn-tool" style="background:#2980b9" onclick="clonarPosicao(this)">📋</button>
-                </div>
-                <img src="${src}" style="transform: rotate(${angle}deg)">
-                <div class="handle"></div>
-            `;
-            page.appendChild(div);
-            setupInteract(div);
-        }
-
-        function girarSig(btn) {
-            const el = btn.closest('.sig-box');
-            let angle = (parseInt(el.dataset.angle) + 90) % 360;
-            el.dataset.angle = angle;
-            el.querySelector('img').style.transform = `rotate(${angle}deg)`;
-        }
-
-        function clonarPosicao(btn) {
-            const el = btn.closest('.sig-box');
-            const src = el.querySelector('img').src, a = parseInt(el.dataset.angle);
-            const w = el.offsetWidth, h = el.offsetHeight, t = parseFloat(el.style.top), l = parseFloat(el.style.left);
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                if (`page-${i}` === el.parentElement.id) continue;
-                addSigToPage(i, src, t, l, w, h, a);
+/* --- CORREÇÃO DO FLUXO DE ASSINATURA --- */
+function abrirModal() {
+    const overlay = document.getElementById('rotation-overlay');
+    
+    // Se estiver em pé (Portrait), mostra o aviso interativo
+    if (window.innerHeight > window.innerWidth) {
+        overlay.style.display = 'flex';
+        
+        const checkRotation = () => {
+            if (window.innerWidth > window.innerHeight) {
+                overlay.style.display = 'none';
+                window.removeEventListener('resize', checkRotation);
+                iniciarAssinatura();
             }
-        }
+        };
+        window.addEventListener('resize', checkRotation);
+    } else {
+        // Se já estiver deitado, abre direto
+        iniciarAssinatura();
+    }
+}
 
-        function setupInteract(el) {
-            let x = 0, y = 0;
-            interact(el).draggable({
-                listeners: { move(e) { x += e.dx; y += e.dy; e.target.style.transform = `translate(${x}px, ${y}px)`; },
-                end(e) {
-                    const rect = e.target.getBoundingClientRect();
-                    const parentRect = e.target.parentElement.getBoundingClientRect();
-                    e.target.style.top = (rect.top - parentRect.top) + "px";
-                    e.target.style.left = (rect.left - parentRect.left) + "px";
-                    e.target.style.transform = "translate(0,0)"; x = 0; y = 0;
-                }}
-            }).resizable({
-                edges: { right: true, bottom: true },
-                listeners: { move(e) { Object.assign(e.target.style, { width: `${e.rect.width}px`, height: `${e.rect.height}px` }); }}
-            });
+function iniciarAssinatura() {
+    document.getElementById('sig-modal').style.display = 'flex';
+    const canvas = document.getElementById('sig-pad');
+    
+    // Delay para garantir que o DOM se ajustou à nova largura/altura
+    setTimeout(() => {
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight - 70;
+        
+        // Reinicializa o SignaturePad para o novo tamanho de canvas
+        if (signaturePad) {
+            signaturePad.off(); // Desliga o antigo
         }
+        signaturePad = new SignaturePad(canvas, { minWidth: 1.5, maxWidth: 4 });
+        signaturePad.clear();
+    }, 300);
+}
+
+function fecharModal() {
+    document.getElementById('sig-modal').style.display = 'none';
+    document.getElementById('rotation-overlay').style.display = 'none';
+    
+    // Tenta destravar a orientação se o navegador suportar
+    try {
+        if (screen.orientation && screen.orientation.unlock) {
+            screen.orientation.unlock();
+        }
+    } catch (e) { console.log("Unlock não suportado"); }
+}
+
+function confirmSig() {
+    const canvas = document.getElementById('sig-pad');
+    const result = trimCanvas(canvas);
+    if (result) {
+        // Adiciona a assinatura na primeira página (pode ajustar pNum conforme necessário)
+        addSigToPage(1, result.data, 100, 50, 150, 150 / result.ratio, 0);
+    }
+    fecharModal(); // Fecha e limpa estados
+}
 
         /* --- HISTÓRICO E SALVAMENTO --- */
         function salvarNoHistorico(nome) {
