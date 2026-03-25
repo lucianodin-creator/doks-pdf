@@ -537,6 +537,72 @@ function mostrarRecentes() {
     alert("Lista de arquivos recentes (Em breve): \n1. " + pdfName);
 }
 
+/* ============================================================== */
+/* FUNÇÃO: addSigToPage (A PONTE QUE APLICA A ASSINATURA)        */
+/* ============================================================== */
+function addSigToPage(pageNum, imgData, x, y, width, height) {
+    Analista.log("Iniciando inserção da imagem na página " + pageNum);
+    try {
+        // Verifica se a página existe no wrapper
+        const pageWrapper = document.querySelector(`[data-page-number="${pageNum}"]`);
+        
+        if (!pageWrapper) {
+            throw new Error("Página do PDF não encontrada no visualizador.");
+        }
+
+        // Cria o elemento da imagem
+        const img = document.createElement('img');
+        img.src = imgData;
+        img.style.position = 'absolute';
+        img.style.left = x + 'px';
+        img.style.top = y + 'px';
+        img.style.width = width + 'px';
+        img.style.height = height + 'px';
+        img.style.cursor = 'move';
+        img.className = 'assinatura-colada';
+
+        // Torna a assinatura arrastável (opcional, mas útil)
+        tornarArrastavel(img);
+
+        pageWrapper.appendChild(img);
+        Analista.log("Assinatura fixada na página com sucesso!", "INFO");
+
+    } catch (err) {
+        Analista.log("ERRO AO ADICIONAR NA PÁGINA: " + err.message, "ERRO");
+    }
+}
+
+// Função auxiliar para você poder mover a assinatura com o dedo se ficar torta
+function tornarArrastavel(elmnt) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    elmnt.ontouchstart = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        pos3 = touch.clientX;
+        pos4 = touch.clientY;
+        document.ontouchend = closeDragElement;
+        document.ontouchmove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        pos1 = pos3 - touch.clientX;
+        pos2 = pos4 - touch.clientY;
+        pos3 = touch.clientX;
+        pos4 = touch.clientY;
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        document.ontouchend = null;
+        document.ontouchmove = null;
+    }
+}
+
     </script>
 </body>
 </html>
