@@ -296,30 +296,39 @@ function confirmSig() {
     }
 }
 
-/* ============================================================== */
-/* MÓDULO JS: MOTOR DE RENDERIZAÇÃO (FIX CONFLITO)               */
-/* ============================================================== */
+// --- COLOQUE AQUI (Módulo 1: Abertura de Arquivo) ---
 document.getElementById('file-in').onchange = function(e) {
+    alert("1. Botão 'ABRIR PDF' clicado!"); // <-- O Alerta 1 começa aqui
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) { 
+        alert("Erro: Nenhum arquivo selecionado."); 
+        return; 
+    }
 
-    pdfName = file.name.replace(".pdf", "_assinado.pdf");
-    const reader = new FileReader();
-    
-    reader.onload = function() {
-        const typedarray = new Uint8Array(this.result);
-        // Garante que o worker está configurado antes de chamar
-        pdfjsLib.getDocument({data: typedarray}).promise.then(function(pdf) {
-            pdfDoc = pdf;
-            zoomAtual = 1.0; // Reseta o zoom ao abrir novo arquivo
-            document.getElementById('zoom-val').innerText = "100%";
-            renderPages();
-        }).catch(err => {
-            console.error("Erro PDF:", err);
-            alert("Não foi possível processar este PDF.");
-        });
-    };
-    reader.readAsArrayBuffer(file);
+    try {
+        if (typeof pdfjsLib === 'undefined') {
+            alert("ERRO CRÍTICO: Biblioteca PDF.js não carregada!");
+            return;
+        }
+        alert("2. Biblioteca de PDF detectada!");
+
+        const reader = new FileReader();
+        alert("3. Iniciando processamento do arquivo...");
+
+        reader.onload = function() {
+            const typedarray = new Uint8Array(this.result);
+            pdfjsLib.getDocument({data: typedarray}).promise.then(function(pdf) {
+                pdfDoc = pdf;
+                alert("4. SUCESSO: PDF carregado!");
+                renderPages();
+            }).catch(function(err) {
+                alert("ERRO NO PDF: " + err.message);
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    } catch (e) {
+        alert("ERRO GERAL: " + e.message);
+    }
 };
 
 async function renderPages() {
