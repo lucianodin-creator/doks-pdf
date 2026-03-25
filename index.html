@@ -164,6 +164,11 @@
         /* OVERLAY ROTAÇÃO */
         #rotation-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
 
+.assinatura-colada {
+    border: 1px dashed rgba(65, 105, 225, 0.5); /* Borda azul discreta para ajudar a ver onde está */
+    touch-action: none; /* Melhora o arrasto no celular */
+}
+
     </style>
 </head>
 <body>
@@ -407,37 +412,36 @@ document.getElementById('file-in').onchange = function(e) {
 };
 
 async function renderPages() {
-    const wrapper = document.getElementById('pdf-wrapper');
-    const scrollCont = document.getElementById('scroll-cont');
-    if (!wrapper || !scrollCont) return;
+    Analista.log("Iniciando renderização das páginas...");
+    const container = document.getElementById('pdf-wrapper');
+    container.innerHTML = ''; // Limpa antes de renderizar
 
-    wrapper.innerHTML = '<p style="color:white; padding:20px;">Carregando...</p>';
-    const screenW = scrollCont.clientWidth - 30;
-
-    try {
-        wrapper.innerHTML = '';
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+        try {
             const page = await pdfDoc.getPage(i);
-            const vp = page.getViewport({ scale: (screenW / page.getViewport({scale:1}).width) });
-
-            const pageDiv = document.createElement('div');
-            pageDiv.className = 'page-container';
-            pageDiv.id = `page-${i}`;
-            pageDiv.style.width = Math.floor(vp.width) + 'px';
-            pageDiv.style.height = Math.floor(vp.height) + 'px';
-            pageDiv.style.marginBottom = "15px";
+            const viewport = page.getViewport({ scale: 1.5 });
+            
+            // CRUCIAL: Cria o wrapper com o número da página
+            const pageWrapper = document.createElement('div');
+            pageWrapper.className = 'pdf-page-container';
+            pageWrapper.setAttribute('data-page-number', i); // Etiqueta que estava faltando
+            pageWrapper.style.position = 'relative';
+            pageWrapper.style.display = 'inline-block';
+            pageWrapper.style.marginBottom = '20px';
 
             const canvas = document.createElement('canvas');
-            canvas.width = vp.width;
-            canvas.height = vp.height;
-            
-            pageDiv.appendChild(canvas);
-            wrapper.appendChild(pageDiv);
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
 
-            await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            
+            pageWrapper.appendChild(canvas);
+            container.appendChild(pageWrapper);
+            Analista.log(`Página ${i} renderizada com sucesso.`);
+        } catch (err) {
+            Analista.log(`Erro na página ${i}: ` + err.message, "ERRO");
         }
-    } catch (e) {
-        console.error("Erro render:", e);
     }
 }
 
@@ -541,34 +545,31 @@ function mostrarRecentes() {
 /* FUNÇÃO: addSigToPage (A PONTE QUE APLICA A ASSINATURA)        */
 /* ============================================================== */
 function addSigToPage(pageNum, imgData, x, y, width, height) {
-    Analista.log("Iniciando inserção da imagem na página " + pageNum);
+    Analista.log("Buscando página " + pageNum + " para inserir assinatura...");
     try {
-        // Verifica se a página existe no wrapper
+        // Busca o wrapper que criamos na renderização
         const pageWrapper = document.querySelector(`[data-page-number="${pageNum}"]`);
         
         if (!pageWrapper) {
-            throw new Error("Página do PDF não encontrada no visualizador.");
+            throw new Error("Alvo não encontrado. Verifique se o PDF carregou as páginas.");
         }
 
-        // Cria o elemento da imagem
         const img = document.createElement('img');
         img.src = imgData;
         img.style.position = 'absolute';
-        img.style.left = x + 'px';
-        img.style.top = y + 'px';
-        img.style.width = width + 'px';
-        img.style.height = height + 'px';
-        img.style.cursor = 'move';
+        img.style.left = '50px'; // Posição inicial segura
+        img.style.top = '50px';  // Posição inicial segura
+        img.style.width = '150px';
+        img.style.zIndex = '100';
         img.className = 'assinatura-colada';
 
-        // Torna a assinatura arrastável (opcional, mas útil)
         tornarArrastavel(img);
-
         pageWrapper.appendChild(img);
-        Analista.log("Assinatura fixada na página com sucesso!", "INFO");
-
+        
+        Analista.log("ASSINATURA APLICADA! Arraste com o dedo para posicionar.", "INFO");
+        fecharModal();
     } catch (err) {
-        Analista.log("ERRO AO ADICIONAR NA PÁGINA: " + err.message, "ERRO");
+        Analista.log("FALHA AO COLAR: " + err.message, "ERRO");
     }
 }
 
