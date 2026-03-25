@@ -496,27 +496,68 @@ function setupInteract(el) {
 }
 
         /* MÓDULO: JS - GERAR PDF FINAL */
-        async function gerarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'pt', 'a4');
-            const pages = document.querySelectorAll('.page-container');
-
-            for (let i = 0; i < pages.length; i++) {
-                if (i > 0) doc.addPage();
-                const canvas = pages[i].querySelector('canvas');
-                doc.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 595, 842);
-                
-                pages[i].querySelectorAll('.sig-box').forEach(sig => {
-                    const img = sig.querySelector('img');
-                    const r = sig.getBoundingClientRect(), pr = pages[i].getBoundingClientRect();
-                    const x = ((r.left - pr.left) / pr.width) * 595;
-                    const y = ((r.top - pr.top) / pr.height) * 842;
-                    const w = (r.width / pr.width) * 595, h = (r.height / pr.height) * 842;
-                    doc.addImage(img.src, 'PNG', x, y, w, h);
-                });
-            }
-            doc.save(pdfName);
+async function gerarPDF() {
+    Analista.log("Iniciando exportação do PDF...");
+    try {
+        if (typeof window.jspdf === 'undefined') {
+            throw new Error("Biblioteca jsPDF não carregada!");
         }
+
+        const { jsPDF } = window.jspdf;
+        // Cria o documento em A4 e pontos (pt)
+        const doc = new jsPDF('p', 'pt', 'a4');
+        
+        // Pega todas as páginas renderizadas no seu visualizador
+        const pages = document.querySelectorAll('.pdf-page-container');
+        
+        if (pages.length === 0) {
+            throw new Error("Nenhuma página encontrada para salvar. O PDF foi aberto?");
+        }
+
+        Analista.log(`Processando ${pages.length} página(s)...`);
+
+        for (let i = 0; i < pages.length; i++) {
+            const container = pages[i];
+            const canvas = container.querySelector('canvas');
+            
+            if (i > 0) doc.addPage();
+
+            // 1. Adiciona a imagem do PDF original (o canvas)
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+            doc.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+
+            // 2. Busca assinaturas dentro deste container específico
+            const assinaturas = container.querySelectorAll('.assinatura-colada');
+            Analista.log(`Página ${i+1}: ${assinaturas.length} assinatura(s) encontrada(s).`);
+
+            assinaturas.forEach((sig) => {
+                // Pega a posição e tamanho exatos da assinatura na tela
+                const rect = sig.getBoundingClientRect();
+                const contRect = container.getBoundingClientRect();
+
+                // Converte a posição da tela para a escala do PDF (A4 = 595.28 pt)
+                const scaleX = 595.28 / contRect.width;
+                const scaleY = 841.89 / contRect.height;
+
+                const x = (rect.left - contRect.left) * scaleX;
+                const y = (rect.top - contRect.top) * scaleY;
+                const w = rect.width * scaleX;
+                const h = rect.height * scaleY;
+
+                doc.addImage(sig.src, 'PNG', x, y, w, h);
+            });
+        }
+
+        Analista.log("Gerando arquivo final e iniciando download...");
+        doc.save("documento_assinado.pdf");
+        Analista.log("SUCESSO: PDF salvo com as assinaturas!", "INFO");
+
+    } catch (err) {
+        Analista.log("FALHA AO SALVAR: " + err.message, "ERRO");
+        alert("Erro ao salvar! Veja o log no topo.");
+    }
+}
+
 /* ============================================================== */
 /* MÓDULO JS: ZOOM E HISTÓRICO                                   */
 /* ============================================================== */
