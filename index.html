@@ -12,6 +12,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
+
+.assinatura-container {
+    position: absolute;
+    border: 1px dashed #007bff;
+    cursor: move;
+}
+
+.controles-assinatura {
+    position: absolute;
+    top: -35px;
+    right: 0;
+    display: flex;
+    gap: 5px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.btn-ctrl {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 5px;
+}
+
+.btn-del { color: red; }
+.btn-rot { color: blue; }
+.btn-dup { color: green; }
+
 /* Configuração para quando o celular estiver deitado (Horizontal) */
 @media screen and (orientation: landscape) and (max-height: 500px) {
     .container-botoes { /* Use o nome da classe que envolve seus botões */
@@ -353,6 +384,26 @@ function abrirModal() {
     }
 }
 
+// Exemplo de como montar o bloco da assinatura com os botões
+function criarAssinaturaNaTela(imgData, x, y, pagina) {
+    const container = document.createElement('div');
+    container.className = 'assinatura-container';
+    container.style.left = x + 'px';
+    container.style.top = y + 'px';
+    container.dataset.rotacao = 0; // Guarda o ângulo atual
+
+    container.innerHTML = `
+        <div class="controles-assinatura">
+            <button class="btn-ctrl btn-dup" onclick="duplicarAssinatura(this)" title="Duplicar em todas">📋</button>
+            <button class="btn-ctrl btn-rot" onclick="girarAssinatura(this)" title="Girar">🔄</button>
+            <button class="btn-ctrl btn-del" onclick="removerAssinatura(this)" title="Excluir">🗑️</button>
+        </div>
+        <img src="${imgData}" style="width: 150px; pointer-events: none;">
+    `;
+    
+    document.getElementById('pagina-' + pagina).appendChild(container);
+}
+
 function iniciarPad() {
     document.getElementById('sig-modal').style.display = 'flex';
     const canvas = document.getElementById('sig-pad');
@@ -434,6 +485,42 @@ document.getElementById('file-in').onchange = function(e) {
     } catch (e) {
     }
 };
+
+// 1. Lixeira: Remove a assinatura da folha atual
+function removerAssinatura(botao) {
+    botao.closest('.assinatura-container').remove();
+}
+
+// 2. Girar: Rotaciona a assinatura em 90 graus a cada clique
+function girarAssinatura(botao) {
+    const container = botao.closest('.assinatura-container');
+    let atual = parseInt(container.dataset.rotacao) || 0;
+    atual = (atual + 90) % 360;
+    container.dataset.rotacao = atual;
+    container.querySelector('img').style.transform = `rotate(${atual}deg)`;
+}
+
+// 3. Duplicar: Copia para as mesmas coordenadas em TODAS as folhas
+function duplicarAssinatura(botao) {
+    const original = botao.closest('.assinatura-container');
+    const imgData = original.querySelector('img').src;
+    const x = original.style.left;
+    const y = original.style.top;
+    const rot = original.dataset.rotacao;
+
+    // Pega todas as páginas do documento (ajuste o seletor conforme seu código)
+    const paginas = document.querySelectorAll('.pagina-pdf'); 
+    
+    paginas.forEach((pag, index) => {
+        // Não duplica na página onde a original já está
+        if (pag !== original.parentElement) {
+            const clone = original.cloneNode(true);
+            pag.appendChild(clone);
+        }
+    });
+    
+    alert("Assinatura duplicada em todas as folhas!");
+}
 
 async function renderPages() {
     Analista.log("Iniciando renderização das páginas...");
