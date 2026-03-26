@@ -61,6 +61,23 @@
 
         #sig-modal { position: fixed; inset: 0; background: #fff; z-index: 5000; display: none; flex-direction: column; }
         #sig-pad { flex: 1; width: 100%; background: #f9f9f9; touch-action: none; }
+
+.assinatura-wrapper {
+    position: absolute; border: 1.5px dashed #4169E1; 
+    z-index: 500; touch-action: none; background: rgba(65, 105, 225, 0.05);
+}
+.controles-assinatura {
+    position: absolute; top: -45px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 8px;
+}
+.btn-tool {
+    width: 35px; height: 35px; border: none; border-radius: 5px; 
+    color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.btn-del { background: #d32f2f; } /* Vermelho */
+.btn-rot { background: #4169E1; } /* Azul */
+.btn-dup { background: #2e7d32; } /* Verde */
+
     </style>
 </head>
 <body>
@@ -159,24 +176,27 @@
             fecharModal();
         }
 
-        function addSigToScreen(imgData) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'assinatura-wrapper';
-            wrapper.dataset.angle = 0;
-            wrapper.style.top = '100px';
-            wrapper.style.left = '50px';
+function addSigToScreen(imgData) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'assinatura-wrapper';
+    wrapper.dataset.angle = 0; // Controle de rotação
+    wrapper.style.top = '100px';
+    wrapper.style.left = '50px';
 
-            wrapper.innerHTML = `
-                <div class="controles-assinatura">
-                    <button class="btn-tool btn-dup" onclick="duplicar(this)">📋</button>
-                    <button class="btn-tool btn-rot" onclick="girar(this)">🔄</button>
-                    <button class="btn-tool btn-del" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                </div>
-                <img src="${imgData}" style="width: 140px; display: block; pointer-events: none;">
-            `;
+    wrapper.innerHTML = `
+        <div class="controles-assinatura">
+            <button class="btn-tool btn-dup" onclick="duplicarAssinatura(this)" title="Duplicar">📋</button>
+            <button class="btn-tool btn-rot" onclick="girarAssinatura(this)" title="Girar">🔄</button>
+            <button class="btn-tool btn-del" onclick="this.parentElement.parentElement.remove()" title="Excluir">🗑️</button>
+        </div>
+        <img src="${imgData}" style="width: 150px; display: block; pointer-events: none;">
+    `;
 
-            document.getElementById('page-1').appendChild(wrapper);
-            tornarArrastavel(wrapper);
+    // Adiciona na primeira página por padrão
+    document.getElementById('page-1').appendChild(wrapper);
+    tornarArrastavel(wrapper);
+}
+
         }
 
         // FERRAMENTAS: GIRAR E DUPLICAR
@@ -256,6 +276,37 @@
             }
             doc.save("documento_assinado.pdf");
         }
+
+// Gira a imagem em 90 graus
+function girarAssinatura(btn) {
+    const el = btn.closest('.assinatura-wrapper');
+    let angle = (parseInt(el.dataset.angle) + 90) % 360;
+    el.dataset.angle = angle;
+    el.querySelector('img').style.transform = `rotate(${angle}deg)`;
+}
+
+// Copia para todas as outras páginas na mesma posição
+function duplicarAssinatura(btn) {
+    const original = btn.closest('.assinatura-wrapper');
+    const imgData = original.querySelector('img').src;
+    const top = original.style.top;
+    const left = original.style.left;
+    const angle = original.dataset.angle;
+
+    document.querySelectorAll('.pdf-page-container').forEach(page => {
+        if (page.id === original.parentElement.id) return; // Pula a página atual
+        
+        const clone = original.cloneNode(true);
+        clone.style.top = top;
+        clone.style.left = left;
+        clone.dataset.angle = angle;
+        clone.querySelector('img').style.transform = `rotate(${angle}deg)`;
+        
+        page.appendChild(clone);
+        tornarArrastavel(clone); // Ativa o arrasto no clone também
+    });
+}
+
     </script>
 </body>
 </html>
