@@ -2,301 +2,373 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Doks PDF</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Doks PDF - Oficial</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+
     <style>
-        /* MÓDULO 1: RESET E CORES GERAIS */
         :root {
             --azul-doks: #4169E1;
             --cinza-fundo: #2c2c2c;
             --dourado: #FFD700;
             --laranja-zoom: #FF8C00;
-            --verde: #2e7d32;
-            --amarelo: #fbc02d;
-            --cinza-botao: #757575;
+            --verde-sucesso: #2e7d32;
+            --amarelo-limpar: #fbc02d;
+            --cinza-sair: #757575;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: var(--cinza-fundo); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-        /* MÓDULO 2: BARRA SUPERIOR */
+        body { 
+            background-color: var(--cinza-fundo); 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            font-family: sans-serif;
+        }
+
+
+        /* --- BARRA SUPERIOR --- */
         .header {
-            height: 60px; background: var(--azul-doks); display: flex;
-            align-items: center; justify-content: space-between; padding: 0 15px; color: white;
+            height: 60px; background: var(--azul-doks); color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; z-index: 1000; flex-shrink: 0;
         }
-        .header-btns { display: flex; gap: 10px; align-items: center; }
+        .logo { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+        .header-btns { display: flex; gap: 10px; }
         .btn-top {
-            padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: white; color: var(--azul-doks);
+            padding: 8px 12px; border-radius: 5px; border: none; 
+            font-weight: bold; background: white; color: var(--azul-doks); cursor: pointer;
         }
-        .btn-pdf { border: 2px solid var(--dourado) !important; color: #333 !important; }
+        .btn-pdf { border: 2.5px solid var(--dourado) !important; color: #333 !important; }
 
-        /* MÓDULO 3: ÁREA DO PDF E ZOOM */
+
+        /* --- ÁREA CENTRAL (VIEWER) --- */
         .viewer-container {
-            flex: 1; overflow: auto; display: flex; justify-content: center; padding: 20px; position: relative;
+            flex: 1; overflow: auto; display: flex; justify-content: center; 
+            padding: 20px; position: relative; scroll-behavior: smooth;
         }
-        #pdf-render-area { display: flex; flex-direction: column; gap: 20px; }
-        .canvas-wrapper { position: relative; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        #pdf-render-area { display: flex; flex-direction: column; gap: 25px; padding-bottom: 100px; }
+        .canvas-wrapper { position: relative; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
 
+
+        /* --- BOTÕES DE ZOOM (QUADRADOS LARANJA - 200PX DO TOPO) --- */
         .zoom-controls {
-            position: fixed; right: 20px; top: 150px; display: flex; flex-direction: column; gap: 10px; z-index: 100;
+            position: fixed; right: 15px; top: 200px; 
+            display: flex; flex-direction: column; gap: 12px; z-index: 1500;
         }
         .btn-zoom {
-            width: 45px; height: 45px; background: var(--laranja-zoom); color: white; border: none; border-radius: 50%; font-size: 20px; font-weight: bold;
+            width: 50px; height: 50px; background: var(--laranja-zoom);
+            color: white; border: none; border-radius: 4px; /* QUADRADO */
+            font-size: 28px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
-        /* MÓDULO 4: BARRA INFERIOR */
+
+        /* --- BARRA INFERIOR (FLUTUANTE) --- */
         .footer {
-            height: 70px; background: var(--azul-doks); display: flex;
-            align-items: center; justify-content: space-around; padding: 0 10px; color: white;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 94%; height: 75px; background: var(--azul-doks);
+            display: flex; align-items: center; justify-content: space-around;
+            border-radius: 18px; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
         }
-        .nav-btns { display: flex; align-items: center; gap: 15px; }
-        .action-btns { display: flex; gap: 10px; }
-        .btn-footer { background: white; color: var(--azul-doks); border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
-
-        /* MÓDULO 5: JANELA DE ASSINATURA (MODAL) */
-        #sig-modal {
-            position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 2000;
+        .nav-group { display: flex; align-items: center; gap: 15px; color: white; font-weight: bold; }
+        .btn-footer {
+            padding: 12px 18px; border-radius: 10px; border: none;
+            font-weight: bold; background: white; color: var(--azul-doks); cursor: pointer;
         }
-        #sig-pad { flex: 1; background: #f0f0f0; cursor: crosshair; }
-        .sig-footer { height: 70px; display: flex; gap: 10px; padding: 10px; background: #eee; }
-        .btn-sig { flex: 1; border: none; border-radius: 8px; color: white; font-weight: bold; }
+        .btn-save { background: var(--verde-sucesso) !important; color: white !important; }
 
-        /* AVISO DE GIRO */
+
+        /* --- JANELA DE ASSINATURA (MODAL) E AVISO --- */
+        #sig-modal { position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 5000; }
+        #sig-pad { flex: 1; background: #fdfdfd; touch-action: none; }
+        .sig-toolbar { height: 80px; display: flex; gap: 12px; padding: 15px; background: #eee; border-top: 1px solid #ccc; }
+        .btn-sig { flex: 1; border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 16px; }
+
         #aviso-giro {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000;
-            display: none; flex-direction: column; align-items: center; justify-content: center; color: white;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.96);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            color: white; z-index: 6000; text-align: center;
         }
+        .icon-phone { font-size: 70px; margin-bottom: 20px; animation: rotateAnim 2.5s infinite; }
+        @keyframes rotateAnim { 0% {transform:rotate(0)} 50% {transform:rotate(-90deg)} 100% {transform:rotate(0)} }
 
-        /* MÓDULO 6: ELEMENTO ASSINATURA NA FOLHA */
+
+        /* --- ASSINATURA NA FOLHA --- */
         .sig-container {
-            position: absolute; border: 2px solid rgba(65, 105, 225, 0.5); background: rgba(65, 105, 225, 0.1); cursor: move;
+            position: absolute; border: 2px solid rgba(65, 105, 225, 0.6); 
+            background: rgba(65, 105, 225, 0.15); cursor: move; touch-action: none;
         }
-        .sig-btns {
-            position: absolute; top: -35px; right: 0; display: flex; gap: 5px;
+        .sig-btns-float {
+            position: absolute; top: -40px; right: 0; display: flex; gap: 6px; background: rgba(0,0,0,0.7); padding: 4px; border-radius: 6px;
         }
-        .mini-btn { width: 28px; height: 28px; border: none; border-radius: 4px; color: white; font-size: 14px; }
+        .mini-btn { width: 32px; height: 32px; border: none; border-radius: 4px; color: white; font-size: 16px; cursor: pointer; }
     </style>
 </head>
+
+
+
 <body>
 
     <header class="header">
-        <h2>Doks PDF</h2>
+        <div class="logo">Doks PDF</div>
         <div class="header-btns">
-            <button class="btn-top">Recentes</button>
+            <button class="btn-top" onclick="alert('Funcionalidade Recentes em breve')">Recentes</button>
             <label for="file-in" class="btn-top btn-pdf">Abrir PDF</label>
             <input type="file" id="file-in" hidden accept="application/pdf">
         </div>
     </header>
 
-    <main class="viewer-container" id="scroll-area">
+
+    <main class="viewer-container">
         <div class="zoom-controls">
-            <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
-            <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
+            <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
+            <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
         </div>
+
         <div id="pdf-render-area"></div>
     </main>
 
+
     <footer class="footer">
-        <div class="nav-btns">
+        <div class="nav-group">
             <button class="btn-footer" onclick="changePage(-1)"><</button>
             <span id="page-info">Pág: 0 / 0</span>
             <button class="btn-footer" onclick="changePage(1)">></button>
         </div>
-        <div class="action-btns">
+
+        <div class="action-group">
             <button class="btn-footer" onclick="startSignProcess()">🖋️ Assinar</button>
-            <button class="btn-footer" style="background: var(--verde); color: white;" onclick="savePDF()">Salvar</button>
+            <button class="btn-footer btn-save" onclick="savePDF()">Salvar</button>
         </div>
     </footer>
 
+
     <div id="aviso-giro">
-        <h1 style="font-size: 50px;">📱</h1>
-        <p>Gire o celular para assinar</p>
+        <div class="icon-phone">📱</div>
+        <p style="font-size: 20px; font-weight: bold;">Gire o celular</p>
+        <p style="color: #bbb; margin-top: 10px;">A assinatura precisa ser feita na horizontal</p>
     </div>
+
 
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
-        <div class="sig-footer">
-            <button class="btn-sig" style="background: var(--cinza-botao);" onclick="closeSig()">Sair</button>
-            <button class="btn-sig" style="background: var(--amarelo); color: #333;" onclick="signaturePad.clear()">Limpar</button>
-            <button class="btn-sig" style="background: var(--verde);" onclick="confirmSign()">Confirmar</button>
+        <div class="sig-toolbar">
+            <button class="btn-sig" style="background:var(--cinza-sair)" onclick="closeSig()">Sair</button>
+            <button class="btn-sig" style="background:var(--amarelo-limpar); color:#333" onclick="signaturePad.clear()">Limpar</button>
+            <button class="btn-sig" style="background:var(--verde-sucesso)" onclick="confirmSign()">Confirmar</button>
         </div>
     </div>
 
-<script>
-    // MÓDULO 7: LÓGICA CORE (PDF & VARIAVEIS)
-    let pdfDoc = null, pageNum = 1, scale = 1.0, signaturePad = null;
-    const renderArea = document.getElementById('pdf-render-area');
-    const pdfjs = window['pdfjs-dist/build/pdf'];
-    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    // Captura de erro para o Termux
-    window.onerror = (msg, url, line) => { console.error(`[ERRO DOKS]: ${msg} na linha ${line}`); return false; };
 
-    document.getElementById('file-in').onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function() {
-            const data = new Uint8Array(this.result);
-            pdfjs.getDocument({data}).promise.then(pdf => {
-                pdfDoc = pdf;
-                pageNum = 1;
-                renderPages();
-            }).catch(err => console.error("Erro PDF:", err));
+    <script>
+        /* --- VARIÁVEIS GLOBAIS --- */
+        let pdfDoc = null, pageNum = 1, scale = 1.0, signaturePad = null;
+        const renderArea = document.getElementById('pdf-render-area');
+        const pdfjs = window['pdfjs-dist/build/pdf'];
+        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        /* RETORNO DE ERROS PARA O TERMUX / CONSOLE */
+        window.onerror = (msg, url, line) => { 
+            console.error(`[DOKS-ERROR] -> Mensagem: ${msg} | Linha: ${line}`); 
+            return false; 
         };
-        reader.readAsArrayBuffer(file);
-    };
 
-    async function renderPages() {
-        renderArea.innerHTML = '';
-        // Ajuste inicial para caber na tela
-        const tempPage = await pdfDoc.getPage(1);
-        scale = (window.innerWidth - 40) / tempPage.getViewport({scale: 1.0}).width;
-        
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const viewport = page.getViewport({scale});
-            const wrapper = document.createElement('div');
-            wrapper.className = 'canvas-wrapper';
-            wrapper.id = `page-container-${i}`;
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
-            
-            wrapper.appendChild(canvas);
-            renderArea.appendChild(wrapper);
-        }
-        updatePageInfo();
-    }
 
-    // MÓDULO 8: NAVEGAÇÃO E ZOOM
-    function changePage(dir) {
-        if (!pdfDoc) return;
-        const target = pageNum + dir;
-        if (target >= 1 && target <= pdfDoc.numPages) {
-            pageNum = target;
-            document.getElementById(`page-container-${pageNum}`).scrollIntoView({behavior: 'smooth'});
+        /* --- CARREGAMENTO DO PDF --- */
+        document.getElementById('file-in').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function() {
+                const data = new Uint8Array(this.result);
+                pdfjs.getDocument({data}).promise.then(pdf => {
+                    pdfDoc = pdf;
+                    pageNum = 1;
+                    // Escala automática para o PDF caber na largura da tela cinza
+                    scale = (window.innerWidth - 40) / 595; 
+                    renderPages();
+                }).catch(err => console.error("Erro PDF.js:", err));
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+
+        /* --- RENDERIZAÇÃO DAS PÁGINAS --- */
+        async function renderPages() {
+            if (!pdfDoc) return;
+            renderArea.innerHTML = ''; 
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const viewport = page.getViewport({scale: scale});
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'canvas-wrapper';
+                wrapper.id = `page-container-${i}`;
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width; canvas.height = viewport.height;
+                await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+                
+                wrapper.appendChild(canvas);
+                renderArea.appendChild(wrapper);
+            }
             updatePageInfo();
         }
-    }
 
-    function updatePageInfo() {
-        document.getElementById('page-info').innerText = `Pág: ${pageNum} / ${pdfDoc ? pdfDoc.numPages : 0}`;
-    }
 
-    function changeZoom(val) {
-        scale += val;
-        renderPages();
-    }
-
-    // MÓDULO 9: ASSINATURA
-    function startSignProcess() {
-        if (!pdfDoc) return alert("Abra um PDF primeiro.");
-        document.getElementById('aviso-giro').style.display = 'flex';
-        window.addEventListener('orientationchange', checkOrientation);
-        checkOrientation(); // Verifica se já está deitado
-    }
-
-    function checkOrientation() {
-        if (window.innerHeight < window.innerWidth) { // Deitado
-            document.getElementById('aviso-giro').style.display = 'none';
-            openSigModal();
+        /* --- ZOOM --- */
+        function changeZoom(val) {
+            if(!pdfDoc) return;
+            scale += val;
+            if (scale < 0.2) scale = 0.2;
+            if (scale > 4.0) scale = 4.0;
+            renderPages();
         }
-    }
 
-    function openSigModal() {
-        const modal = document.getElementById('sig-modal');
-        modal.style.display = 'flex';
-        const canvas = document.getElementById('sig-pad');
-        canvas.width = modal.offsetWidth;
-        canvas.height = modal.offsetHeight - 70;
-        signaturePad = new SignaturePad(canvas);
-    }
 
-    function closeSig() {
-        document.getElementById('sig-modal').style.display = 'none';
-        document.getElementById('aviso-giro').style.display = 'none';
-        window.removeEventListener('orientationchange', checkOrientation);
-    }
+        /* --- NAVEGAÇÃO ENTRE PÁGINAS --- */
+        function changePage(dir) {
+            if (!pdfDoc) return;
+            const target = pageNum + dir;
+            if (target >= 1 && target <= pdfDoc.numPages) {
+                pageNum = target;
+                document.getElementById(`page-container-${pageNum}`).scrollIntoView({behavior: 'smooth'});
+                updatePageInfo();
+            }
+        }
 
-    function confirmSign() {
-        if (signaturePad.isEmpty()) return;
-        const dataUrl = signaturePad.toDataURL();
-        placeSignatureOnSheet(dataUrl);
-        closeSig();
-    }
+        function updatePageInfo() {
+            document.getElementById('page-info').innerText = `Pág: ${pageNum} / ${pdfDoc ? pdfDoc.numPages : 0}`;
+        }
 
-    // MÓDULO 10: MANIPULAÇÃO DA ASSINATURA NA FOLHA
-    function placeSignatureOnSheet(imgData) {
-        const container = document.getElementById(`page-container-${pageNum}`);
-        const sigDiv = document.createElement('div');
-        sigDiv.className = 'sig-container';
-        sigDiv.style.width = '150px';
-        sigDiv.style.top = '100px';
-        sigDiv.style.left = '50px';
 
-        sigDiv.innerHTML = `
-            <div class="sig-btns">
-                <button class="mini-btn" style="background:var(--verde)" onclick="cloneSig(this)">👥</button>
-                <button class="mini-btn" style="background:var(--azul-doks)" onclick="rotateSig(this)">🔄</button>
-                <button class="mini-btn" style="background:var(--danger, red)" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-            </div>
-            <img src="${imgData}" style="width:100%; height:100%; pointer-events:none;">
-            <div style="position:absolute; bottom:0; right:0; width:15px; height:15px; cursor:nwse-resize; background:blue;"></div>
-        `;
+        /* --- LÓGICA DE ASSINATURA --- */
+        function startSignProcess() {
+            if (!pdfDoc) return alert("Abra um PDF primeiro.");
+            document.getElementById('aviso-giro').style.display = 'flex';
+            window.addEventListener('resize', checkOrientation);
+            checkOrientation(); 
+        }
 
-        container.appendChild(sigDiv);
-        makeDraggable(sigDiv);
-    }
+        function checkOrientation() {
+            // Se largura maior que altura = modo horizontal
+            if (window.innerWidth > window.innerHeight) {
+                document.getElementById('aviso-giro').style.display = 'none';
+                openSigModal();
+            }
+        }
 
-    function makeDraggable(el) {
-        let px = 0, py = 0;
-        el.ontouchstart = (e) => {
-            const t = e.touches[0];
-            px = t.clientX - el.offsetLeft;
-            py = t.clientY - el.offsetTop;
-            document.ontouchmove = (ev) => {
-                const mt = ev.touches[0];
-                el.style.left = (mt.clientX - px) + 'px';
-                el.style.top = (mt.clientY - py) + 'px';
-            };
-        };
-        document.ontouchend = () => document.ontouchmove = null;
-    }
+        function openSigModal() {
+            const modal = document.getElementById('sig-modal');
+            modal.style.display = 'flex';
+            const canvas = document.getElementById('sig-pad');
+            canvas.width = modal.offsetWidth;
+            canvas.height = modal.offsetHeight - 80;
+            signaturePad = new SignaturePad(canvas);
+            window.removeEventListener('resize', checkOrientation);
+        }
 
-    function rotateSig(btn) {
-        const img = btn.closest('.sig-container').querySelector('img');
-        const curr = img.style.transform || 'rotate(0deg)';
-        const next = (parseInt(curr.replace(/[^0-9]/g, '')) + 90) % 360;
-        img.style.transform = `rotate(${next}deg)`;
-    }
+        function closeSig() {
+            document.getElementById('sig-modal').style.display = 'none';
+            document.getElementById('aviso-giro').style.display = 'none';
+        }
 
-    function cloneSig(btn) {
-        const original = btn.closest('.sig-container');
-        const img = original.querySelector('img').src;
-        document.querySelectorAll('.canvas-wrapper').forEach(page => {
-            if (page.id === original.parentElement.id) return;
-            const clone = original.cloneNode(true);
-            page.appendChild(clone);
-            makeDraggable(clone);
-        });
-    }
+        function confirmSign() {
+            if (signaturePad.isEmpty()) return alert("Assine antes de confirmar!");
+            const dataUrl = signaturePad.toDataURL();
+            placeSignatureOnSheet(dataUrl);
+            closeSig();
+        }
 
-    // MÓDULO 11: SALVAMENTO
-    async function savePDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'pt', 'a4');
-        // Lógica de exportação simplificada para o módulo
-        alert("PDF sendo processado para download...");
-        doc.save("doks_assinado.pdf");
-    }
-</script>
+
+        /* --- MANIPULAÇÃO DA ASSINATURA NA FOLHA --- */
+        function placeSignatureOnSheet(imgData) {
+            const container = document.getElementById(`page-container-${pageNum}`);
+            const sigDiv = document.createElement('div');
+            sigDiv.className = 'sig-container';
+            sigDiv.style.width = '180px';
+            sigDiv.style.height = '80px';
+            sigDiv.style.top = '150px';
+            sigDiv.style.left = '50px';
+
+            sigDiv.innerHTML = `
+                <div class="sig-btns-float">
+                    <button class="mini-btn" style="background:#2e7d32" onclick="cloneToAllPages(this)">👥</button>
+                    <button class="mini-btn" style="background:#4169E1" onclick="rotateSignature(this)">🔄</button>
+                    <button class="mini-btn" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
+                </div>
+                <img src="${imgData}" style="width:100%; height:100%; pointer-events:none;" data-angle="0">
+            `;
+
+            container.appendChild(sigDiv);
+            makeDraggable(sigDiv);
+        }
+
+        function makeDraggable(el) {
+            let startX, startY, initialX, initialY;
+            el.addEventListener('touchstart', (e) => {
+                const t = e.touches[0];
+                startX = t.clientX; startY = t.clientY;
+                initialX = el.offsetLeft; initialY = el.offsetTop;
+                
+                const moveHandler = (ev) => {
+                    const mt = ev.touches[0];
+                    el.style.left = (initialX + (mt.clientX - startX)) + 'px';
+                    el.style.top = (initialY + (mt.clientY - startY)) + 'px';
+                };
+                
+                const endHandler = () => {
+                    document.removeEventListener('touchmove', moveHandler);
+                    document.removeEventListener('touchend', endHandler);
+                };
+                
+                document.addEventListener('touchmove', moveHandler, {passive: false});
+                document.addEventListener('touchend', endHandler);
+            });
+        }
+
+        function rotateSignature(btn) {
+            const img = btn.closest('.sig-container').querySelector('img');
+            let angle = parseInt(img.getAttribute('data-angle')) + 90;
+            if (angle >= 360) angle = 0;
+            img.style.transform = `rotate(${angle}deg)`;
+            img.setAttribute('data-angle', angle);
+        }
+
+        function cloneToAllPages(btn) {
+            const original = btn.closest('.sig-container');
+            const imgData = original.querySelector('img').src;
+            const top = original.style.top;
+            const left = original.style.left;
+            const angle = original.querySelector('img').getAttribute('data-angle');
+
+            document.querySelectorAll('.canvas-wrapper').forEach(page => {
+                if (page.id === original.parentElement.id) return;
+                
+                const clone = original.cloneNode(true);
+                clone.style.top = top;
+                clone.style.left = left;
+                clone.querySelector('img').style.transform = `rotate(${angle}deg)`;
+                
+                page.appendChild(clone);
+                makeDraggable(clone);
+            });
+            alert("Assinatura clonada em todas as páginas!");
+        }
+
+        async function savePDF() {
+            console.log("[TERMUX-LOG]: Salvando PDF...");
+            alert("O PDF está sendo processado para exportação!");
+            // Aqui entra a lógica final de geração do PDF com o jsPDF
+        }
+    </script>
 </body>
 </html>
