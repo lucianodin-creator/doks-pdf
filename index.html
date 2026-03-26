@@ -140,31 +140,42 @@
             reader.readAsArrayBuffer(file);
         };
 
-        async function renderPages() {
-            const container = document.getElementById('pdf-wrapper');
-            container.innerHTML = '';
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                const page = await pdfDoc.getPage(i);
-                // Zoom 'auto' baseado na largura da tela
-                const viewport = page.getViewport({ scale: (window.innerWidth - 30) / page.getViewport({scale: 1.0}).width });
-                
-// Dentro da função renderPages, procure a criação do wrapper e deixe assim:
-const pageWrapper = document.createElement('div');
-pageWrapper.className = 'pdf-page-container'; // Classe para o CSS
-pageWrapper.id = 'page-' + i;                // ID para a função de assinar
-pageWrapper.setAttribute('data-page-number', i); // Atributo para compatibilidade
-                wrapper.style.width = viewport.width + 'px';
-                wrapper.style.height = viewport.height + 'px';
+async function renderPages() {
+    Analista.log("Iniciando renderização das páginas...");
+    const container = document.getElementById('pdf-wrapper');
+    container.innerHTML = ''; 
 
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+        try {
+            const page = await pdfDoc.getPage(i);
+            // Ajusta o zoom para a largura da tela do celular
+            const viewport = page.getViewport({ scale: (window.innerWidth - 20) / page.getViewport({scale: 1.0}).width });
 
-                await page.render({ canvasContext: context, viewport: viewport }).promise;
-                wrapper.appendChild(canvas);
-                container.appendChild(wrapper);
-            }
+            const pageWrapper = document.createElement('div');
+            pageWrapper.className = 'pdf-page-container'; // Necessário para o Duplicar e Salvar
+            pageWrapper.id = 'page-' + i;                // Necessário para o addSigToPage
+            pageWrapper.setAttribute('data-page-number', i);
+            pageWrapper.style.position = 'relative';
+            pageWrapper.style.display = 'inline-block';
+            pageWrapper.style.marginBottom = '20px';
+            pageWrapper.style.background = 'white';
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+            pageWrapper.appendChild(canvas);
+            container.appendChild(pageWrapper);
+            Analista.log(`Página ${i} renderizada com sucesso.`);
+        } catch (err) {
+            Analista.log(`Erro na página ${i}: ` + err.message, "ERRO");
+        }
+    }
+}
+
         }
 
         // MODAL DE ASSINATURA
@@ -185,21 +196,22 @@ pageWrapper.setAttribute('data-page-number', i); // Atributo para compatibilidad
             addSigToScreen(data);
             fecharModal();
         }
+
 function addSigToPage(pageNum, imgData) {
-    // Busca o container da página pelo ID que criamos no passo 1
+    Analista.log("Inserindo assinatura na página " + pageNum);
     const pageWrapper = document.getElementById('page-' + pageNum);
 
     if (!pageWrapper) {
-        console.error("Página não encontrada!");
+        Analista.log("ERRO: Alvo page-" + pageNum + " não encontrado.", "ERRO");
         return;
     }
 
     const wrapper = document.createElement('div');
     wrapper.className = 'assinatura-wrapper';
     wrapper.dataset.angle = 0;
+    wrapper.style.position = 'absolute';
     wrapper.style.top = '100px';
     wrapper.style.left = '50px';
-    wrapper.style.position = 'absolute';
 
     wrapper.innerHTML = `
         <div class="controles-assinatura">
@@ -207,7 +219,7 @@ function addSigToPage(pageNum, imgData) {
             <button class="btn-tool btn-rot" onclick="girarAssinatura(this)">🔄</button>
             <button class="btn-tool btn-del" onclick="this.parentElement.parentElement.remove()">🗑️</button>
         </div>
-        <img src="${imgData}" style="width: 150px; display: block; pointer-events: none; border:none;">
+        <img src="${imgData}" style="width: 150px; display: block; pointer-events: none;">
     `;
 
     pageWrapper.appendChild(wrapper);
