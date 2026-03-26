@@ -1,273 +1,48 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Doks PDF Profissional</title>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-
-    <style>
-        :root {
-            --primary: #4169E1;
-            --success: #2e7d32;
-            --accent: #ff8c00;
-            --danger: #d32f2f;
-            --bg-dark: #2c2c2c;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-        body { 
-            font-family: sans-serif; background: var(--bg-dark); 
-            height: 100vh; height: -webkit-fill-available;
-            display: flex; flex-direction: column; overflow: hidden; 
-        }
-
-        /* BARRA SUPERIOR */
-        .header {
-            height: 60px; background: var(--primary); display: flex;
-            align-items: center; justify-content: space-between; padding: 0 15px;
-            color: white; z-index: 1000; flex-shrink: 0;
-        }
-        .btn-top {
-            padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold;
-            background: white; color: var(--primary); cursor: pointer; font-size: 14px;
-        }
-        .btn-pdf { border: 2px solid #FFD700 !important; }
-
-        /* ÁREA DO PDF */
-        .viewer-container {
-            flex: 1; overflow: auto; display: flex; justify-content: center;
-            padding: 20px; position: relative; padding-bottom: 100px;
-        }
-        #pdf-render-area { display: flex; flex-direction: column; gap: 20px; }
-        .canvas-wrapper { position: relative; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-
-        /* ZOOM - QUADRADOS A 200PX DO TOPO */
-        .zoom-controls {
-            position: fixed; right: 15px; top: 200px; display: flex;
-            flex-direction: column; gap: 10px; z-index: 1500;
-        }
-        .btn-zoom {
-            width: 45px; height: 45px; background: var(--accent); color: white;
-            border: none; border-radius: 4px; font-size: 24px; font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        /* BARRA INFERIOR - COLADA E PROPORCIONAL */
-        .footer {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
-            background: var(--primary); display: flex; align-items: center;
-            justify-content: space-around; padding: 0 10px;
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 2000; box-shadow: 0 -3px 10px rgba(0,0,0,0.3);
-        }
-        .btn-footer {
-            height: 40px; padding: 0 15px; border-radius: 8px; border: none;
-            font-weight: bold; background: white; color: var(--primary);
-            font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px;
-        }
-        .btn-save { background: var(--success) !important; color: white !important; }
-
-        /* JANELA DE ASSINATURA (MODAL) */
-        #sig-modal { 
-            position: fixed; inset: 0; background: white; 
-            display: none; flex-direction: column; z-index: 5000; 
-        }
-        #sig-pad { flex: 1; background: #fdfdfd; touch-action: none; }
-        .sig-toolbar { 
-            height: 70px; display: flex; gap: 10px; padding: 10px; 
-            background: #eee; border-top: 1px solid #ccc;
-        }
-
-        /* ASSINATURA NA FOLHA */
-        .sig-container {
-            position: absolute; border: 2px solid rgba(65, 105, 225, 0.5);
-            background: rgba(255,255,255,0.8); z-index: 100;
-        }
-        .sig-btns-float {
-            position: absolute; top: -45px; right: 0; display: flex; gap: 5px;
-            background: rgba(0,0,0,0.8); padding: 5px; border-radius: 5px;
-        }
-        .mini-btn { width: 32px; height: 32px; border: none; border-radius: 4px; color: white; cursor: pointer; }
-
-        /* AVISO GIRE CELULAR */
-        #aviso-giro {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-            display: none; flex-direction: column; align-items: center;
-            justify-content: center; color: white; z-index: 6000;
-        }
-    </style>
-</head>
-
-<body>
-
-
-    <header class="header">
-        <div style="font-size: 20px; font-weight: bold;">Doks PDF</div>
-        <div style="display: flex; gap: 8px;">
-            <button class="btn-top">Recentes</button>
-            <label for="file-in" class="btn-top btn-pdf">Abrir PDF</label>
-            <input type="file" id="file-in" hidden accept="application/pdf">
-        </div>
-    </header>
-
-    <main class="viewer-container">
-        <div class="zoom-controls">
-            <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
-            <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
-        </div>
-        <div id="pdf-render-area"></div>
-    </main>
-
-    <footer class="footer">
-        <div style="display: flex; gap: 10px; align-items: center; color: white;">
-            <button class="btn-footer" onclick="changePage(-1)"> < </button>
-            <span id="page-info" style="min-width: 60px; text-align: center;">0 / 0</span>
-            <button class="btn-footer" onclick="changePage(1)"> > </button>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <button class="btn-footer" onclick="startSignProcess()">🖋️ Assinar</button>
-            <button class="btn-footer btn-save" onclick="savePDF()">Salvar</button>
-        </div>
-    </footer>
-
-    <div id="aviso-giro">
-        <div style="font-size: 50px;">📱</div>
-        <p>Gire o celular para assinar</p>
+<header class="header">
+    <div class="logo">Doks PDF</div>
+    <div class="header-btns">
+        <button class="btn-top">Recentes</button>
+        <label for="file-in" class="btn-top btn-pdf">Abrir PDF</label>
+        <input type="file" id="file-in" hidden accept="application/pdf">
     </div>
+</header>
 
-    <div id="sig-modal">
-        <canvas id="sig-pad"></canvas>
-        <div class="sig-toolbar">
-            <button onclick="closeSig()" style="flex:1; background:#757575; color:white; border:none; border-radius:8px;">Sair</button>
-            <button onclick="signaturePad.clear()" style="flex:1; background:#fbc02d; border:none; border-radius:8px;">Limpar</button>
-            <button onclick="confirmSign()" style="flex:1; background:var(--success); color:white; border:none; border-radius:8px;">Confirmar</button>
-        </div>
+
+<main class="viewer-container">
+    <div class="zoom-controls">
+        <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
+        <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
     </div>
+    <div id="pdf-render-area"></div>
+</main>
 
 
-    <script>
-        let pdfDoc = null, pageNum = 1, scale = 1.0, signaturePad = null;
-        const renderArea = document.getElementById('pdf-render-area');
-        const pdfjs = window['pdfjs-dist/build/pdf'];
-        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+<footer class="footer">
+    <div class="nav-group">
+        <button class="btn-footer" onclick="changePage(-1)"> < </button>
+        <span id="page-info">0 / 0</span>
+        <button class="btn-footer" onclick="changePage(1)"> > </button>
+    </div>
+    <div class="action-group">
+        <button class="btn-footer" onclick="startSignProcess()">🖋️ Assinar</button>
+        <button class="btn-footer btn-save" onclick="savePDF()">Salvar</button>
+    </div>
+</footer>
 
-        // CARREGAR PDF
-        document.getElementById('file-in').onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function() {
-                const data = new Uint8Array(this.result);
-                pdfjs.getDocument({data}).promise.then(pdf => {
-                    pdfDoc = pdf;
-                    scale = (window.innerWidth - 40) / 595;
-                    renderPages();
-                });
-            };
-            reader.readAsArrayBuffer(file);
-        };
 
-        async function renderPages() {
-            if (!pdfDoc) return;
-            renderArea.innerHTML = '';
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                const page = await pdfDoc.getPage(i);
-                const viewport = page.getViewport({scale: scale});
-                const wrapper = document.createElement('div');
-                wrapper.className = 'canvas-wrapper';
-                wrapper.id = `page-container-${i}`;
-                const canvas = document.createElement('canvas');
-                canvas.width = viewport.width; canvas.height = viewport.height;
-                await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
-                wrapper.appendChild(canvas);
-                renderArea.appendChild(wrapper);
-            }
-            updatePageInfo();
-        }
+<div id="aviso-giro">
+    <div style="font-size: 60px;">📱</div>
+    <p>Gire o celular para o modo paisagem</p>
+    <p style="font-size: 14px; color: #ccc;">A assinatura será aberta automaticamente</p>
+    <button onclick="closeSig()" style="margin-top:20px; padding:10px; border-radius:5px; border:none;">Cancelar</button>
+</div>
 
-        function changeZoom(val) {
-            if (!pdfDoc) return;
-            scale += val;
-            scale = Math.min(Math.max(scale, 0.3), 3.0);
-            renderPages();
-        }
 
-        function changePage(dir) {
-            if (!pdfDoc) return;
-            const target = pageNum + dir;
-            if (target >= 1 && target <= pdfDoc.numPages) {
-                pageNum = target;
-                document.getElementById(`page-container-${pageNum}`).scrollIntoView({behavior: 'smooth'});
-                updatePageInfo();
-            }
-        }
-
-        function updatePageInfo() {
-            document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc ? pdfDoc.numPages : 0}`;
-        }
-
-        // ASSINATURA
-        function startSignProcess() {
-            if (!pdfDoc) return alert("Abra um PDF primeiro.");
-            const aviso = document.getElementById('aviso-giro');
-            if(aviso) aviso.style.display = 'flex';
-            window.addEventListener('orientationchange', () => {
-                if (window.innerWidth > window.innerHeight) {
-                    if(aviso) aviso.style.display = 'none';
-                    openSigModal();
-                }
-            });
-        }
-
-        function openSigModal() {
-            const modal = document.getElementById('sig-modal');
-            modal.style.display = 'flex';
-            const canvas = document.getElementById('sig-pad');
-            canvas.width = modal.offsetWidth;
-            canvas.height = modal.offsetHeight - 80;
-            signaturePad = new SignaturePad(canvas);
-        }
-
-        function closeSig() {
-            document.getElementById('sig-modal').style.display = 'none';
-            document.getElementById('aviso-giro').style.display = 'none';
-        }
-
-        function confirmSign() {
-            const dataUrl = signaturePad.toDataURL();
-            const container = document.getElementById(`page-container-${pageNum}`);
-            const sigDiv = document.createElement('div');
-            sigDiv.className = 'sig-container';
-            sigDiv.style.width = '150px'; sigDiv.style.height = '60px';
-            sigDiv.style.top = '100px'; sigDiv.style.left = '50px';
-            sigDiv.innerHTML = `
-                <div class="sig-btns-float">
-                    <button class="mini-btn" style="background:#2e7d32" onclick="cloneAll(this)">📋</button>
-                    <button class="mini-btn" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                </div>
-                <img src="${dataUrl}" style="width:100%; height:100%;">
-            `;
-            container.appendChild(sigDiv);
-            closeSig();
-        }
-
-        function cloneAll(btn) {
-            const original = btn.closest('.sig-container');
-            const img = original.querySelector('img').src;
-            document.querySelectorAll('.canvas-wrapper').forEach(p => {
-                if(p.id === original.parentElement.id) return;
-                const clone = original.cloneNode(true);
-                p.appendChild(clone);
-            });
-        }
-
-        function savePDF() { alert("Processando exportação..."); }
-    </script>
-</body>
-</html>
+<div id="sig-modal">
+    <canvas id="sig-pad"></canvas>
+    <div class="sig-toolbar">
+        <button class="btn-sig" style="background:#757575;" onclick="closeSig()">Sair</button>
+        <button class="btn-sig" style="background:#fbc02d; color:#333;" onclick="signaturePad.clear()">Limpar</button>
+        <button class="btn-sig" style="background:#2e7d32;" onclick="confirmSign()">Confirmar</button>
+    </div>
+</div>
