@@ -172,12 +172,36 @@ async function renderPages() {
 // --- ASSINATURA ---
 function abrirModal() {
     if(!pdfDoc) return alert("Abra um PDF primeiro!");
+    
+    // Mostra o modal
     document.getElementById('sig-modal').style.display = 'flex';
+    
+    // Verifica se precisa girar
+    verificarOrientacao();
+
     const canvas = document.getElementById('sig-pad');
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     signaturePad = new SignaturePad(canvas);
 }
+
+// Função que mostra/esconde o aviso de giro
+function verificarOrientacao() {
+    const aviso = document.getElementById('aviso-giro');
+    const modalAberto = document.getElementById('sig-modal').style.display === 'flex';
+
+    // Se o modal estiver aberto e a tela estiver em "pé" (altura maior que largura)
+    if (modalAberto && window.innerHeight > window.innerWidth) {
+        aviso.style.display = 'flex';
+    } else {
+        aviso.style.display = 'none';
+    }
+}
+
+// Ouve quando o usuário vira o celular
+window.addEventListener("resize", verificarOrientacao);
+window.addEventListener("orientationchange", verificarOrientacao);
+
 
 function fecharModal() { document.getElementById('sig-modal').style.display = 'none'; }
 
