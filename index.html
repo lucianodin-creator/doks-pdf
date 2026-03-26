@@ -70,20 +70,23 @@
         }
 
 
-        /* --- BARRA INFERIOR (FLUTUANTE) --- */
-        .footer {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 94%; height: 75px; background: var(--azul-doks);
-            display: flex; align-items: center; justify-content: space-around;
-            border-radius: 18px; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-        }
-        .nav-group { display: flex; align-items: center; gap: 15px; color: white; font-weight: bold; }
-        .btn-footer {
-            padding: 12px 18px; border-radius: 10px; border: none;
-            font-weight: bold; background: white; color: var(--azul-doks); cursor: pointer;
-        }
-        .btn-save { background: var(--verde-sucesso) !important; color: white !important; }
-
+/* BARRA INFERIOR - CORRIGIDA (COLADA NA BORDA) */
+.footer {
+    position: fixed; 
+    bottom: 0; /* Colada no fundo */
+    left: 0;
+    width: 100%; /* Largura total */
+    height: 75px; 
+    background: var(--azul-doks); 
+    display: flex;
+    align-items: center; 
+    justify-content: space-around; 
+    /* Padding inferior inteligente para não cobrir botões do Android/iOS */
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px;
+    border-radius: 18px 18px 0 0; /* Arredondado apenas em cima */
+    z-index: 2000; /* Acima do PDF */
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+}
 
         /* --- JANELA DE ASSINATURA (MODAL) E AVISO --- */
         #sig-modal { position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 5000; }
@@ -100,15 +103,31 @@
         @keyframes rotateAnim { 0% {transform:rotate(0)} 50% {transform:rotate(-90deg)} 100% {transform:rotate(0)} }
 
 
-        /* --- ASSINATURA NA FOLHA --- */
-        .sig-container {
-            position: absolute; border: 2px solid rgba(65, 105, 225, 0.6); 
-            background: rgba(65, 105, 225, 0.15); cursor: move; touch-action: none;
-        }
-        .sig-btns-float {
-            position: absolute; top: -40px; right: 0; display: flex; gap: 6px; background: rgba(0,0,0,0.7); padding: 4px; border-radius: 6px;
-        }
-        .mini-btn { width: 32px; height: 32px; border: none; border-radius: 4px; color: white; font-size: 16px; cursor: pointer; }
+/* CAIXA DE ASSINATURA NA FOLHA - CORRIGIDA */
+.sig-container {
+    position: absolute; 
+    border: 2px solid rgba(65, 105, 225, 0.7); 
+    background: rgba(255, 255, 255, 0.9); /* Fundo branco semi-transparente para destacar o traço */
+    cursor: move; 
+    touch-action: none;
+    z-index: 100; /* Garante que flutua ACIMA das outras páginas */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* BARRA DE BOTÕES DA ASSINATURA */
+.sig-btns-float {
+    position: absolute; 
+    top: -45px; /* Um pouco mais para cima para não grudar */
+    right: 0; 
+    display: flex; 
+    gap: 8px; 
+    background: rgba(0,0,0,0.85); /* Fundo escuro para destacar os ícones */
+    padding: 5px; 
+    border-radius: 8px;
+    z-index: 110; /* Acima da própria caixa de assinatura */
+}
+
+
     </style>
 </head>
 
@@ -288,51 +307,64 @@
             closeSig();
         }
 
+/* --- MANIPULAÇÃO DA ASSINATURA NA FOLHA (CORRIGIDA) --- */
+/* --- TRECHO DO MÓDULO 2.1 (JAVE) --- */
+function placeSignatureOnSheet(imgData) {
+    const container = document.getElementById(`page-container-${pageNum}`);
+    const sigDiv = document.createElement('div');
+    sigDiv.className = 'sig-container';
+    
+    // Aqui injetamos o HTML que cria os botões e a imagem da assinatura
+    sigDiv.innerHTML = `
+        <div class="sig-btns-float">
+            <button class="mini-btn" style="background:#2e7d32; color:white;" onclick="cloneToAllPages(this)">📋</button>
+            
+            <button class="mini-btn" style="background:#4169E1; color:white;" onclick="rotateSignature(this)">🔄</button>
+            
+            <button class="mini-btn" style="background:#d32f2f; color:white;" onclick="this.parentElement.parentElement.remove()">🗑️</button>
+        </div>
+        <img src="${imgData}" style="width:100%; height:100%; pointer-events:none;" data-angle="0">
+    `;
 
-        /* --- MANIPULAÇÃO DA ASSINATURA NA FOLHA --- */
-        function placeSignatureOnSheet(imgData) {
-            const container = document.getElementById(`page-container-${pageNum}`);
-            const sigDiv = document.createElement('div');
-            sigDiv.className = 'sig-container';
-            sigDiv.style.width = '180px';
-            sigDiv.style.height = '80px';
-            sigDiv.style.top = '150px';
-            sigDiv.style.left = '50px';
+    container.appendChild(sigDiv);
+    makeDraggable(sigDiv);
+}
 
-            sigDiv.innerHTML = `
-                <div class="sig-btns-float">
-                    <button class="mini-btn" style="background:#2e7d32" onclick="cloneToAllPages(this)">👥</button>
-                    <button class="mini-btn" style="background:#4169E1" onclick="rotateSignature(this)">🔄</button>
-                    <button class="mini-btn" style="background:#d32f2f" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                </div>
-                <img src="${imgData}" style="width:100%; height:100%; pointer-events:none;" data-angle="0">
-            `;
 
-            container.appendChild(sigDiv);
-            makeDraggable(sigDiv);
+}
+
         }
 
-        function makeDraggable(el) {
-            let startX, startY, initialX, initialY;
-            el.addEventListener('touchstart', (e) => {
-                const t = e.touches[0];
-                startX = t.clientX; startY = t.clientY;
-                initialX = el.offsetLeft; initialY = el.offsetTop;
-                
-                const moveHandler = (ev) => {
-                    const mt = ev.touches[0];
-                    el.style.left = (initialX + (mt.clientX - startX)) + 'px';
-                    el.style.top = (initialY + (mt.clientY - startY)) + 'px';
-                };
-                
-                const endHandler = () => {
-                    document.removeEventListener('touchmove', moveHandler);
-                    document.removeEventListener('touchend', endHandler);
-                };
-                
-                document.addEventListener('touchmove', moveHandler, {passive: false});
-                document.addEventListener('touchend', endHandler);
-            });
+/* --- FUNÇÃO DE ARRASTAR (BLINDADA PARA FLUTUAR) --- */
+function makeDraggable(el) {
+    let startX, startY, initialX, initialY;
+    
+    el.addEventListener('touchstart', (e) => {
+        // Ao tocar, trazemos a assinatura para a camada mais alta de todas
+        el.style.zIndex = "999"; 
+        
+        const t = e.touches[0];
+        startX = t.clientX; startY = t.clientY;
+        initialX = el.offsetLeft; initialY = el.offsetTop;
+        
+        const moveHandler = (ev) => {
+            const mt = ev.touches[0];
+            el.style.left = (initialX + (mt.clientX - startX)) + 'px';
+            el.style.top = (initialY + (mt.clientY - startY)) + 'px';
+        };
+        
+        const endHandler = () => {
+            // Ao soltar, restauramos o z-index padrão (mas ainda acima da página)
+            el.style.zIndex = "100";
+            document.removeEventListener('touchmove', moveHandler);
+            document.removeEventListener('touchend', endHandler);
+        };
+        
+        document.addEventListener('touchmove', moveHandler, {passive: false});
+        document.addEventListener('touchend', endHandler);
+    });
+}
+
         }
 
         function rotateSignature(btn) {
