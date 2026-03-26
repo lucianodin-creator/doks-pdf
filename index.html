@@ -43,9 +43,25 @@
         .btn-pdf { border: 2px solid #FFD700 !important; color: #333 !important; }
 
         /* ÁREA DO PDF (CINZA ESCURO) */
-        .viewer-container {
-            flex: 1; overflow: auto; display: flex; justify-content: center;
-            padding: 20px; position: relative; padding-bottom: 90px;
+body { 
+    font-family: sans-serif; background: var(--cinza-fundo); 
+    height: 100vh;
+    display: flex; flex-direction: column; 
+    /* Removido o overflow: hidden para permitir que o navegador controle a altura */
+}
+
+.viewer-container {
+    flex: 1; 
+    overflow-y: auto; /* Garante que o scroll vertical funcione */
+    overflow-x: hidden;
+    display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    padding: 20px 10px 120px 10px; /* Espaço extra no fim para a barra não tampar */
+    -webkit-overflow-scrolling: touch; /* Suaviza o touch em iPhones/Android */
+}
+
+
         }
         #pdf-render-area { display: flex; flex-direction: column; gap: 20px; }
         .canvas-wrapper { position: relative; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
@@ -309,6 +325,10 @@
         /* FUNÇÃO DE ARRASTAR (MOVE) CORRIGIDA PARA CELULAR */
         function makeDraggable(el) {
             let startX, startY, initialX, initialY;
+
+el.addEventListener('touchstart', (e) => {
+    e.stopPropagation(); // <-- ADICIONE ISSO AQUI
+    // ... resto do código ...
             
             el.addEventListener('touchstart', (e) => {
                 // Traz a assinatura para a camada mais alta ao tocar
@@ -368,11 +388,62 @@
 
 
         /* --- 6. EXPORTAR PDF --- */
-        async function savePDF() {
-            if(!pdfDoc) return alert("Abra um PDF primeiro.");
-            console.log("[DOKS-INFO]: Iniciando exportação...");
-            alert("O PDF está sendo processado para download com as assinaturas!");
-            // Aqui entra a lógica final com o jsPDF (Módulo jsPDF Export)
+async function savePDF() {
+    if (!pdfDoc) return alert("Abra um PDF primeiro.");
+    
+    // Mostra um aviso de progresso
+    const btnSave = document.querySelector('.btn-save');
+    const originalText = btnSave.innerText;
+    btnSave.innerText = "⏳ Aguarde...";
+    btnSave.disabled = true;
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const finalDoc = new jsPDF();
+        const containers = document.querySelectorAll('.canvas-wrapper');
+
+        for (let i = 0; i < containers.length; i++) {
+            const container = containers[i];
+            const canvas = container.querySelector('canvas');
+            
+            // Se não for a primeira página, adiciona uma nova
+            if (i > 0) finalDoc.addPage();
+
+            // 1. Adiciona a página do PDF original
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+            finalDoc.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+
+            // 2. Procura assinaturas dentro desta página específica
+            const sigs = container.querySelectorAll('.sig-container');
+            sigs.forEach(sig => {
+                const img = sig.querySelector('img');
+                const rect = container.getBoundingClientRect();
+                const sigRect = sig.getBoundingClientRect();
+
+                // Calcula a posição proporcional para o PDF (A4: 210x297mm)
+                const x = ((sigRect.left - rect.left) / rect.width) * 210;
+                const y = ((sigRect.top - rect.top) / rect.height) * 297;
+                const w = (sigRect.width / rect.width) * 210;
+                const h = (sigRect.height / rect.height) * 297;
+                const angle = parseInt(img.getAttribute('data-angle')) || 0;
+
+                // Adiciona a imagem da assinatura no PDF final
+                finalDoc.addImage(img.src, 'PNG', x, y, w, h, null, 'FAST', angle);
+            });
+        }
+
+        // 3. Dispara o Download
+        finalDoc.save("documento-assinado.pdf");
+        alert("Sucesso! O download foi iniciado.");
+
+    } catch (err) {
+        console.error(err);
+        alert("Erro ao gerar PDF. Verifique o console.");
+    } finally {
+        btnSave.innerText = originalText;
+        btnSave.disabled = false;
+    }
+}
         }
     </script>
 </body>
