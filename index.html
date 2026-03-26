@@ -121,42 +121,43 @@
 
    <script>
 
+// --- NOVO BLOCO ANALISTA ---
 const Analista = {
     log: function(msg, tipo = "INFO") {
         const container = document.getElementById('detalhes-log');
-        if (!container) return; // Segurança caso o HTML não tenha carregado
-        
-        const cor = tipo === "ERRO" ? "#ff4444" : (tipo === "CONFLITO" ? "#ff8c00" : "#0f0");
-        const novaLinha = document.createElement('div');
-        novaLinha.style.color = cor;
-        novaLinha.innerHTML = `[${tipo}] ${msg}`;
-        container.appendChild(novaLinha);
+        if (!container) return;
+        const div = document.createElement('div');
+        div.style.color = tipo === "ERRO" ? "#ff4444" : "#0f0";
+        div.innerHTML = `[${tipo}] ${msg}`;
+        container.appendChild(div);
         container.scrollTop = container.scrollHeight;
-
-        // Se for erro, abre a barra automaticamente
-        if (tipo === "ERRO") container.style.display = 'block';
-    },
-
-    verificarSaude: function() {
-        this.log("Iniciando DoksPDF...");
-        try {
-            if (typeof pdfjsLib === 'undefined') this.log("PDF.js não carregado!", "ERRO");
-            else this.log("PDF.js: OK");
-
-            if (typeof SignaturePad === 'undefined') this.log("SignaturePad não carregado!", "ERRO");
-            else this.log("SignaturePad: OK");
-
-            document.getElementById('status-geral').innerText = "SISTEMA ATIVO";
-        } catch (e) {
-            this.log("Falha na verificação: " + e.message, "ERRO");
-        }
     }
 };
 
-// Captura erros que impedem o PDF de abrir
-window.onerror = function(msg, url, line) {
-    Analista.log(`${msg} (Linha: ${line})`, "ERRO");
-    return false;
+let pdfDoc = null;
+const pdfjsLib = window['pdfjs-dist/build/pdf'];
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+// --- FUNÇÃO DE ABRIR PDF (CORRIGIDA) ---
+document.getElementById('file-in').onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    Analista.log("Arquivo selecionado: " + file.name);
+
+    const reader = new FileReader();
+    reader.onload = function() {
+        const typedarray = new Uint8Array(this.result);
+        Analista.log("Lendo bytes do PDF...");
+        
+        pdfjsLib.getDocument({data: typedarray}).promise.then(pdf => {
+            pdfDoc = pdf;
+            Analista.log("PDF Carregado! Renderizando páginas...");
+            renderPages();
+        }).catch(err => {
+            Analista.log("ERRO AO ABRIR PDF: " + err.message, "ERRO");
+        });
+    };
+    reader.readAsArrayBuffer(file);
 };
 
         let pdfDoc = null;
