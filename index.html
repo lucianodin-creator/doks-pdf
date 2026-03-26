@@ -71,6 +71,21 @@
 </head>
 <body>
 
+<div id="aviso-giro" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; font-family: sans-serif;">
+    <div style="font-size: 50px; margin-bottom: 15px; animation: girar 2s infinite;">📱</div>
+    <p><b>Gire o celular</b></p>
+    <p style="font-size: 12px; color: #ccc;">Use a tela na horizontal para assinar</p>
+</div>
+
+<style>
+@keyframes girar {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+    100% { transform: rotate(0deg); }
+}
+</style>
+
+
 <div id="analise-online">
     <div style="padding:5px; display:flex; justify-content:space-between; align-items:center;">
         <span>🔍 STATUS: <b id="status-geral">ANALISANDO...</b></span>
@@ -177,20 +192,15 @@ function abrirModal() {
     document.getElementById('sig-modal').style.display = 'flex';
     
     // Verifica se precisa girar
-    verificarOrientacao();
-
-    const canvas = document.getElementById('sig-pad');
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    signaturePad = new SignaturePad(canvas);
-}
-
-// Função que mostra/esconde o aviso de giro
 function verificarOrientacao() {
     const aviso = document.getElementById('aviso-giro');
-    const modalAberto = document.getElementById('sig-modal').style.display === 'flex';
+    const modal = document.getElementById('sig-modal');
+    
+    // Só executa se o aviso e o modal existirem na página
+    if (!aviso || !modal) return;
 
-    // Se o modal estiver aberto e a tela estiver em "pé" (altura maior que largura)
+    const modalAberto = modal.style.display === 'flex';
+
     if (modalAberto && window.innerHeight > window.innerWidth) {
         aviso.style.display = 'flex';
     } else {
