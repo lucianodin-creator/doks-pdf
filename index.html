@@ -71,6 +71,13 @@
 </head>
 <body>
 
+<div id="aviso-giro" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center;">
+    <div style="font-size: 50px; margin-bottom: 10px;">📱</div>
+    <p><b>Gire o telemóvel</b></p>
+    <p style="font-size: 12px; color: #ccc;">Use o ecrã na horizontal para assinar</p>
+</div>
+
+
 <div id="aviso-giro" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; font-family: sans-serif;">
     <div style="font-size: 50px; margin-bottom: 15px; animation: girar 2s infinite;">📱</div>
     <p><b>Gire o celular</b></p>
@@ -196,8 +203,8 @@ function verificarOrientacao() {
     const aviso = document.getElementById('aviso-giro');
     const modal = document.getElementById('sig-modal');
     
-    // Só executa se o aviso e o modal existirem na página
-    if (!aviso || !modal) return;
+    // Se o aviso não estiver no HTML, a função para aqui e não trava o site
+    if (!aviso || !modal) return; 
 
     const modalAberto = modal.style.display === 'flex';
 
