@@ -140,9 +140,11 @@
                 // Zoom 'auto' baseado na largura da tela
                 const viewport = page.getViewport({ scale: (window.innerWidth - 30) / page.getViewport({scale: 1.0}).width });
                 
-                const wrapper = document.createElement('div');
-                wrapper.className = 'pdf-page-container';
-                wrapper.id = 'page-' + i;
+// Dentro da função renderPages, procure a criação do wrapper e deixe assim:
+const pageWrapper = document.createElement('div');
+pageWrapper.className = 'pdf-page-container'; // Classe para o CSS
+pageWrapper.id = 'page-' + i;                // ID para a função de assinar
+pageWrapper.setAttribute('data-page-number', i); // Atributo para compatibilidade
                 wrapper.style.width = viewport.width + 'px';
                 wrapper.style.height = viewport.height + 'px';
 
@@ -175,26 +177,34 @@
             addSigToScreen(data);
             fecharModal();
         }
+function addSigToPage(pageNum, imgData) {
+    // Busca o container da página pelo ID que criamos no passo 1
+    const pageWrapper = document.getElementById('page-' + pageNum);
 
-function addSigToScreen(imgData) {
+    if (!pageWrapper) {
+        console.error("Página não encontrada!");
+        return;
+    }
+
     const wrapper = document.createElement('div');
     wrapper.className = 'assinatura-wrapper';
-    wrapper.dataset.angle = 0; // Controle de rotação
+    wrapper.dataset.angle = 0;
     wrapper.style.top = '100px';
     wrapper.style.left = '50px';
+    wrapper.style.position = 'absolute';
 
     wrapper.innerHTML = `
         <div class="controles-assinatura">
-            <button class="btn-tool btn-dup" onclick="duplicarAssinatura(this)" title="Duplicar">📋</button>
-            <button class="btn-tool btn-rot" onclick="girarAssinatura(this)" title="Girar">🔄</button>
-            <button class="btn-tool btn-del" onclick="this.parentElement.parentElement.remove()" title="Excluir">🗑️</button>
+            <button class="btn-tool btn-dup" onclick="duplicarAssinatura(this)">📋</button>
+            <button class="btn-tool btn-rot" onclick="girarAssinatura(this)">🔄</button>
+            <button class="btn-tool btn-del" onclick="this.parentElement.parentElement.remove()">🗑️</button>
         </div>
-        <img src="${imgData}" style="width: 150px; display: block; pointer-events: none;">
+        <img src="${imgData}" style="width: 150px; display: block; pointer-events: none; border:none;">
     `;
 
-    // Adiciona na primeira página por padrão
-    document.getElementById('page-1').appendChild(wrapper);
+    pageWrapper.appendChild(wrapper);
     tornarArrastavel(wrapper);
+    fecharModal();
 }
 
         }
