@@ -11,65 +11,72 @@
 
     <style>
         :root { --azul: #4169E1; --fundo: #1a1a1a; --laranja: #FF8C00; --verde: #2e7d32; }
+        
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body { 
             font-family: sans-serif; background: var(--fundo); 
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
+            height: 100svh; /* Altura dinâmica para Chrome Mobile */
+            display: flex; flex-direction: column; overflow: hidden; 
         }
 
-        /* BARRA SUPERIOR - CORRIGIDA PARA O CHROME */
+        /* HEADER FIXO */
         .header {
-            height: 65px; background: var(--azul); display: flex;
-            align-items: center; justify-content: space-between; padding: 0 15px;
-            color: white; z-index: 1000; flex-shrink: 0 !important; /* Força o tamanho */
+            height: 60px; background: var(--azul); color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; z-index: 1000; flex-shrink: 0;
         }
         .btn-top {
             padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold;
-            background: white; color: var(--azul); font-size: 14px;
+            background: white; color: var(--azul); font-size: 13px;
         }
 
-        /* ÁREA DO PDF - TOUCH LIBERADO */
+        /* ÁREA DO PDF - SCROLL LIBERADO */
         .viewer-container {
-            flex: 1; overflow-y: auto !important; overflow-x: hidden;
+            flex: 1; overflow-y: auto; overflow-x: hidden;
             display: flex; flex-direction: column; align-items: center;
-            padding: 20px 10px 100px 10px; -webkit-overflow-scrolling: touch;
+            padding: 20px 10px 120px 10px; /* Espaço para não tampar o final */
+            -webkit-overflow-scrolling: touch;
         }
-        #pdf-render-area { display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center; }
-        .canvas-wrapper { position: relative; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        #pdf-render-area { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; }
+        .canvas-wrapper { position: relative; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); line-height: 0; }
 
-        .zoom-controls { position: fixed; right: 15px; top: 150px; display: flex; flex-direction: column; gap: 10px; z-index: 1500; }
-        .btn-zoom { width: 48px; height: 48px; background: var(--laranja); color: white; border: none; border-radius: 4px; font-size: 24px; }
+        /* BOTÕES DE ZOOM LATERAIS */
+        .zoom-controls { position: fixed; right: 15px; top: 30%; display: flex; flex-direction: column; gap: 10px; z-index: 1500; }
+        .btn-zoom { width: 45px; height: 45px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-size: 24px; font-weight: bold; }
 
-        /* BARRA INFERIOR */
+        /* FOOTER FIXO NO RODAPÉ */
         .footer {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 75px;
-            background: var(--azul); display: flex; align-items: center;
-            justify-content: space-around; padding-bottom: env(safe-area-inset-bottom);
-            z-index: 2000;
+            height: 70px; background: var(--azul); 
+            display: flex; align-items: center; justify-content: space-around;
+            padding-bottom: env(safe-area-inset-bottom); z-index: 2000; flex-shrink: 0;
         }
-        .btn-footer { height: 42px; padding: 0 15px; border-radius: 8px; border: none; font-weight: bold; background: white; color: var(--azul); }
+        .btn-footer { 
+            height: 44px; padding: 0 12px; border-radius: 8px; border: none; 
+            font-weight: bold; background: white; color: var(--azul); display: flex; align-items: center; gap: 5px;
+        }
         .btn-save { background: var(--verde) !important; color: white !important; }
 
-        /* ASSINATURA */
+        /* MODAL DE ASSINATURA */
         #sig-modal { position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 5000; }
-        #sig-pad { flex: 1; background: #fdfdfd; touch-action: none; }
-        .sig-toolbar { height: 75px; display: flex; gap: 10px; padding: 12px; background: #eee; }
+        #sig-pad { flex: 1; width: 100%; height: 100%; touch-action: none; background: #fdfdfd; }
+        .sig-toolbar { height: 70px; display: flex; gap: 10px; padding: 10px; background: #eee; border-top: 1px solid #ccc; }
         
-        .sig-container { position: absolute; border: 2px solid var(--azul); background: rgba(255,255,255,0.8); z-index: 500; touch-action: none; }
-        .sig-btns-float { position: absolute; top: -42px; right: 0; display: flex; gap: 5px; background: rgba(0,0,0,0.8); padding: 4px; border-radius: 5px; }
-        .mini-btn { width: 32px; height: 32px; border: none; border-radius: 4px; color: white; }
+        /* CAIXA DE ASSINATURA NA FOLHA */
+        .sig-container { position: absolute; border: 2px solid var(--azul); background: rgba(255,255,255,0.8); z-index: 500; touch-action: none; cursor: move; }
+        .sig-btns-float { position: absolute; top: -40px; right: 0; display: flex; gap: 4px; background: rgba(0,0,0,0.8); padding: 4px; border-radius: 4px; }
+        .mini-btn { width: 30px; height: 30px; border: none; border-radius: 3px; color: white; font-size: 14px; }
 
-        #aviso-giro { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 6000; }
+        #aviso-giro { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 6000; text-align: center; }
     </style>
 </head>
 <body>
 
     <header class="header">
         <div style="font-weight:bold; font-size:18px;">Doks PDF</div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-top">Recentes</button>
-            <label for="file-in" class="btn-top" style="border: 2px solid gold;">Abrir PDF</label>
+        <div style="display:flex; gap:8px;">
+            <button class="btn-top" onclick="location.reload()">Recentes</button>
+            <label for="file-in" class="btn-top" style="border: 2px solid #FFD700;">Abrir PDF</label>
             <input type="file" id="file-in" hidden accept="application/pdf">
         </div>
     </header>
@@ -83,24 +90,26 @@
     </main>
 
     <footer class="footer">
-        <button class="btn-footer" onclick="changePage(-1)"> < </button>
-        <span id="page-info" style="color:white; font-weight:bold;">0 / 0</span>
-        <button class="btn-footer" onclick="changePage(1)"> > </button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-footer" onclick="changePage(-1)"> < </button>
+            <span id="page-info" style="color:white; font-weight:bold; min-width: 45px; text-align: center;">0 / 0</span>
+            <button class="btn-footer" onclick="changePage(1)"> > </button>
+        </div>
         <button class="btn-footer" onclick="startSignProcess()">🖋️ Assinar</button>
         <button class="btn-footer btn-save" onclick="savePDF()">Salvar</button>
     </footer>
 
     <div id="aviso-giro">
-        <div style="font-size:50px;">📱</div>
-        <p>Gire para assinar</p>
+        <div style="font-size:60px; margin-bottom: 20px;">📱</div>
+        <p style="font-size:20px; font-weight:bold;">Gire o celular para assinar</p>
     </div>
 
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
         <div class="sig-toolbar">
-            <button onclick="closeSig()" style="flex:1; background:#757575; color:white; border-radius:8px; border:none;">Sair</button>
-            <button onclick="signaturePad.clear()" style="flex:1; background:#fbc02d; border-radius:8px; border:none;">Limpar</button>
-            <button onclick="confirmSign()" style="flex:1; background:var(--verde); color:white; border-radius:8px; border:none;">OK</button>
+            <button onclick="closeSig()" style="flex:1; background:#757575; color:white; border-radius:8px; border:none; font-weight:bold;">Sair</button>
+            <button onclick="signaturePad.clear()" style="flex:1; background:#fbc02d; border-radius:8px; border:none; font-weight:bold;">Limpar</button>
+            <button onclick="confirmSign()" style="flex:1; background:var(--verde); color:white; border-radius:8px; border:none; font-weight:bold;">Confirmar</button>
         </div>
     </div>
 
@@ -109,17 +118,13 @@
         const pdfjs = window['pdfjs-dist/build/pdf'];
         pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        document.getElementById('file-in').onchange = (e) => {
+        document.getElementById('file-in').onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function() {
-                const data = new Uint8Array(this.result);
-                pdfjs.getDocument({data}).promise.then(pdf => {
-                    pdfDoc = pdf; renderPages();
-                });
-            };
-            reader.readAsArrayBuffer(file);
+            const data = new Uint8Array(await file.arrayBuffer());
+            pdfDoc = await pdfjs.getDocument({data}).promise;
+            scale = (window.innerWidth - 30) / 595;
+            renderPages();
         };
 
         async function renderPages() {
@@ -127,7 +132,7 @@
             area.innerHTML = '';
             for (let i = 1; i <= pdfDoc.numPages; i++) {
                 const page = await pdfDoc.getPage(i);
-                const viewport = page.getViewport({scale: scale});
+                const viewport = page.getViewport({scale});
                 const wrapper = document.createElement('div');
                 wrapper.className = 'canvas-wrapper';
                 wrapper.id = `page-container-${i}`;
@@ -137,23 +142,28 @@
                 wrapper.appendChild(canvas);
                 area.appendChild(wrapper);
             }
-            document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc.numPages}`;
+            updatePageInfo();
         }
 
-        function changeZoom(v) { scale += v; renderPages(); }
+        function updatePageInfo() { document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc ? pdfDoc.numPages : 0}`; }
+
+        function changeZoom(v) { if(!pdfDoc) return; scale = Math.min(Math.max(scale + v, 0.4), 2.5); renderPages(); }
+        
         function changePage(d) {
+            if(!pdfDoc) return;
             pageNum = Math.min(Math.max(pageNum + d, 1), pdfDoc.numPages);
-            document.getElementById(`page-container-${pageNum}`).scrollIntoView();
-            document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc.numPages}`;
+            document.getElementById(`page-container-${pageNum}`).scrollIntoView({behavior: 'smooth'});
+            updatePageInfo();
         }
 
         function startSignProcess() {
+            if(!pdfDoc) return alert("Abra um PDF primeiro.");
             const check = () => {
                 if (window.innerWidth > window.innerHeight) {
                     document.getElementById('aviso-giro').style.display = 'none';
                     document.getElementById('sig-modal').style.display = 'flex';
                     const c = document.getElementById('sig-pad');
-                    c.width = window.innerWidth; c.height = window.innerHeight - 80;
+                    c.width = window.innerWidth; c.height = window.innerHeight - 75;
                     signaturePad = new SignaturePad(c);
                     window.removeEventListener('resize', check);
                 } else { document.getElementById('aviso-giro').style.display = 'flex'; }
@@ -165,11 +175,12 @@
         function closeSig() { document.getElementById('sig-modal').style.display = 'none'; document.getElementById('aviso-giro').style.display = 'none'; }
 
         function confirmSign() {
+            if (signaturePad.isEmpty()) return alert("Assine antes!");
             const data = signaturePad.toDataURL();
             const cont = document.getElementById(`page-container-${pageNum}`);
             const div = document.createElement('div');
             div.className = 'sig-container';
-            div.style.width = '150px'; div.style.top = '100px'; div.style.left = '50px';
+            div.style.width = '160px'; div.style.top = '100px'; div.style.left = '40px';
             div.innerHTML = `
                 <div class="sig-btns-float">
                     <button class="mini-btn" style="background:var(--verde)" onclick="cloneAll(this)">📋</button>
@@ -186,10 +197,12 @@
         function makeDraggable(el) {
             let sx, sy, ix, iy;
             el.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
                 const t = e.touches[0];
                 sx = t.clientX; sy = t.clientY;
                 ix = el.offsetLeft; iy = el.offsetTop;
                 const move = (ev) => {
+                    ev.preventDefault();
                     const mt = ev.touches[0];
                     el.style.left = (ix + (mt.clientX - sx)) + 'px';
                     el.style.top = (iy + (mt.clientY - sy)) + 'px';
@@ -209,22 +222,35 @@
 
         function cloneAll(b) {
             const orig = b.closest('.sig-container');
+            const data = orig.querySelector('img').src;
+            const top = orig.style.top; const left = orig.style.left;
+            const angle = orig.querySelector('img').getAttribute('data-angle');
+            
             document.querySelectorAll('.canvas-wrapper').forEach(p => {
                 if (p.id === orig.parentElement.id) return;
                 const clone = orig.cloneNode(true);
-                p.appendChild(clone); makeDraggable(clone);
+                p.appendChild(clone);
+                makeDraggable(clone);
+                const cImg = clone.querySelector('img');
+                cImg.style.transform = `rotate(${angle}deg)`;
+                cImg.setAttribute('data-angle', angle);
             });
+            alert("Clonado em todas as páginas!");
         }
 
-        /* MOTOR DE DOWNLOAD REAL */
         async function savePDF() {
+            if(!pdfDoc) return;
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "⏳ Gerando...";
+            
             const pages = document.querySelectorAll('.canvas-wrapper');
             for (let i = 0; i < pages.length; i++) {
                 if (i > 0) doc.addPage();
                 const canv = pages[i].querySelector('canvas');
-                doc.addImage(canv.toDataURL('image/jpeg'), 'JPEG', 0, 0, 210, 297);
+                doc.addImage(canv.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297);
+                
                 pages[i].querySelectorAll('.sig-container').forEach(s => {
                     const img = s.querySelector('img');
                     const r = pages[i].getBoundingClientRect();
@@ -233,11 +259,13 @@
                     const y = ((sr.top - r.top) / r.height) * 297;
                     const w = (sr.width / r.width) * 210;
                     const h = (sr.height / r.height) * 297;
-                    doc.addImage(img.src, 'PNG', x, y, w, h);
+                    const angle = parseInt(img.getAttribute('data-angle')) || 0;
+                    doc.addImage(img.src, 'PNG', x, y, w, h, null, 'FAST', angle);
                 });
             }
-            doc.save("assinado.pdf");
-            alert("Download concluído!");
+            doc.save("documento_assinado.pdf");
+            btn.innerText = "Salvar";
+            alert("Download iniciado!");
         }
     </script>
 </body>
