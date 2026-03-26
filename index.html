@@ -12,6 +12,32 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
+/* Configuração para quando o celular estiver deitado (Horizontal) */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    .container-botoes { /* Use o nome da classe que envolve seus botões */
+        display: flex;
+        flex-direction: row; /* Coloca os botões um ao lado do outro */
+        justify-content: center;
+        gap: 10px;
+        padding: 5px;
+        position: fixed; /* Fixa os botões na tela para não sumirem */
+        bottom: 10px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.9); /* Fundo leve para não cobrir o PDF */
+        z-index: 9999;
+    }
+
+    canvas { 
+        max-height: 60vh; /* Garante que o campo de assinatura não ocupe a tela toda */
+        width: auto;
+        margin-bottom: 50px; /* Abre espaço para os botões embaixo */
+    }
+
+    button {
+        padding: 8px 15px !important; /* Diminui um pouco o tamanho dos botões */
+        font-size: 14px !important;
+    }
+}
 
 #pdf-canvas {
     max-width: 100%;    /* Garante que o PDF não ultrapasse a largura da tela */
