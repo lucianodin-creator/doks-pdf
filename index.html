@@ -11,6 +11,34 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
+
+/* AVISO DE GIRAR TELA */
+#aviso-giro {
+    display: none; /* Escondido por padrão */
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 6000; /* Acima do modal de assinatura */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+}
+
+.icone-giro {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 20px;
+    animation: girarCelular 2s infinite;
+}
+
+@keyframes girarCelular {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+    100% { transform: rotate(0deg); }
+}
+
         * { box-sizing: border-box; margin: 0; padding: 0; tap-highlight-color: transparent; }
         :root { --primary: #4169E1; --success: #2e7d32; --accent: #ff8c00; --danger: #d32f2f; }
 
