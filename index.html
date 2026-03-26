@@ -49,12 +49,18 @@
 
 
         /* --- ÁREA CENTRAL (VIEWER) --- */
-        .viewer-container {
-            flex: 1; overflow: auto; display: flex; justify-content: center; 
-            padding: 20px; position: relative; scroll-behavior: smooth;
-        }
-        #pdf-render-area { display: flex; flex-direction: column; gap: 25px; padding-bottom: 100px; }
-        .canvas-wrapper { position: relative; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+.viewer-container {
+    flex: 1; 
+    overflow: auto; 
+    display: flex; 
+    justify-content: center; 
+    padding: 20px; 
+    position: relative;
+    
+    /* CORREÇÃO AQUI: Dá espaço para a barra flutuante */
+    padding-bottom: 90px; 
+    scroll-behavior: smooth;
+}
 
 
         /* --- BOTÕES DE ZOOM (QUADRADOS LARANJA - 200PX DO TOPO) --- */
@@ -73,19 +79,29 @@
 /* BARRA INFERIOR - CORRIGIDA (COLADA NA BORDA) */
 .footer {
     position: fixed; 
-    bottom: 0; /* Colada no fundo */
-    left: 0;
-    width: 100%; /* Largura total */
-    height: 75px; 
+    
+    /* CORREÇÃO AQUI: Sobe a barra 20px da borda real para não ser cortada */
+    bottom: 20px; 
+    
+    left: 50%; 
+    transform: translateX(-50%);
+    
+    /* Um pouco menor que 100% para dar aspecto flutuante e evitar cortes laterais */
+    width: 92%; 
+    
+    height: 70px; 
     background: var(--azul-doks); 
-    display: flex;
+    display: flex; 
     align-items: center; 
-    justify-content: space-around; 
-    /* Padding inferior inteligente para não cobrir botões do Android/iOS */
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px;
-    border-radius: 18px 18px 0 0; /* Arredondado apenas em cima */
-    z-index: 2000; /* Acima do PDF */
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    justify-content: space-around;
+    border-radius: 15px; 
+    
+    /* CORREÇÃO AQUI: Garante que está ACIMA do PDF ao arrastar assinatura */
+    z-index: 2000; 
+    
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.4);
+}
+
 }
 
         /* --- JANELA DE ASSINATURA (MODAL) E AVISO --- */
@@ -139,7 +155,7 @@
         <div class="logo">Doks PDF</div>
         <div class="header-btns">
             <button class="btn-top" onclick="alert('Funcionalidade Recentes em breve')">Recentes</button>
-            <label for="file-in" class="btn-top btn-pdf">Abrir PDF</label>
+<label for="file-in" class="btn-top btn-pdf" style="cursor: pointer; -webkit-tap-highlight-color: transparent;">Abrir PDF</label>
             <input type="file" id="file-in" hidden accept="application/pdf">
         </div>
     </header>
@@ -401,6 +417,19 @@ function makeDraggable(el) {
             alert("O PDF está sendo processado para exportação!");
             // Aqui entra a lógica final de geração do PDF com o jsPDF
         }
+
+body { 
+    background-color: var(--cinza-fundo); 
+    
+    /* CORREÇÃO AQUI: Garante altura total real em celulares */
+    height: 100vh; 
+    height: -webkit-fill-available;
+    
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+}
+
     </script>
 </body>
 </html>
