@@ -27,11 +27,26 @@
             padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold;
             background: white; color: var(--azul); font-size: 13px;
         }
+.viewer-container {
+    flex: 1; 
+    overflow-y: auto; 
+    overflow-x: auto; /* Permite scroll horizontal se o zoom for muito grande */
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; /* Centraliza a folha horizontalmente */
+    padding: 20px 0 120px 0; /* Remove padding lateral do container para não somar com o cálculo */
+    background: #121212;
+    -webkit-overflow-scrolling: touch;
+}
 
-        .viewer-container {
-            flex: 1; overflow-y: auto; overflow-x: hidden;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 20px 10px 120px 10px; -webkit-overflow-scrolling: touch;
+#pdf-render-area { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px; 
+    width: fit-content; /* Faz a área de renderização se ajustar ao tamanho da folha */
+    padding: 0 20px; /* Cria o respiro lateral real que você quer */
+}
+
         }
 
         #pdf-render-area { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; }
@@ -116,18 +131,20 @@
         const pdfjs = window['pdfjs-dist/build/pdf'];
         pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        document.getElementById('file-in').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const data = new Uint8Array(await file.arrayBuffer());
-            pdfDoc = await pdfjs.getDocument({data}).promise;
-            
-            // AJUSTE DE ZOOM INICIAL: Deixa 40px de margem total nas laterais
-            scale = (window.innerWidth - 40) / 595;
-            if(scale > 1.2) scale = 1.0; // Evita zoom exagerado em telas grandes
-            
-            renderPages();
-        };
+document.getElementById('file-in').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const data = new Uint8Array(await file.arrayBuffer());
+    pdfDoc = await pdfjs.getDocument({data}).promise;
+    
+    // REDUÇÃO REAL: Agora subtraímos 60px para garantir sobra nas laterais do Chrome
+    scale = (window.innerWidth - 60) / 595;
+    
+    // Limite para não ficar pequeno demais em telas minúsculas
+    if(scale < 0.5) scale = 0.5; 
+    
+    renderPages();
+};
 
         async function renderPages() {
             const area = document.getElementById('pdf-render-area');
