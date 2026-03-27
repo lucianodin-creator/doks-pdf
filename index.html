@@ -18,13 +18,11 @@
             height: 100svh; display: flex; flex-direction: column; overflow: hidden; 
         }
 
-        /* HEADER COM RECENTES E ABRIR */
         .header {
             height: 60px; background: var(--azul); color: white;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 15px; z-index: 1000; flex-shrink: 0;
         }
-        .header-btns { display: flex; gap: 8px; }
         .btn-top {
             padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold;
             background: white; color: var(--azul); font-size: 13px;
@@ -37,91 +35,53 @@
         }
 
         #pdf-render-area { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; }
-        .canvas-wrapper { position: relative; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); line-height: 0; }
+        .canvas-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.6); line-height: 0; }
 
-        /* BOTÕES DE ZOOM VOLTARAM */
         .zoom-controls { position: fixed; right: 15px; top: 30%; display: flex; flex-direction: column; gap: 10px; z-index: 1500; }
-        .btn-zoom { width: 45px; height: 45px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-size: 24px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .btn-zoom { width: 48px; height: 48px; background: var(--laranja); color: white; border: none; border-radius: 10px; font-size: 26px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
 
-        /* ASSINATURA E REDIMENSIONAMENTO */
-        .sig-container { 
-            position: absolute; border: 2px dashed var(--azul); 
-            background: rgba(255,255,255,0.7); z-index: 500; touch-action: none;
-        }
-        .resizer {
-            position: absolute; width: 28px; height: 28px;
-            background: var(--azul); right: -10px; bottom: -10px;
-            border-radius: 50%; border: 2px solid white; z-index: 600;
-        }
-        .sig-btns-float { 
-            position: absolute; top: -45px; right: 0; display: flex; gap: 5px; 
-            background: rgba(0,0,0,0.8); padding: 5px; border-radius: 5px; 
-        }
-        .mini-btn { width: 32px; height: 32px; border: none; border-radius: 4px; color: white; font-size: 14px; }
+        .sig-container { position: absolute; border: 2px dashed var(--azul); background: rgba(255,255,255,0.7); z-index: 500; touch-action: none; }
+        .resizer { position: absolute; width: 30px; height: 30px; background: var(--azul); right: -12px; bottom: -12px; border-radius: 50%; border: 2px solid white; z-index: 600; }
+        
+        .sig-btns-float { position: absolute; top: -45px; right: 0; display: flex; gap: 6px; background: rgba(0,0,0,0.85); padding: 5px; border-radius: 6px; }
+        .mini-btn { width: 34px; height: 34px; border: none; border-radius: 4px; color: white; }
 
-        /* FOOTER */
         .footer {
-            height: 70px; background: var(--azul); display: flex;
+            height: 75px; background: var(--azul); display: flex;
             align-items: center; justify-content: space-around;
             padding-bottom: env(safe-area-inset-bottom); z-index: 2000; flex-shrink: 0;
         }
-        .btn-footer { height: 44px; padding: 0 15px; border-radius: 8px; border: none; font-weight: bold; background: white; color: var(--azul); }
-        
+        .btn-footer { height: 46px; padding: 0 18px; border-radius: 10px; border: none; font-weight: bold; background: white; color: var(--azul); }
+
+        /* AVISO DE GIRO - NÃO MAIS TÍMIDO */
+        #aviso-giro { 
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); 
+            display: none; flex-direction: column; align-items: center; justify-content: center; 
+            color: #FFD700; z-index: 9999; text-align: center; padding: 30px;
+        }
+        .icone-animado { font-size: 90px; margin-bottom: 25px; animation: girarTela 2s infinite ease-in-out; }
+        @keyframes girarTela { 0% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(0deg); } }
+
         #sig-modal { position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 5000; }
         #sig-pad { flex: 1; background: #fdfdfd; }
-        .sig-toolbar { height: 75px; display: flex; gap: 10px; padding: 12px; background: #eee; }
-
-/* AVISO DE GIRO TURBO */
-#aviso-giro { 
-    position: fixed; 
-    inset: 0; 
-    background: rgba(0, 0, 0, 0.9); /* Fundo bem escuro para destacar */
-    display: none; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    color: #FFD700; /* Amarelo ouro para chamar atenção */
-    z-index: 9999; /* Ficar na frente de TUDO */
-    text-align: center;
-    padding: 20px;
-}
-
-#aviso-giro .icone-celular {
-    font-size: 80px;
-    margin-bottom: 20px;
-    animation: girar 2s infinite ease-in-out;
-}
-
-#aviso-giro p {
-    font-size: 24px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-@keyframes girar {
-    0% { transform: rotate(0deg); }
-    50% { transform: rotate(90deg); }
-    100% { transform: rotate(0deg); }
-}
-
+        .sig-toolbar { height: 80px; display: flex; gap: 12px; padding: 15px; background: #eee; }
     </style>
 </head>
 <body>
 
     <header class="header">
         <div style="font-weight:bold; font-size:18px;">DoksPDF</div>
-        <div class="header-btns">
-            <button class="btn-top" onclick="alert('Histórico em breve...')">Recentes</button>
-            <label for="file-in" class="btn-top" style="border: 2px solid gold;">Abrir PDF</label>
+        <div style="display:flex; gap:8px;">
+            <button class="btn-top" onclick="location.reload()">Recentes</button>
+            <label for="file-in" class="btn-top" style="border: 2px solid #FFD700;">Abrir PDF</label>
             <input type="file" id="file-in" hidden accept="application/pdf">
         </div>
     </header>
 
     <main class="viewer-container">
         <div class="zoom-controls">
-            <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
-            <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
+            <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
+            <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
         </div>
         <div id="pdf-render-area"></div>
     </main>
@@ -129,32 +89,30 @@
     <footer class="footer">
         <div style="display: flex; gap: 8px; align-items: center;">
             <button class="btn-footer" onclick="changePage(-1)"> < </button>
-            <span id="page-info" style="color:white; font-weight:bold; min-width: 45px; text-align: center;">0 / 0</span>
+            <span id="page-info" style="color:white; font-weight:bold; min-width: 50px; text-align: center;">0 / 0</span>
             <button class="btn-footer" onclick="changePage(1)"> > </button>
         </div>
         <button class="btn-footer" onclick="startSignProcess()">🖋️ Assinar</button>
-        <button class="btn-footer" style="background:var(--verde); color:white;" onclick="savePDF()">Salvar</button>
+        <button class="btn-footer btn-save" style="background:var(--verde); color:white;" onclick="savePDF()">Salvar</button>
     </footer>
 
-<div id="aviso-giro">
-    <div class="icone-celular">📱</div>
-    <p>Gire o celular para o<br>modo paisagem</p>
-    <span style="color: white; font-size: 14px; margin-top: 15px; opacity: 0.8;">
-        A área de assinatura aparecerá automaticamente
-    </span>
-</div>
+    <div id="aviso-giro">
+        <div class="icone-animado">📱</div>
+        <p style="font-size: 24px; font-weight: bold;">GIRE O CELULAR</p>
+        <p style="color: white; font-size: 16px; margin-top: 10px;">Para assinar com precisão</p>
+    </div>
 
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
         <div class="sig-toolbar">
-            <button onclick="closeSig()" style="flex:1; background:#757575; color:white; border:none; border-radius:8px;">Sair</button>
-            <button onclick="signaturePad.clear()" style="flex:1; background:#fbc02d; border:none; border-radius:8px;">Limpar</button>
-            <button onclick="confirmSign()" style="flex:1; background:var(--verde); color:white; border:none; border-radius:8px;">Confirmar</button>
+            <button onclick="closeSig()" style="flex:1; background:#757575; color:white; border-radius:8px; border:none; font-weight:bold;">Sair</button>
+            <button onclick="signaturePad.clear()" style="flex:1; background:#fbc02d; border-radius:8px; border:none; font-weight:bold;">Limpar</button>
+            <button onclick="confirmSign()" style="flex:1; background:var(--verde); color:white; border-radius:8px; border:none; font-weight:bold;">Confirmar</button>
         </div>
     </div>
 
     <script>
-        let pdfDoc = null, pageNum = 1, scale = 1.0, signaturePad = null;
+        let pdfDoc = null, pageNum = 1, scale = 0.8, signaturePad = null;
         const pdfjs = window['pdfjs-dist/build/pdf'];
         pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
@@ -163,12 +121,17 @@
             if (!file) return;
             const data = new Uint8Array(await file.arrayBuffer());
             pdfDoc = await pdfjs.getDocument({data}).promise;
-            scale = (window.innerWidth - 30) / 595;
+            
+            // AJUSTE DE ZOOM INICIAL: Deixa 40px de margem total nas laterais
+            scale = (window.innerWidth - 40) / 595;
+            if(scale > 1.2) scale = 1.0; // Evita zoom exagerado em telas grandes
+            
             renderPages();
         };
 
         async function renderPages() {
             const area = document.getElementById('pdf-render-area');
+            const scrollPos = document.querySelector('.viewer-container').scrollTop;
             area.innerHTML = '';
             if(!pdfDoc) return;
             for (let i = 1; i <= pdfDoc.numPages; i++) {
@@ -184,15 +147,14 @@
                 area.appendChild(wrapper);
             }
             updatePageInfo();
+            document.querySelector('.viewer-container').scrollTop = scrollPos;
         }
 
-        function updatePageInfo() {
-            document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc ? pdfDoc.numPages : 0}`;
-        }
+        function updatePageInfo() { document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc ? pdfDoc.numPages : 0}`; }
 
         function changeZoom(v) { 
             if(!pdfDoc) return; 
-            scale = Math.min(Math.max(scale + v, 0.4), 2.5); 
+            scale = Math.min(Math.max(scale + v, 0.3), 3.0); 
             renderPages(); 
         }
 
@@ -227,9 +189,8 @@
             const cont = document.getElementById(`page-container-${pageNum}`);
             const div = document.createElement('div');
             div.className = 'sig-container';
-            div.style.width = '180px'; div.style.height = '80px';
-            div.style.top = '100px'; div.style.left = '50px';
-            
+            div.style.width = '160px'; div.style.height = '70px';
+            div.style.top = '100px'; div.style.left = '40px';
             div.innerHTML = `
                 <div class="sig-btns-float">
                     <button class="mini-btn" style="background:var(--verde)" onclick="cloneAll(this)">📋</button>
@@ -239,7 +200,6 @@
                 <img src="${dataUrl}" style="width:100%; height:100%; pointer-events:none;" data-angle="0">
                 <div class="resizer"></div>
             `;
-            
             cont.appendChild(div);
             makeDraggableAndResizable(div);
             closeSig();
@@ -248,14 +208,10 @@
         function makeDraggableAndResizable(el) {
             const resizer = el.querySelector('.resizer');
             let isResizing = false;
-
             el.addEventListener('touchstart', (e) => {
                 isResizing = (e.target === resizer);
                 const t = e.touches[0];
-                let sx = t.clientX, sy = t.clientY;
-                let sw = el.offsetWidth, sh = el.offsetHeight;
-                let sl = el.offsetLeft, st = el.offsetTop;
-
+                let sx = t.clientX, sy = t.clientY, sw = el.offsetWidth, sh = el.offsetHeight, sl = el.offsetLeft, st = el.offsetTop;
                 const move = (ev) => {
                     ev.preventDefault();
                     const mt = ev.touches[0];
@@ -267,7 +223,6 @@
                         el.style.top = (st + (mt.clientY - sy)) + 'px';
                     }
                 };
-
                 const end = () => { document.removeEventListener('touchmove', move); };
                 document.addEventListener('touchmove', move, {passive:false});
                 document.addEventListener('touchend', end);
@@ -283,8 +238,6 @@
 
         function cloneAll(b) {
             const orig = b.closest('.sig-container');
-            const data = orig.querySelector('img').src;
-            const w = orig.style.width, h = orig.style.height;
             document.querySelectorAll('.canvas-wrapper').forEach(p => {
                 if (p.id === orig.parentElement.id) return;
                 const clone = orig.cloneNode(true);
@@ -295,13 +248,15 @@
 
         async function savePDF() {
             if(!pdfDoc) return;
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "Aguarde...";
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const pages = document.querySelectorAll('.canvas-wrapper');
             for (let i = 0; i < pages.length; i++) {
                 if (i > 0) doc.addPage();
                 const canv = pages[i].querySelector('canvas');
-                doc.addImage(canv.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, 210, 297);
+                doc.addImage(canv.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297);
                 pages[i].querySelectorAll('.sig-container').forEach(s => {
                     const img = s.querySelector('img');
                     const r = pages[i].getBoundingClientRect();
@@ -315,7 +270,7 @@
                 });
             }
             doc.save("DoksPDF_Assinado.pdf");
-            alert("Salvo com sucesso!");
+            btn.innerText = "Salvar";
         }
     </script>
 </body>
