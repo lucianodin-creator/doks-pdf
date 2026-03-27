@@ -3,302 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>DoksPDF</title>
-
+    <title>DoksPDF - Gestão Documental</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        :root { --azul: #4169E1; --fundo: #1a1a1a; --laranja: #FF8C00; --verde: #2e7d32; }
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-        body { 
-            font-family: sans-serif; background: var(--fundo); 
-            height: 100svh; display: flex; flex-direction: column; overflow: hidden; 
+        :root {
+            --azul-escuro: #0a192f;
+            --azul-primario: #1e3a8a;
+            --azul-claro: #3b82f6;
+            --branco: #ffffff;
+            --cinza-fundo: #f8fafc;
+            --texto: #1e293b;
+            --ouro: #fbbf24;
         }
 
-        .header {
-            height: 60px; background: var(--azul); color: white;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px; z-index: 1000; flex-shrink: 0;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+
+        body { background-color: var(--cinza-fundo); color: var(--texto); display: flex; height: 100vh; overflow: hidden; }
+
+        /* --- BARRA LATERAL (PC) / OCULTA (MOBILE) --- */
+        .sidebar {
+            width: 260px; background: var(--azul-escuro); color: white;
+            display: flex; flex-direction: column; transition: 0.3s;
         }
-        .btn-top {
-            padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold;
-            background: white; color: var(--azul); font-size: 13px;
+
+        .logo-area { padding: 30px 20px; font-size: 24px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo-area span { color: var(--azul-claro); }
+
+        .nav-links { flex: 1; padding: 20px 0; }
+        .nav-item { 
+            padding: 12px 20px; display: flex; align-items: center; gap: 12px; 
+            cursor: pointer; transition: 0.2s; color: rgba(255,255,255,0.7);
         }
-.viewer-container {
-    flex: 1; 
-    overflow-y: auto; 
-    overflow-x: auto; /* Permite scroll horizontal se o zoom for muito grande */
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; /* Centraliza a folha horizontalmente */
-    padding: 20px 0 120px 0; /* Remove padding lateral do container para não somar com o cálculo */
-    background: #121212;
-    -webkit-overflow-scrolling: touch;
-}
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; border-left: 4px solid var(--azul-claro); }
 
-#pdf-render-area { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 20px; 
-    width: 100%; /* Ocupa a largura disponível */
-    max-width: 90vw; /* FORÇA a folha a ter no máximo 90% da largura da tela */
-    padding: 0; 
-    margin: 0 auto; /* Centraliza */
-}
+        /* --- CONTEÚDO PRINCIPAL --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
 
-.canvas-wrapper { 
-    position: relative; 
-    background: white; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
-    line-height: 0;
-    width: 100% !important; /* Força o wrapper a obedecer ao max-width do pai */
-}
-
-.canvas-wrapper canvas {
-    width: 100% !important; /* Força o desenho do PDF a encolher para caber */
-    height: auto !important;
-}
-
-        .zoom-controls { position: fixed; right: 15px; top: 30%; display: flex; flex-direction: column; gap: 10px; z-index: 1500; }
-        .btn-zoom { width: 48px; height: 48px; background: var(--laranja); color: white; border: none; border-radius: 10px; font-size: 26px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
-
-        .sig-container { position: absolute; border: 2px dashed var(--azul); background: rgba(255,255,255,0.7); z-index: 500; touch-action: none; }
-        .resizer { position: absolute; width: 30px; height: 30px; background: var(--azul); right: -12px; bottom: -12px; border-radius: 50%; border: 2px solid white; z-index: 600; }
-        
-        .sig-btns-float { position: absolute; top: -45px; right: 0; display: flex; gap: 6px; background: rgba(0,0,0,0.85); padding: 5px; border-radius: 6px; }
-        .mini-btn { width: 34px; height: 34px; border: none; border-radius: 4px; color: white; }
-
-        .footer {
-            height: 75px; background: var(--azul); display: flex;
-            align-items: center; justify-content: space-around;
-            padding-bottom: env(safe-area-inset-bottom); z-index: 2000; flex-shrink: 0;
+        /* HEADER SUPERIOR */
+        header {
+            height: 70px; background: white; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        .btn-footer { height: 46px; padding: 0 18px; border-radius: 10px; border: none; font-weight: bold; background: white; color: var(--azul); }
 
-        /* AVISO DE GIRO - NÃO MAIS TÍMIDO */
-        #aviso-giro { 
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); 
-            display: none; flex-direction: column; align-items: center; justify-content: center; 
-            color: #FFD700; z-index: 9999; text-align: center; padding: 30px;
+        .search-bar { 
+            background: #f1f5f9; border-radius: 8px; padding: 10px 15px; width: 400px; 
+            display: flex; align-items: center; gap: 10px;
         }
-        .icone-animado { font-size: 90px; margin-bottom: 25px; animation: girarTela 2s infinite ease-in-out; }
-        @keyframes girarTela { 0% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(0deg); } }
+        .search-bar input { border: none; background: transparent; width: 100%; outline: none; }
 
-        #sig-modal { position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 5000; }
-        #sig-pad { flex: 1; background: #fdfdfd; }
-        .sig-toolbar { height: 80px; display: flex; gap: 12px; padding: 15px; background: #eee; }
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .btn-pro { background: var(--ouro); color: var(--azul-escuro); padding: 8px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+
+        /* ÁREA DAS FERRAMENTAS (GRID) */
+        .tools-section { padding: 30px; }
+        .section-title { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: var(--azul-primario); }
+
+        .tools-grid { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 20px; margin-bottom: 40px;
+        }
+
+        .tool-card {
+            background: white; border-radius: 12px; padding: 25px; text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: 0.3s; cursor: pointer;
+            border: 1px solid #e2e8f0; position: relative;
+        }
+        .tool-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: var(--azul-claro); }
+        .tool-card i { font-size: 32px; color: var(--azul-claro); margin-bottom: 15px; display: block; }
+        .tool-card h3 { font-size: 16px; margin-bottom: 8px; }
+        .tool-card p { font-size: 12px; color: #64748b; }
+
+        /* TAG PRO */
+        .badge-pro { 
+            position: absolute; top: 10px; right: 10px; background: var(--ouro); 
+            font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; 
+        }
+
+        /* --- RESPONSIVIDADE (MOBILE) --- */
+        @media (max-width: 768px) {
+            .sidebar { display: none; } /* Esconde barra lateral no celular */
+            header { padding: 0 15px; height: 60px; }
+            .search-bar { width: 180px; font-size: 14px; }
+            .tools-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } /* 2 Colunas no celular */
+            .tools-section { padding: 15px; padding-bottom: 100px; }
+            
+            /* MENU INFERIOR MOBILE */
+            .mobile-nav {
+                position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
+                background: var(--azul-escuro); display: flex; justify-content: space-around;
+                align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom);
+            }
+            .mobile-item { color: rgba(255,255,255,0.6); text-align: center; font-size: 10px; text-decoration: none; }
+            .mobile-item i { font-size: 20px; display: block; margin-bottom: 4px; }
+            .mobile-item.active { color: var(--azul-claro); }
+        }
+
+        /* Desktop only elements */
+        @media (min-width: 769px) { .mobile-nav { display: none; } }
+
     </style>
 </head>
 <body>
 
-    <header class="header">
-        <div style="font-weight:bold; font-size:18px;">DoksPDF</div>
-        <div style="display:flex; gap:8px;">
-            <button class="btn-top" onclick="location.reload()">Recentes</button>
-            <label for="file-in" class="btn-top" style="border: 2px solid #FFD700;">Abrir PDF</label>
-            <input type="file" id="file-in" hidden accept="application/pdf">
-        </div>
-    </header>
+    <aside class="sidebar">
+        <div class="logo-area">Doks<span>PDF</span></div>
+        <nav class="nav-links">
+            <div class="nav-item active">🏠 Início</div>
+            <div class="nav-item">📄 Meus Documentos</div>
+            <div class="nav-item">⭐ Favoritos</div>
+            <div class="nav-item">💳 Assinatura Pro</div>
+            <div class="nav-item">⚙️ Configurações</div>
+        </nav>
+    </aside>
 
-    <main class="viewer-container">
-        <div class="zoom-controls">
-            <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
-            <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
+    <main class="main-content">
+        <header>
+            <div class="search-bar">
+                <span>🔍</span>
+                <input type="text" placeholder="Buscar ferramenta (PDF, áudio, links...)">
+            </div>
+            <div class="user-profile">
+                <button class="btn-pro">Seja PRO</button>
+                <div style="width: 35px; height: 35px; background: #ddd; border-radius: 50%;"></div>
+            </div>
+        </header>
+
+        <div class="tools-section">
+            
+            <div class="section-title">✨ Mais Usadas</div>
+            <div class="tools-grid">
+                <div class="tool-card" onclick="window.location.href='/assinar.html'">
+                    <i>🖋️</i>
+                    <h3>Assinar PDF</h3>
+                    <p>Assine documentos com validade</p>
+                </div>
+                <div class="tool-card">
+                    <span class="badge-pro">PRO</span>
+                    <i>🔍</i>
+                    <h3>OCR Scanner</h3>
+                    <p>Foto para texto editável</p>
+                </div>
+                <div class="tool-card">
+                    <i>📂</i>
+                    <h3>Juntar PDF</h3>
+                    <p>Unir vários arquivos em um</p>
+                </div>
+                <div class="tool-card">
+                    <i>🖼️</i>
+                    <h3>Imagem p/ PDF</h3>
+                    <p>Converta fotos rapidamente</p>
+                </div>
+            </div>
+
+            <div class="section-title">🎧 Mídia & Conversores</div>
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <i>🔗</i>
+                    <h3>Conversor de Link</h3>
+                    <p>Extraia áudio e vídeo</p>
+                </div>
+                <div class="tool-card">
+                    <i>✂️</i>
+                    <h3>Cortar MP3</h3>
+                    <p>Crie toques personalizados</p>
+                </div>
+                <div class="tool-card">
+                    <i>🎥</i>
+                    <h3>Comprimir Vídeo</h3>
+                    <p>Reduza o tamanho sem perder qualidade</p>
+                </div>
+            </div>
+
         </div>
-        <div id="pdf-render-area"></div>
+
+        <nav class="mobile-nav">
+            <a href="#" class="mobile-item active"><i>🏠</i>Início</a>
+            <a href="#" class="mobile-item"><i>📄</i>Docs</a>
+            <a href="#" class="mobile-item"><i>⭐</i>Pro</a>
+            <a href="#" class="mobile-item"><i>👤</i>Perfil</a>
+        </nav>
     </main>
 
-    <footer class="footer">
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <button class="btn-footer" onclick="changePage(-1)"> < </button>
-            <span id="page-info" style="color:white; font-weight:bold; min-width: 50px; text-align: center;">0 / 0</span>
-            <button class="btn-footer" onclick="changePage(1)"> > </button>
-        </div>
-        <button class="btn-footer" onclick="startSignProcess()">🖋️ Assinar</button>
-        <button class="btn-footer btn-save" style="background:var(--verde); color:white;" onclick="savePDF()">Salvar</button>
-    </footer>
-
-    <div id="aviso-giro">
-        <div class="icone-animado">📱</div>
-        <p style="font-size: 24px; font-weight: bold;">GIRE O CELULAR</p>
-        <p style="color: white; font-size: 16px; margin-top: 10px;">Para assinar com precisão</p>
-    </div>
-
-    <div id="sig-modal">
-        <canvas id="sig-pad"></canvas>
-        <div class="sig-toolbar">
-            <button onclick="closeSig()" style="flex:1; background:#757575; color:white; border-radius:8px; border:none; font-weight:bold;">Sair</button>
-            <button onclick="signaturePad.clear()" style="flex:1; background:#fbc02d; border-radius:8px; border:none; font-weight:bold;">Limpar</button>
-            <button onclick="confirmSign()" style="flex:1; background:var(--verde); color:white; border-radius:8px; border:none; font-weight:bold;">Confirmar</button>
-        </div>
-    </div>
-
     <script>
-        let pdfDoc = null, pageNum = 1, scale = 0.8, signaturePad = null;
-        const pdfjs = window['pdfjs-dist/build/pdf'];
-        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-document.getElementById('file-in').onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const data = new Uint8Array(await file.arrayBuffer());
-    pdfDoc = await pdfjs.getDocument({data}).promise;
-    
-    // REDUÇÃO AGRESSIVA: Subtraímos 100px para garantir que ele abra pequeno
-    scale = (window.innerWidth - 100) / 595;
-    
-    // Garante um zoom mínimo para não sumir, mas mantendo a folga
-    if(scale > 0.9) scale = 0.85; 
-    
-    renderPages();
-};
-
-        async function renderPages() {
-            const area = document.getElementById('pdf-render-area');
-            const scrollPos = document.querySelector('.viewer-container').scrollTop;
-            area.innerHTML = '';
-            if(!pdfDoc) return;
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-                const page = await pdfDoc.getPage(i);
-                const viewport = page.getViewport({scale});
-                const wrapper = document.createElement('div');
-                wrapper.className = 'canvas-wrapper';
-                wrapper.id = `page-container-${i}`;
-                const canvas = document.createElement('canvas');
-                canvas.width = viewport.width; canvas.height = viewport.height;
-                await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
-                wrapper.appendChild(canvas);
-                area.appendChild(wrapper);
-            }
-            updatePageInfo();
-            document.querySelector('.viewer-container').scrollTop = scrollPos;
-        }
-
-        function updatePageInfo() { document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc ? pdfDoc.numPages : 0}`; }
-
-        function changeZoom(v) { 
-            if(!pdfDoc) return; 
-            scale = Math.min(Math.max(scale + v, 0.3), 3.0); 
-            renderPages(); 
-        }
-
-        function changePage(d) {
-            if(!pdfDoc) return;
-            pageNum = Math.min(Math.max(pageNum + d, 1), pdfDoc.numPages);
-            document.getElementById(`page-container-${pageNum}`).scrollIntoView({behavior: 'smooth'});
-            updatePageInfo();
-        }
-
-        function startSignProcess() {
-            if(!pdfDoc) return alert("Abra um PDF.");
-            const check = () => {
-                if (window.innerWidth > window.innerHeight) {
-                    document.getElementById('aviso-giro').style.display = 'none';
-                    document.getElementById('sig-modal').style.display = 'flex';
-                    const c = document.getElementById('sig-pad');
-                    c.width = window.innerWidth; c.height = window.innerHeight - 80;
-                    signaturePad = new SignaturePad(c);
-                    window.removeEventListener('resize', check);
-                } else { document.getElementById('aviso-giro').style.display = 'flex'; }
-            };
-            window.addEventListener('resize', check);
-            check();
-        }
-
-        function closeSig() { document.getElementById('sig-modal').style.display = 'none'; document.getElementById('aviso-giro').style.display = 'none'; }
-
-        function confirmSign() {
-            if (signaturePad.isEmpty()) return alert("Assine primeiro.");
-            const dataUrl = signaturePad.toDataURL();
-            const cont = document.getElementById(`page-container-${pageNum}`);
-            const div = document.createElement('div');
-            div.className = 'sig-container';
-            div.style.width = '160px'; div.style.height = '70px';
-            div.style.top = '100px'; div.style.left = '40px';
-            div.innerHTML = `
-                <div class="sig-btns-float">
-                    <button class="mini-btn" style="background:var(--verde)" onclick="cloneAll(this)">📋</button>
-                    <button class="mini-btn" style="background:var(--azul)" onclick="rotateSig(this)">🔄</button>
-                    <button class="mini-btn" style="background:red" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                </div>
-                <img src="${dataUrl}" style="width:100%; height:100%; pointer-events:none;" data-angle="0">
-                <div class="resizer"></div>
-            `;
-            cont.appendChild(div);
-            makeDraggableAndResizable(div);
-            closeSig();
-        }
-
-        function makeDraggableAndResizable(el) {
-            const resizer = el.querySelector('.resizer');
-            let isResizing = false;
-            el.addEventListener('touchstart', (e) => {
-                isResizing = (e.target === resizer);
-                const t = e.touches[0];
-                let sx = t.clientX, sy = t.clientY, sw = el.offsetWidth, sh = el.offsetHeight, sl = el.offsetLeft, st = el.offsetTop;
-                const move = (ev) => {
-                    ev.preventDefault();
-                    const mt = ev.touches[0];
-                    if (isResizing) {
-                        el.style.width = (sw + (mt.clientX - sx)) + 'px';
-                        el.style.height = (sh + (mt.clientY - sy)) + 'px';
-                    } else {
-                        el.style.left = (sl + (mt.clientX - sx)) + 'px';
-                        el.style.top = (st + (mt.clientY - sy)) + 'px';
-                    }
-                };
-                const end = () => { document.removeEventListener('touchmove', move); };
-                document.addEventListener('touchmove', move, {passive:false});
-                document.addEventListener('touchend', end);
+        // Lógica de Busca Simples
+        const searchInput = document.querySelector('.search-bar input');
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.tool-card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('h3').innerText.toLowerCase();
+                if(title.includes(term)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
             });
-        }
-
-        function rotateSig(b) {
-            const img = b.closest('.sig-container').querySelector('img');
-            let a = (parseInt(img.getAttribute('data-angle')) + 90) % 360;
-            img.style.transform = `rotate(${a}deg)`;
-            img.setAttribute('data-angle', a);
-        }
-
-        function cloneAll(b) {
-            const orig = b.closest('.sig-container');
-            document.querySelectorAll('.canvas-wrapper').forEach(p => {
-                if (p.id === orig.parentElement.id) return;
-                const clone = orig.cloneNode(true);
-                p.appendChild(clone);
-                makeDraggableAndResizable(clone);
-            });
-        }
-
-        async function savePDF() {
-            if(!pdfDoc) return;
-            const btn = document.querySelector('.btn-save');
-            btn.innerText = "Aguarde...";
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const pages = document.querySelectorAll('.canvas-wrapper');
-            for (let i = 0; i < pages.length; i++) {
-                if (i > 0) doc.addPage();
-                const canv = pages[i].querySelector('canvas');
-                doc.addImage(canv.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297);
-                pages[i].querySelectorAll('.sig-container').forEach(s => {
-                    const img = s.querySelector('img');
-                    const r = pages[i].getBoundingClientRect();
-                    const sr = s.getBoundingClientRect();
-                    const x = ((sr.left - r.left) / r.width) * 210;
-                    const y = ((sr.top - r.top) / r.height) * 297;
-                    const w = (sr.width / r.width) * 210;
-                    const h = (sr.height / r.height) * 297;
-                    const angle = parseInt(img.getAttribute('data-angle')) || 0;
-                    doc.addImage(img.src, 'PNG', x, y, w, h, null, 'FAST', angle);
-                });
-            }
-            doc.save("DoksPDF_Assinado.pdf");
-            btn.innerText = "Salvar";
-        }
+        });
     </script>
 </body>
 </html>
