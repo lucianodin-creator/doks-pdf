@@ -70,6 +70,7 @@
         #sig-modal { position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 5000; }
         #sig-pad { flex: 1; background: #fdfdfd; }
         .sig-toolbar { height: 75px; display: flex; gap: 10px; padding: 12px; background: #eee; }
+
 /* AVISO DE GIRO TURBO */
 #aviso-giro { 
     position: fixed; 
@@ -135,7 +136,13 @@
         <button class="btn-footer" style="background:var(--verde); color:white;" onclick="savePDF()">Salvar</button>
     </footer>
 
-    <div id="aviso-giro">📱<br>Gire para assinar</div>
+<div id="aviso-giro">
+    <div class="icone-celular">📱</div>
+    <p>Gire o celular para o<br>modo paisagem</p>
+    <span style="color: white; font-size: 14px; margin-top: 15px; opacity: 0.8;">
+        A área de assinatura aparecerá automaticamente
+    </span>
+</div>
 
     <div id="sig-modal">
         <canvas id="sig-pad"></canvas>
