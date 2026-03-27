@@ -43,14 +43,24 @@
     display: flex; 
     flex-direction: column; 
     gap: 20px; 
-    width: fit-content; /* Faz a área de renderização se ajustar ao tamanho da folha */
-    padding: 0 20px; /* Cria o respiro lateral real que você quer */
+    width: 100%; /* Ocupa a largura disponível */
+    max-width: 90vw; /* FORÇA a folha a ter no máximo 90% da largura da tela */
+    padding: 0; 
+    margin: 0 auto; /* Centraliza */
 }
 
-        }
+.canvas-wrapper { 
+    position: relative; 
+    background: white; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
+    line-height: 0;
+    width: 100% !important; /* Força o wrapper a obedecer ao max-width do pai */
+}
 
-        #pdf-render-area { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; }
-        .canvas-wrapper { position: relative; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.6); line-height: 0; }
+.canvas-wrapper canvas {
+    width: 100% !important; /* Força o desenho do PDF a encolher para caber */
+    height: auto !important;
+}
 
         .zoom-controls { position: fixed; right: 15px; top: 30%; display: flex; flex-direction: column; gap: 10px; z-index: 1500; }
         .btn-zoom { width: 48px; height: 48px; background: var(--laranja); color: white; border: none; border-radius: 10px; font-size: 26px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
@@ -137,11 +147,11 @@ document.getElementById('file-in').onchange = async (e) => {
     const data = new Uint8Array(await file.arrayBuffer());
     pdfDoc = await pdfjs.getDocument({data}).promise;
     
-    // REDUÇÃO REAL: Agora subtraímos 60px para garantir sobra nas laterais do Chrome
-    scale = (window.innerWidth - 60) / 595;
+    // REDUÇÃO AGRESSIVA: Subtraímos 100px para garantir que ele abra pequeno
+    scale = (window.innerWidth - 100) / 595;
     
-    // Limite para não ficar pequeno demais em telas minúsculas
-    if(scale < 0.5) scale = 0.5; 
+    // Garante um zoom mínimo para não sumir, mas mantendo a folga
+    if(scale > 0.9) scale = 0.85; 
     
     renderPages();
 };
