@@ -18,10 +18,16 @@
             height: 100svh; display: flex; flex-direction: column; overflow: hidden; 
         }
 
+        /* HEADER COM RECENTES E ABRIR */
         .header {
             height: 60px; background: var(--azul); color: white;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 15px; z-index: 1000; flex-shrink: 0;
+        }
+        .header-btns { display: flex; gap: 8px; }
+        .btn-top {
+            padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold;
+            background: white; color: var(--azul); font-size: 13px;
         }
 
         .viewer-container {
@@ -30,57 +36,68 @@
             padding: 20px 10px 120px 10px; -webkit-overflow-scrolling: touch;
         }
 
+        #pdf-render-area { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; }
         .canvas-wrapper { position: relative; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); line-height: 0; }
 
-        /* CAIXA DE ASSINATURA COM REDIMENSIONAMENTO */
+        /* BOTÕES DE ZOOM VOLTARAM */
+        .zoom-controls { position: fixed; right: 15px; top: 30%; display: flex; flex-direction: column; gap: 10px; z-index: 1500; }
+        .btn-zoom { width: 45px; height: 45px; background: var(--laranja); color: white; border: none; border-radius: 8px; font-size: 24px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+
+        /* ASSINATURA E REDIMENSIONAMENTO */
         .sig-container { 
             position: absolute; border: 2px dashed var(--azul); 
             background: rgba(255,255,255,0.7); z-index: 500; touch-action: none;
         }
-
-        /* PUXADOR DE REDIMENSIONAMENTO (Canto inferior direito) */
         .resizer {
-            position: absolute; width: 25px; height: 25px;
-            background: var(--azul); right: -5px; bottom: -5px;
+            position: absolute; width: 28px; height: 28px;
+            background: var(--azul); right: -10px; bottom: -10px;
             border-radius: 50%; border: 2px solid white; z-index: 600;
         }
-
         .sig-btns-float { 
             position: absolute; top: -45px; right: 0; display: flex; gap: 5px; 
             background: rgba(0,0,0,0.8); padding: 5px; border-radius: 5px; 
         }
-
         .mini-btn { width: 32px; height: 32px; border: none; border-radius: 4px; color: white; font-size: 14px; }
 
+        /* FOOTER */
         .footer {
             height: 70px; background: var(--azul); display: flex;
             align-items: center; justify-content: space-around;
             padding-bottom: env(safe-area-inset-bottom); z-index: 2000; flex-shrink: 0;
         }
-
         .btn-footer { height: 44px; padding: 0 15px; border-radius: 8px; border: none; font-weight: bold; background: white; color: var(--azul); }
+        
         #sig-modal { position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 5000; }
         #sig-pad { flex: 1; background: #fdfdfd; }
         .sig-toolbar { height: 75px; display: flex; gap: 10px; padding: 12px; background: #eee; }
-        #aviso-giro { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 6000; }
+        #aviso-giro { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 6000; text-align: center; }
     </style>
 </head>
 <body>
 
     <header class="header">
         <div style="font-weight:bold; font-size:18px;">DoksPDF</div>
-        <label for="file-in" style="background:white; color:var(--azul); padding:8px 15px; border-radius:6px; font-weight:bold;">Abrir PDF</label>
-        <input type="file" id="file-in" hidden accept="application/pdf">
+        <div class="header-btns">
+            <button class="btn-top" onclick="alert('Histórico em breve...')">Recentes</button>
+            <label for="file-in" class="btn-top" style="border: 2px solid gold;">Abrir PDF</label>
+            <input type="file" id="file-in" hidden accept="application/pdf">
+        </div>
     </header>
 
     <main class="viewer-container">
+        <div class="zoom-controls">
+            <button class="btn-zoom" onclick="changeZoom(0.2)">+</button>
+            <button class="btn-zoom" onclick="changeZoom(-0.2)">-</button>
+        </div>
         <div id="pdf-render-area"></div>
     </main>
 
     <footer class="footer">
-        <button class="btn-footer" onclick="changePage(-1)"> < </button>
-        <span id="page-info" style="color:white; font-weight:bold;">0 / 0</span>
-        <button class="btn-footer" onclick="changePage(1)"> > </button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn-footer" onclick="changePage(-1)"> < </button>
+            <span id="page-info" style="color:white; font-weight:bold; min-width: 45px; text-align: center;">0 / 0</span>
+            <button class="btn-footer" onclick="changePage(1)"> > </button>
+        </div>
         <button class="btn-footer" onclick="startSignProcess()">🖋️ Assinar</button>
         <button class="btn-footer" style="background:var(--verde); color:white;" onclick="savePDF()">Salvar</button>
     </footer>
@@ -113,6 +130,7 @@
         async function renderPages() {
             const area = document.getElementById('pdf-render-area');
             area.innerHTML = '';
+            if(!pdfDoc) return;
             for (let i = 1; i <= pdfDoc.numPages; i++) {
                 const page = await pdfDoc.getPage(i);
                 const viewport = page.getViewport({scale});
@@ -125,14 +143,24 @@
                 wrapper.appendChild(canvas);
                 area.appendChild(wrapper);
             }
-            document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc.numPages}`;
+            updatePageInfo();
+        }
+
+        function updatePageInfo() {
+            document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc ? pdfDoc.numPages : 0}`;
+        }
+
+        function changeZoom(v) { 
+            if(!pdfDoc) return; 
+            scale = Math.min(Math.max(scale + v, 0.4), 2.5); 
+            renderPages(); 
         }
 
         function changePage(d) {
             if(!pdfDoc) return;
             pageNum = Math.min(Math.max(pageNum + d, 1), pdfDoc.numPages);
             document.getElementById(`page-container-${pageNum}`).scrollIntoView({behavior: 'smooth'});
-            document.getElementById('page-info').innerText = `${pageNum} / ${pdfDoc.numPages}`;
+            updatePageInfo();
         }
 
         function startSignProcess() {
@@ -142,7 +170,7 @@
                     document.getElementById('aviso-giro').style.display = 'none';
                     document.getElementById('sig-modal').style.display = 'flex';
                     const c = document.getElementById('sig-pad');
-                    c.width = window.innerWidth; c.height = window.innerHeight - 75;
+                    c.width = window.innerWidth; c.height = window.innerHeight - 80;
                     signaturePad = new SignaturePad(c);
                     window.removeEventListener('resize', check);
                 } else { document.getElementById('aviso-giro').style.display = 'flex'; }
@@ -155,7 +183,7 @@
 
         function confirmSign() {
             if (signaturePad.isEmpty()) return alert("Assine primeiro.");
-            const data = signaturePad.toDataURL();
+            const dataUrl = signaturePad.toDataURL();
             const cont = document.getElementById(`page-container-${pageNum}`);
             const div = document.createElement('div');
             div.className = 'sig-container';
@@ -168,7 +196,7 @@
                     <button class="mini-btn" style="background:var(--azul)" onclick="rotateSig(this)">🔄</button>
                     <button class="mini-btn" style="background:red" onclick="this.parentElement.parentElement.remove()">🗑️</button>
                 </div>
-                <img src="${data}" style="width:100%; height:100%; pointer-events:none;" data-angle="0">
+                <img src="${dataUrl}" style="width:100%; height:100%; pointer-events:none;" data-angle="0">
                 <div class="resizer"></div>
             `;
             
@@ -181,27 +209,22 @@
             const resizer = el.querySelector('.resizer');
             let isResizing = false;
 
-            // Lógica de Arrastar e Redimensionar
             el.addEventListener('touchstart', (e) => {
-                if (e.target === resizer) {
-                    isResizing = true;
-                } else {
-                    isResizing = false;
-                }
-                
+                isResizing = (e.target === resizer);
                 const t = e.touches[0];
-                let startX = t.clientX, startY = t.clientY;
-                let startW = el.offsetWidth, startH = el.offsetHeight;
-                let startL = el.offsetLeft, startT = el.offsetTop;
+                let sx = t.clientX, sy = t.clientY;
+                let sw = el.offsetWidth, sh = el.offsetHeight;
+                let sl = el.offsetLeft, st = el.offsetTop;
 
                 const move = (ev) => {
+                    ev.preventDefault();
                     const mt = ev.touches[0];
                     if (isResizing) {
-                        el.style.width = (startW + (mt.clientX - startX)) + 'px';
-                        el.style.height = (startH + (mt.clientY - startY)) + 'px';
+                        el.style.width = (sw + (mt.clientX - sx)) + 'px';
+                        el.style.height = (sh + (mt.clientY - sy)) + 'px';
                     } else {
-                        el.style.left = (startL + (mt.clientX - startX)) + 'px';
-                        el.style.top = (startT + (mt.clientY - startY)) + 'px';
+                        el.style.left = (sl + (mt.clientX - sx)) + 'px';
+                        el.style.top = (st + (mt.clientY - sy)) + 'px';
                     }
                 };
 
@@ -221,6 +244,7 @@
         function cloneAll(b) {
             const orig = b.closest('.sig-container');
             const data = orig.querySelector('img').src;
+            const w = orig.style.width, h = orig.style.height;
             document.querySelectorAll('.canvas-wrapper').forEach(p => {
                 if (p.id === orig.parentElement.id) return;
                 const clone = orig.cloneNode(true);
@@ -230,6 +254,7 @@
         }
 
         async function savePDF() {
+            if(!pdfDoc) return;
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const pages = document.querySelectorAll('.canvas-wrapper');
@@ -245,7 +270,8 @@
                     const y = ((sr.top - r.top) / r.height) * 297;
                     const w = (sr.width / r.width) * 210;
                     const h = (sr.height / r.height) * 297;
-                    doc.addImage(img.src, 'PNG', x, y, w, h);
+                    const angle = parseInt(img.getAttribute('data-angle')) || 0;
+                    doc.addImage(img.src, 'PNG', x, y, w, h, null, 'FAST', angle);
                 });
             }
             doc.save("DoksPDF_Assinado.pdf");
