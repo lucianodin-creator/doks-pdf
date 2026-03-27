@@ -70,7 +70,40 @@
         #sig-modal { position: fixed; inset: 0; background: white; display: none; flex-direction: column; z-index: 5000; }
         #sig-pad { flex: 1; background: #fdfdfd; }
         .sig-toolbar { height: 75px; display: flex; gap: 10px; padding: 12px; background: #eee; }
-        #aviso-giro { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 6000; text-align: center; }
+/* AVISO DE GIRO TURBO */
+#aviso-giro { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0, 0, 0, 0.9); /* Fundo bem escuro para destacar */
+    display: none; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    color: #FFD700; /* Amarelo ouro para chamar atenção */
+    z-index: 9999; /* Ficar na frente de TUDO */
+    text-align: center;
+    padding: 20px;
+}
+
+#aviso-giro .icone-celular {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: girar 2s infinite ease-in-out;
+}
+
+#aviso-giro p {
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@keyframes girar {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+    100% { transform: rotate(0deg); }
+}
+
     </style>
 </head>
 <body>
