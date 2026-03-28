@@ -3,114 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>DoksPDF - Assinatura</title>
+    <title>DoksPDF - Assinatura Compacta</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
-            --bg-site: #f4f7fa;
             --azul-doks: #0a2540;
-            --azul-claro: #eef2f6;
-            --verde-salvar: #28a745;
+            --verde: #28a745;
             --branco: #ffffff;
-            --perigo: #dc3545;
             --amarelo: #ffcc29;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
-        body { background: var(--bg-site); height: 100vh; width: 100%; overflow: hidden; }
+        body { background: #f4f7fa; height: 100vh; overflow: hidden; }
 
-        /* Header */
-        .header-doks {
-            position: fixed; top: 0; width: 100%; height: 60px;
+        /* HEADER COMPACTO (Reduzido para 45px) */
+        .header-mini {
+            position: fixed; top: 0; width: 100%; height: 45px;
             background: var(--branco); display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 1000;
+            padding: 0 10px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); z-index: 1000;
         }
-        .search-fake { background: var(--azul-claro); flex: 1; margin-right: 15px; border-radius: 8px; padding: 8px; color: #777; font-size: 14px; }
-        .btn-pro { background: var(--amarelo); padding: 7px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; border: none; }
+        .header-title { font-size: 14px; font-weight: bold; color: var(--azul-doks); }
 
-        /* Visor PDF */
+        /* VISOR COM MAIS ESPAÇO */
         #visor {
-            position: absolute; top: 60px; bottom: 160px;
-            width: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 15px 0;
-            -webkit-overflow-scrolling: touch;
+            position: absolute; top: 45px; bottom: 115px; /* Ajustado para as novas barras */
+            width: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center;
         }
-        #pdf-render { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .page-c { position: relative; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: #fff; line-height: 0; }
+        .page-c { position: relative; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); background: #fff; }
 
-        /* BARRA DE AÇÕES FIXA - Agora com cor de destaque */
-        .botoes-fixos {
-            position: fixed; bottom: 75px; 
-            width: 100%; height: 85px; background: var(--azul-doks); /* Azul escuro para destacar */
-            display: flex; justify-content: space-around; align-items: center;
-            padding: 0 15px; z-index: 900; border-top: 2px solid var(--amarelo);
-        }
-        .btn-acao { width: 46%; padding: 16px; border-radius: 12px; font-weight: bold; border: none; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-transform: uppercase; }
-        .btn-assin { background: var(--branco); color: var(--azul-doks); }
-        .btn-salv { background: var(--verde-salvar); color: #fff; }
-
-        /* Menu Inferior */
-        .nav-bottom {
-            position: fixed; bottom: 0; width: 100%; height: 75px;
+        /* BARRA DE AÇÕES SLIM (Fixa acima da nav) */
+        .botoes-slim {
+            position: fixed; bottom: 55px; width: 100%; height: 60px;
             background: var(--azul-doks); display: flex; justify-content: space-around; align-items: center;
-            padding-bottom: env(safe-area-inset-bottom); z-index: 1000;
+            z-index: 900; padding: 0 10px;
         }
-        .nav-item { color: #8899a6; display: flex; flex-direction: column; align-items: center; font-size: 10px; text-decoration: none; }
-        .nav-item.active { color: #fff; }
-        .icon-nav { font-size: 20px; margin-bottom: 4px; }
+        .btn-s { padding: 10px; border-radius: 8px; font-weight: bold; border: none; font-size: 12px; width: 45%; text-transform: uppercase; }
 
-        /* Assinatura no PDF */
-        .sig-wrapper { position: absolute; z-index: 150; touch-action: none; border: 1px dashed var(--perigo); }
-        .sig-tools { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: #000; padding: 5px; border-radius: 6px; }
-        .tool-btn { background: #fff; border: none; font-size: 11px; padding: 6px; border-radius: 4px; font-weight: bold; }
-        .resizer { width: 24px; height: 24px; background: var(--perigo); position: absolute; right: -12px; bottom: -12px; border-radius: 50%; border: 3px solid #fff; }
+        /* NAV BOTTOM SLIM */
+        .nav-slim {
+            position: fixed; bottom: 0; width: 100%; height: 55px;
+            background: #f8f9fa; border-top: 1px solid #ddd; display: flex; justify-content: space-around; align-items: center; z-index: 1000;
+        }
+        .nav-item { color: #666; font-size: 9px; text-decoration: none; text-align: center; }
 
-        /* Modal de Assinatura */
+        /* MODAL DE ASSINATURA - FOCO NO RODAPÉ */
         #modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 2000; display: none; flex-direction: column; }
-        #quadro { flex: 1; border: 2px dashed #ccc; margin: 15px; touch-action: none; background: #fdfdfd; }
+        #quadro { flex: 1; border: 1px solid #eee; touch-action: none; background: #fafafa; }
         
-        .card-inicial { background: #fff; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        /* Barra do Modal colada no chão da tela */
+        .modal-footer {
+            height: 60px; background: #eee; display: flex; justify-content: space-between; align-items: center; padding: 0 10px;
+        }
+
+        /* Ferramentas da Assinatura */
+        .sig-wrapper { position: absolute; z-index: 150; touch-action: none; border: 1px dashed red; }
+        .resizer { width: 30px; height: 30px; background: red; position: absolute; right: -15px; bottom: -15px; border-radius: 50%; border: 3px solid #fff; z-index: 200; }
+        .sig-tools { position: absolute; top: -45px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; background: #000; padding: 4px; border-radius: 4px; }
+        .tool-btn { background: #fff; border: none; font-size: 10px; padding: 5px; border-radius: 3px; font-weight: bold; }
+        
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="header-doks">
-    <div class="search-fake">🔍 Buscar ferramenta...</div>
-    <button class="btn-pro">Seja PRO</button>
+<div class="header-mini">
+    <div class="header-title">DoksPDF</div>
+    <div style="font-size: 10px; color: #777;">Assinatura Digital</div>
 </div>
 
 <div id="visor">
-    <div class="card-inicial" id="area-sel">
-        <h3 style="color:var(--azul-doks); margin-bottom: 10px;">Assinar PDF</h3>
-        <p style="color:#666; font-size: 14px; margin-bottom: 25px;">Escolha o arquivo para assinar.</p>
+    <div id="area-sel" style="padding: 40px; text-align: center;">
         <label for="arquivo" style="background:var(--azul-doks); color:#fff; padding: 15px; border-radius: 10px; display: block; font-weight: bold; cursor: pointer;">
-            ESCOLHER ARQUIVO
+            SELECIONAR PDF
         </label>
         <input type="file" id="arquivo" class="hidden" accept="application/pdf">
     </div>
     <div id="pdf-render"></div>
 </div>
 
-<div class="botoes-fixos hidden" id="controles">
-    <button class="btn-acao btn-assin" onclick="abrir()">ASSINAR</button>
-    <button class="btn-acao btn-salv" onclick="salvar()">SALVAR PDF</button>
+<div class="botoes-slim hidden" id="controles">
+    <button class="btn-s" style="background:#fff; color:var(--azul-doks)" onclick="abrir()">Assinar</button>
+    <button class="btn-s" style="background:var(--verde); color:#fff" onclick="salvar()">Salvar PDF</button>
 </div>
 
-<nav class="nav-bottom">
-    <a href="/" class="nav-item"><span class="icon-nav">🏠</span>Início</a>
-    <a href="#" class="nav-item active"><span class="icon-nav">📄</span>Docs</a>
-    <a href="#" class="nav-item"><span class="icon-nav">⭐</span>Pro</a>
-    <a href="#" class="nav-item"><span class="icon-nav">👤</span>Perfil</a>
+<nav class="nav-slim">
+    <a href="/" class="nav-item">🏠<br>Início</a>
+    <a href="#" class="nav-item">📄<br>Docs</a>
+    <a href="#" class="nav-item">⭐<br>Pro</a>
 </nav>
 
 <div id="modal">
-    <div class="header-doks" style="justify-content:center; font-weight:bold; color:var(--azul-doks)">ASSINE NO QUADRO ABAIXO</div>
     <canvas id="quadro"></canvas>
-    <div class="botoes-fixos">
-        <button class="btn-acao" style="background:#666; color:#fff; width: 28%;" onclick="fechar()">VOLTAR</button>
-        <button class="btn-acao" style="background:var(--amarelo); color:#000; width: 28%;" onclick="limpar()">LIMPAR</button>
-        <button class="btn-acao btn-salv" style="width: 32%;" onclick="colocar()">OK</button>
+    <div class="modal-footer">
+        <button onclick="fechar()" style="width:25%; padding:12px; border:none; border-radius:8px; background:#bbb;">VOLTAR</button>
+        <button onclick="limpar()" style="width:35%; padding:12px; border:none; border-radius:8px; background:var(--amarelo);">LIMPAR</button>
+        <button onclick="colocar()" style="width:35%; padding:12px; border:none; border-radius:8px; background:var(--verde); color:#fff;">OK</button>
     </div>
 </div>
 
@@ -146,29 +134,23 @@
             const vpOrig = pg.getViewport({scale: 1});
             const escala = (largura * 0.95) / vpOrig.width;
             const vp = pg.getViewport({scale: escala});
-            const container = document.createElement('div');
-            container.className = 'page-c'; container.id = 'p'+n;
-            const canv = document.createElement('canvas');
-            canv.height = vp.height; canv.width = vp.width;
+            const container = document.createElement('div'); container.className = 'page-c'; container.id = 'p'+n;
+            const canv = document.createElement('canvas'); canv.height = vp.height; canv.width = vp.width;
             container.appendChild(canv); area.appendChild(container);
             await pg.render({canvasContext: canv.getContext('2d'), viewport: vp}).promise;
             salvas.filter(s => s.p === 'p'+n).forEach(s => {
                 const ns = criarSig(s.src, n);
-                ns.style.top = s.top; ns.style.left = s.left;
-                ns.style.width = s.w; ns.style.height = s.h;
+                ns.style.top = s.top; ns.style.left = s.left; ns.style.width = s.w; ns.style.height = s.h;
                 ns.querySelector('img').style.transform = s.rot;
             });
         }
     }
 
     function abrir() {
-        if(window.innerHeight > window.innerWidth) {
-            alert("⚠️ Dica DoksPDF: Deite o celular para ter mais espaço para assinar!");
-        }
         document.getElementById('modal').style.display='flex';
         setTimeout(() => { q.width = q.offsetWidth; q.height = q.offsetHeight; ctx.lineWidth = 3; ctx.lineCap = 'round'; }, 150);
     }
-    function fechar() { document.getElementById('modal').style.display='none'; limpar(); }
+    function fechar() { document.getElementById('modal').style.display='none'; }
     function limpar() { ctx.clearRect(0,0,q.width,q.height); }
 
     let desenhando = false;
@@ -193,19 +175,30 @@
     function criarSig(src, pNum) {
         const w = document.createElement('div');
         w.className = 'sig-wrapper'; w.style.width = '140px'; w.style.height = 'auto'; w.style.left = '30px'; w.style.top = '30px';
-        w.innerHTML = `<div class="sig-tools"><button class="tool-btn" onclick="clonar(this)">CLONAR</button><button class="tool-btn" onclick="girar(this)">🔄</button><button class="tool-btn" style="color:red" onclick="this.parentElement.parentElement.remove()">🗑️</button></div><img src="${src}" class="sig-img" data-rot="0"><div class="resizer"></div>`;
+        w.innerHTML = `<div class="sig-tools"><button class="tool-btn" onclick="clonar(this)">CLONAR</button><button class="tool-btn" onclick="girar(this)">🔄</button><button class="tool-btn" style="color:red" onclick="this.parentElement.parentElement.remove()">🗑️</button></div><img src="${src}" style="width:100%"><div class="resizer"></div>`;
         configurarTouch(w, pNum);
         document.getElementById('p'+pNum).appendChild(w);
         return w;
     }
 
     function configurarTouch(w, pNum) {
-        let resizing = false, sX, sY, sW, sH;
-        w.addEventListener('touchstart', (e) => { if(e.target.className === 'resizer') { resizing=true; sX=e.touches[0].clientX; sY=e.touches[0].clientY; sW=w.offsetWidth; sH=w.offsetHeight; e.stopPropagation(); } });
+        let resizing = false, sX, sY, sW;
+        w.addEventListener('touchstart', (e) => {
+            if(e.target.className === 'resizer') { 
+                resizing = true; sX = e.touches[0].clientX; sW = w.offsetWidth; 
+                e.stopPropagation(); e.preventDefault();
+            }
+        }, {passive: false});
+
         w.addEventListener('touchmove', (e) => {
             const r = document.getElementById('p'+pNum).getBoundingClientRect(), t = e.touches[0];
-            if(resizing) { w.style.width = (sW + (t.clientX - sX)) + 'px'; w.style.height = (sH + (t.clientY - sY)) + 'px'; }
-            else { w.style.left = (t.clientX - r.left - (w.offsetWidth/2)) + 'px'; w.style.top = (t.clientY - r.top - (w.offsetHeight/2)) + 'px'; }
+            if(resizing) {
+                let novaLargura = sW + (t.clientX - sX);
+                if(novaLargura > 50) w.style.width = novaLargura + 'px';
+            } else {
+                w.style.left = (t.clientX - r.left - (w.offsetWidth/2)) + 'px';
+                w.style.top = (t.clientY - r.top - (w.offsetHeight/2)) + 'px';
+            }
             e.preventDefault();
         }, {passive: false});
         w.addEventListener('touchend', () => resizing = false);
@@ -222,8 +215,7 @@
         const o = btn.parentElement.parentElement, src = o.querySelector('img').src, rot = o.querySelector('img').style.transform;
         for(let i=2; i<=doc.numPages; i++) {
             const n = criarSig(src, i);
-            n.style.width = o.style.width; n.style.height = o.style.height;
-            n.style.top = o.style.top; n.style.left = o.style.left;
+            n.style.width = o.style.width; n.style.top = o.style.top; n.style.left = o.style.left;
             n.querySelector('img').style.transform = rot;
         }
     }
@@ -242,7 +234,7 @@
                 pdf.addImage(img.src, 'PNG', ((sR.left-r.left)*210)/r.width, ((sR.top-r.top)*297)/r.height, (sR.width*210)/r.width, (sR.height*297)/r.height, null, null, rot);
             });
         }
-        pdf.save("documento_assinado.pdf");
+        pdf.save("DoksPDF_Assinado.pdf");
     }
 </script>
 </body>
