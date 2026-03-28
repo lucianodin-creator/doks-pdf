@@ -2,136 +2,109 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DoksPDF - Assinar</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DoksPDF - Mobile Fix</title>
     <style>
         :root { --azul: #0a2540; --verde: #28a745; --amarelo: #ffcc29; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
-        body { background: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* HEADER */
-        .header { height: 45px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; padding: 0 15px; font-weight: bold; color: var(--azul); }
-
-        /* ÁREA DE RENDERIZAÇÃO DO PDF */
-        #visor { flex: 1; overflow-y: auto; background: #f4f7fa; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        canvas { box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; max-width: 100%; }
-
-        /* BOTÃO DE UPLOAD PERSONALIZADO */
-        .upload-container { padding: 40px 20px; text-align: center; }
-        .btn-custom { background: var(--azul); color: #fff; padding: 16px 32px; border-radius: 10px; font-weight: bold; cursor: pointer; display: inline-block; }
-        #arquivo-original { display: none; } /* ESCONDE O BOTÃO FEIO DO NAVEGADOR */
-
-        /* BARRA DE BOTÕES PRINCIPAL */
-        .footer-main { height: 110px; background: var(--azul); display: flex; flex-direction: column; padding: 10px; gap: 10px; z-index: 100; }
-        .row-btn { display: flex; gap: 10px; justify-content: center; }
-        .btn-acao { flex: 1; height: 45px; border-radius: 8px; border: none; font-weight: bold; font-size: 14px; text-transform: uppercase; }
-
-        /* TELA DE ASSINATURA (MODAL) */
-        #modal-assinatura { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #fff; z-index: 9999; display: none; flex-direction: column; 
+        
+        /* O segredo: usar dvh para altura dinâmica */
+        body { 
+            margin: 0; padding: 0; 
+            height: 100dvh; width: 100vw; 
+            display: flex; flex-direction: column; 
+            overflow: hidden; background: #f4f7fa;
+            font-family: sans-serif;
         }
-        #canvas-assinatura { flex: 1; background: #fafafa; touch-action: none; border-bottom: 2px solid var(--azul); }
-        .modal-footer { height: 65px; background: var(--azul); display: flex; align-items: center; justify-content: space-around; padding: 0 10px; }
-        .btn-modal { padding: 12px; border-radius: 6px; border: none; font-weight: bold; font-size: 12px; min-width: 28%; }
+
+        /* HEADER FIXO */
+        .header { height: 45px; background: #fff; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid #ddd; font-weight: bold; color: var(--azul); flex-shrink: 0; }
+
+        /* ÁREA DO PDF (OCUPA O QUE SOBRA) */
+        #visor { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 10px 0; }
+        
+        /* BOTÃO DE UPLOAD (ÚNICO E LIMPO) */
+        .btn-upload { background: var(--azul); color: #fff; padding: 15px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; margin-top: 40px; }
+        #input-file { display: none; }
+
+        /* BARRA DE AÇÕES PDF (FIXA NO RODAPÉ) */
+        .barra-acoes { height: 70px; background: var(--azul); display: none; align-items: center; justify-content: space-around; padding: 0 10px; flex-shrink: 0; }
+        .btn-acao { flex: 1; margin: 0 5px; height: 45px; border-radius: 8px; border: none; font-weight: bold; text-transform: uppercase; }
+
+        /* MODAL DE ASSINATURA (ESTILO OVERLAY TOTAL) */
+        #modal-assin { 
+            position: fixed; top: 0; left: 0; 
+            width: 100vw; height: 100dvh; 
+            background: #fff; z-index: 99999; 
+            display: none; flex-direction: column; 
+        }
+
+        #canvas { flex-grow: 1; background: #fafafa; touch-action: none; width: 100%; }
+
+        /* RODAPÉ DO MODAL (ESTRATÉGICO) */
+        .footer-modal { height: 65px; background: var(--azul); display: flex; align-items: center; justify-content: space-around; padding: 0 10px; flex-shrink: 0; }
+        .btn-m { flex: 1; margin: 0 4px; height: 40px; border-radius: 6px; border: none; font-weight: bold; font-size: 12px; }
+
+        .show { display: flex !important; }
     </style>
 </head>
 <body>
 
-<div class="header" id="topo">DoksPDF</div>
+<div class="header">DoksPDF</div>
 
 <div id="visor">
-    <div class="upload-container" id="container-inicial">
-        <label for="arquivo-original" class="btn-custom">SELECIONAR PDF</label>
-        <input type="file" id="arquivo-original" accept="application/pdf">
+    <div id="area-upload">
+        <label for="input-file" class="btn-upload">SELECIONAR PDF</label>
+        <input type="file" id="input-file" accept="application/pdf">
     </div>
     <div id="pdf-render"></div>
 </div>
 
-<div class="footer-main" id="rodape-pdf" style="display: none;">
-    <div class="row-btn">
-        <button class="btn-acao" style="background:#fff; color:var(--azul);" onclick="iniciarAssinatura()">Assinar</button>
-        <button class="btn-acao" style="background:var(--verde); color:#fff;">Salvar PDF</button>
-    </div>
-    <div style="text-align: center; color: rgba(255,255,255,0.6); font-size: 10px; padding-top: 5px;">
-        MeuPDF - Ferramentas Digitais
-    </div>
+<div class="barra-acoes" id="barra-pdf">
+    <button class="btn-acao" style="background:#fff; color:var(--azul);" onclick="abrirAssinatura()">Assinar</button>
+    <button class="btn-acao" style="background:var(--verde); color:#fff;">Salvar PDF</button>
 </div>
 
-<div id="modal-assinatura">
-    <div style="padding: 10px; text-align: center; font-weight: bold; color: var(--azul);">ASSINE NO QUADRO ABAIXO</div>
-    <canvas id="canvas-assinatura"></canvas>
-    <div class="modal-footer">
-        <button class="btn-modal" style="background:#777; color:#fff;" onclick="fecharAssinatura()">VOLTAR</button>
-        <button class="btn-modal" style="background:var(--amarelo); color:#000;" onclick="limparCanvas()">LIMPAR</button>
-        <button class="btn-modal" style="background:var(--verde); color:#fff;" onclick="finalizar()">OK</button>
+<div id="modal-assin">
+    <div style="padding: 10px; text-align: center; font-size: 12px; font-weight: bold; color: var(--azul);">ASSINE ABAIXO</div>
+    <canvas id="canvas"></canvas>
+    <div class="footer-modal">
+        <button class="btn-m" style="background:#666; color:#fff;" onclick="fechar()">VOLTAR</button>
+        <button class="btn-m" style="background:var(--amarelo);" onclick="limpar()">LIMPAR</button>
+        <button class="btn-m" style="background:var(--verde); color:#fff;" onclick="confirmar()">OK</button>
     </div>
 </div>
 
 <script>
-    const pdfJS = window['pdfjs-dist/build/pdf'];
-    pdfJS.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    const input = document.getElementById('input-file');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-    const inputFile = document.getElementById('arquivo-original');
-    const pdfRender = document.getElementById('pdf-render');
-    const ctxAssinatura = document.getElementById('canvas-assinatura').getContext('2d');
-    let pdfDoc = null;
-
-    inputFile.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function() {
-            const typedarray = new Uint8Array(this.result);
-            pdfJS.getDocument(typedarray).promise.then(pdf => {
-                pdfDoc = pdf;
-                document.getElementById('container-inicial').style.display = 'none';
-                document.getElementById('rodape-pdf').style.display = 'flex';
-                renderizarPDF();
-            });
-        };
-        reader.readAsArrayBuffer(file);
+    input.onchange = () => {
+        document.getElementById('area-upload').style.display = 'none';
+        document.getElementById('barra-pdf').classList.add('show');
+        // Renderização do PDF viria aqui
     };
 
-    async function renderizarPDF() {
-        pdfRender.innerHTML = '';
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const viewport = page.getViewport({ scale: 1.5 });
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            pdfRender.appendChild(canvas);
-            await page.render({ canvasContext: context, viewport: viewport }).promise;
-        }
+    function abrirAssinatura() {
+        document.getElementById('modal-assin').classList.add('show');
+        // Ajuste de tamanho forçado após o modal abrir
+        setTimeout(() => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+        }, 100);
     }
 
-    function iniciarAssinatura() {
-        alert("📱 Vire o celular deitado para assinar melhor!");
-        const modal = document.getElementById('modal-assinatura');
-        const c = document.getElementById('canvas-assinatura');
-        modal.style.display = 'flex';
-        c.width = window.innerWidth;
-        c.height = window.innerHeight - 100;
-        ctxAssinatura.lineWidth = 3;
-        ctxAssinatura.lineCap = 'round';
-        ctxAssinatura.strokeStyle = '#000';
-    }
+    function fechar() { document.getElementById('modal-assin').classList.remove('show'); }
+    function limpar() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function confirmar() { alert("Capturado!"); fechar(); }
 
-    function fecharAssinatura() { document.getElementById('modal-assinatura').style.display = 'none'; }
-    function limparCanvas() { ctxAssinatura.clearRect(0, 0, 5000, 5000); }
-    function finalizar() { alert("Assinatura gravada!"); fecharAssinatura(); }
-
-    // Touch Drawing
-    let drawing = false;
-    const canv = document.getElementById('canvas-assinatura');
-    canv.ontouchstart = (e) => { drawing = true; ctxAssinatura.beginPath(); const r = canv.getBoundingClientRect(); ctxAssinatura.moveTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top); };
-    canv.ontouchmove = (e) => { if (!drawing) return; const r = canv.getBoundingClientRect(); ctxAssinatura.lineTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top); ctxAssinatura.stroke(); e.preventDefault(); };
-    canv.ontouchend = () => drawing = false;
+    // Touch funcional
+    let d = false;
+    canvas.ontouchstart = (e) => { d=true; ctx.beginPath(); const r=canvas.getBoundingClientRect(); ctx.moveTo(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top); };
+    canvas.ontouchmove = (e) => { if(!d) return; const r=canvas.getBoundingClientRect(); ctx.lineTo(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top); ctx.stroke(); e.preventDefault(); };
+    canvas.ontouchend = () => d=false;
 </script>
-
 </body>
 </html>
