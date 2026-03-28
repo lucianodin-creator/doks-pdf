@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -18,50 +17,50 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background: var(--cor-fundo);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        
+        html, body { 
+            height: 100%; 
+            width: 100%; 
+            overflow: hidden; 
+            background: var(--cor-fundo); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
         }
-
+        
         /* Layout de Barras Estilo Doks */
-        .barra-topo {
-            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-            background: var(--cor-primaria); color: var(--cor-secundaria);
-            display: flex; align-items: center; justify-content: center;
+        .barra-topo { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px; 
+            background: var(--cor-primaria); color: var(--cor-secundaria); 
+            display: flex; align-items: center; justify-content: center; 
             font-weight: bold; letter-spacing: 2px; z-index: 100;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
-
-        .barra-base {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 85px;
-            background: var(--cor-primaria); display: flex; justify-content: space-around;
-            align-items: center; z-index: 100; border-top: 1px solid #444;
+        
+        .barra-base { 
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 85px; 
+            background: var(--cor-primaria); display: flex; justify-content: space-around; 
+            align-items: center; z-index: 100; border-top: 1px solid #444; 
             padding-bottom: env(safe-area-inset-bottom);
         }
-
+        
         /* Visor de PDF */
-        #visor {
-            position: absolute; top: 60px; bottom: 85px; width: 100%;
-            overflow-y: auto; display: flex; flex-direction: column;
-            align-items: center; padding: 15px 0; -webkit-overflow-scrolling: touch;
+        #visor { 
+            position: absolute; top: 60px; bottom: 85px; width: 100%; 
+            overflow-y: auto; display: flex; flex-direction: column; 
+            align-items: center; padding: 15px 0; -webkit-overflow-scrolling: touch; 
         }
-
+        
         #pdf-render { display: flex; flex-direction: column; align-items: center; width: 100%; }
-
-        .page-c {
-            position: relative; margin-bottom: 25px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.6);
-            background: #fff; line-height: 0;
+        
+        .page-c { 
+            position: relative; margin-bottom: 25px; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.6); 
+            background: #fff; line-height: 0; 
         }
 
         /* Botões Estilizados */
-        .btn {
-            background: var(--cor-secundaria); color: var(--cor-primaria);
-            padding: 18px; font-weight: bold; border: none;
+        .btn { 
+            background: var(--cor-secundaria); color: var(--cor-primaria); 
+            padding: 18px; font-weight: bold; border: none; 
             width: 44%; border-radius: 8px; font-size: 14px;
             transition: transform 0.1s;
         }
@@ -71,33 +70,33 @@
         /* Elementos da Assinatura no PDF */
         .sig-wrapper { position: absolute; z-index: 150; touch-action: none; border: 1px dashed var(--cor-perigo); }
         .sig-img { width: 100%; height: 100%; pointer-events: none; }
-
-        .sig-tools {
-            position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; background: rgba(0,0,0,0.85);
-            padding: 8px; border-radius: 8px;
+        
+        .sig-tools { 
+            position: absolute; top: -50px; left: 50%; transform: translateX(-50%); 
+            display: flex; gap: 8px; background: rgba(0,0,0,0.85); 
+            padding: 8px; border-radius: 8px; 
+        }
+        
+        .tool-btn { 
+            background: #fff; border: none; font-size: 12px; 
+            padding: 8px 10px; border-radius: 5px; font-weight: bold; 
         }
 
-        .tool-btn {
-            background: #fff; border: none; font-size: 12px;
-            padding: 8px 10px; border-radius: 5px; font-weight: bold;
-        }
-
-        .resizer {
-            width: 25px; height: 25px; background: var(--cor-perigo);
-            position: absolute; right: -12px; bottom: -12px;
-            border-radius: 50%; border: 3px solid #fff;
+        .resizer { 
+            width: 25px; height: 25px; background: var(--cor-perigo); 
+            position: absolute; right: -12px; bottom: -12px; 
+            border-radius: 50%; border: 3px solid #fff; 
         }
 
         /* Janela de Assinatura (Modal) */
-        #modal {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #fff; z-index: 2000; display: none; flex-direction: column;
+        #modal { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: #fff; z-index: 2000; display: none; flex-direction: column; 
         }
-
-        #quadro {
-            flex: 1; border: 2px dashed var(--cor-primaria);
-            margin: 15px; touch-action: none; background: #fdfdfd;
+        
+        #quadro { 
+            flex: 1; border: 2px dashed var(--cor-primaria); 
+            margin: 15px; touch-action: none; background: #fdfdfd; 
         }
 
         .hidden { display: none !important; }
@@ -135,17 +134,17 @@
 <script>
     const pdfJS = window['pdfjs-dist/build/pdf'];
     pdfJS.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
+    
     let doc = null, q = document.getElementById('quadro'), ctx = q.getContext('2d');
 
     // Carregamento de Arquivo
     document.getElementById('arquivo').onchange = function(e) {
         const reader = new FileReader();
         reader.onload = function() {
-            pdfJS.getDocument(new Uint8Array(this.result)).promise.then(p => {
-                doc = p;
-                document.getElementById('area-sel').classList.add('hidden');
-                render();
+            pdfJS.getDocument(new Uint8Array(this.result)).promise.then(p => { 
+                doc = p; 
+                document.getElementById('area-sel').classList.add('hidden'); 
+                render(); 
             });
         };
         reader.readAsArrayBuffer(e.target.files[0]);
@@ -168,7 +167,7 @@
             const vpOrig = pg.getViewport({scale: 1});
             const escala = (largura * 0.95) / vpOrig.width;
             const vp = pg.getViewport({scale: escala});
-
+            
             const container = document.createElement('div');
             container.className = 'page-c'; container.id = 'p'+n;
             const canv = document.createElement('canvas');
@@ -189,13 +188,13 @@
     window.addEventListener('resize', () => { if(doc && modal.style.display !== 'flex') render(); });
 
     // Funções do Modal
-    function abrir() {
-        if(!doc) return alert("Por favor, selecione um PDF primeiro.");
+    function abrir() { 
+        if(!doc) return alert("Por favor, selecione um PDF primeiro."); 
         if(window.innerHeight > window.innerWidth) alert("Dica: Vire o celular para assinar com mais espaço!");
-        document.getElementById('modal').style.display='flex';
-        setTimeout(() => { q.width = q.offsetWidth; q.height = q.offsetHeight; ctx.lineWidth = 3; ctx.lineCap = 'round'; }, 150);
+        document.getElementById('modal').style.display='flex'; 
+        setTimeout(() => { q.width = q.offsetWidth; q.height = q.offsetHeight; ctx.lineWidth = 3; ctx.lineCap = 'round'; }, 150); 
     }
-
+    
     function fechar() { document.getElementById('modal').style.display='none'; limpar(); }
     function limpar() { ctx.clearRect(0,0,q.width,q.height); }
 
@@ -240,7 +239,7 @@
             <img src="${src}" class="sig-img" data-rot="0">
             <div class="resizer"></div>
         `;
-
+        
         configurarTouch(w, pNum);
         document.getElementById('p'+pNum).appendChild(w);
         return w;
