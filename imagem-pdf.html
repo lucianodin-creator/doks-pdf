@@ -20,86 +20,109 @@
             padding: 0; 
         }
 
-        /* --- CABEÇALHO PADRÃO DOKSPDF --- */
+        /* --- CABEÇALHO IGUAL AO JUNTAR PDF --- */
         header {
             background-color: var(--azul);
-            padding: 10px 20px;
+            padding: 12px 20px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             border-bottom: 3px solid var(--amarelo);
         }
 
         .brand {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             cursor: pointer;
+        }
+
+        /* Fundo azul na casinha conforme solicitado */
+        .home-icon {
+            background-color: var(--azul);
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .brand-text {
             color: #ffffff;
             font-weight: 700;
-            font-size: 20px;
+            font-size: 22px;
             display: flex;
             align-items: center;
         }
 
         .pdf-txt {
             color: var(--amarelo);
-            margin-left: 5px;
+            margin-left: 6px;
         }
 
-        /* --- CARD DE CONTEÚDO --- */
+        /* --- CARD COM PROPORÇÕES DA HOME --- */
         .card { 
             background: white; 
-            padding: 30px; 
-            border-radius: 20px; 
-            border-bottom: 5px solid var(--amarelo); 
-            max-width: 450px; 
-            margin: 40px auto; 
+            padding: 40px 30px; 
+            border-radius: 24px; 
+            border-bottom: 6px solid var(--amarelo); 
+            max-width: 400px; 
+            margin: 50px auto; 
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
         }
 
-        h1 { font-size: 24px; margin-bottom: 10px; }
+        .card img {
+            width: 70px; /* Proporção similar aos ícones da Home */
+            margin-bottom: 20px;
+        }
+
+        h1 { 
+            font-size: 22px; 
+            margin-bottom: 10px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
         
         .destaque-pdf {
             color: white;
             background: var(--azul);
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
         }
 
         .btn { 
             background: var(--amarelo); 
             color: var(--azul); 
             border: none; 
-            padding: 15px; 
+            padding: 18px; 
             width: 100%; 
-            border-radius: 10px; 
+            border-radius: 12px; 
             font-weight: 900; 
             cursor: pointer; 
             text-transform: uppercase;
-            margin-top: 20px;
+            margin-top: 25px;
+            font-size: 16px;
+            transition: transform 0.1s;
         }
 
-        .btn:hover { opacity: 0.9; }
+        .btn:active { transform: scale(0.98); }
 
         input[type="file"] {
-            margin: 25px 0;
+            margin: 20px 0;
             font-size: 14px;
+            width: 100%;
         }
 
         .link-voltar {
             text-decoration: none; 
-            color: #666; 
-            font-size: 12px; 
+            color: #777; 
+            font-size: 13px; 
             font-weight: 900; 
             text-transform: uppercase; 
             display: block; 
             text-align: center;
-            margin-top: 25px;
+            margin-top: 30px;
+            letter-spacing: 1px;
         }
     </style>
 </head>
@@ -107,15 +130,15 @@
 
     <header>
         <div class="brand" onclick="irParaHome()">
-            <span style="font-size: 22px; line-height: 1;">🏠</span>
+            <div class="home-icon">🏠</div>
             <div class="brand-text">Doks <span class="pdf-txt">PDF</span></div>
         </div>
     </header>
 
     <div class="card">
-        <img src="https://cdn-icons-png.flaticon.com/512/3342/3342137.png" alt="Ícone" style="width: 80px; margin-bottom: 15px; opacity: 0.8;">
+        <img src="https://cdn-icons-png.flaticon.com/512/3342/3342137.png" alt="Conversor de Imagem">
         <h1>IMAGEM P/ <span class="destaque-pdf">PDF</span></h1>
-        <p style="font-size: 14px; color: #555;">Converta suas fotos em um documento PDF profissional.</p>
+        <p style="font-size: 14px; color: #666; line-height: 1.5;">Converta suas fotos em um documento PDF profissional rapidamente.</p>
         
         <input type="file" id="img-input" multiple accept="image/*">
         
@@ -146,7 +169,7 @@
 
                 if (i > 0) doc.addPage();
                 
-                // Ajuste simples para preencher a página mantendo proporção (opcional)
+                // Ajuste para preencher a página mantendo margens de 10mm
                 doc.addImage(imgData, 'JPEG', 10, 10, 190, 0);
             }
             
@@ -155,4 +178,3 @@
     </script>
 </body>
 </html>
-
