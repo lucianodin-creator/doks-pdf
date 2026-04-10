@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DoksPDF - Gestão Documental</title>
+
+    <style>
+        :root { --azul: #0a2540; --amarelo: #ffcc29; --fundo: #dee2e6; --branco: #ffffff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--fundo); color: var(--azul); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* HEADER PROFISSIONAL */
+        header { 
+            height: 70px; background: var(--azul); display: flex; align-items: center; 
+            justify-content: space-between; padding: 0 12px; border-bottom: 2px solid var(--amarelo); 
+            z-index: 1001; position: relative; 
+        }
+        
+        .logo-box { flex-shrink: 0; }
+        .header-logo { font-size: 18px; font-weight: 900; color: #fff; text-decoration: none; letter-spacing: -1px; }
+        .header-logo span { color: var(--amarelo); }
+
+        /* BUSCA CENTRALIZADA */
+        .search-bar {
+            flex: 1; margin: 0 10px; background: rgba(255,255,255,0.1);
+            border-radius: 8px; display: flex; align-items: center; padding: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .search-bar i { font-style: normal; font-size: 14px; margin-right: 5px; }
+        .search-bar input { 
+            background: transparent; border: none; color: #fff; width: 100%; 
+            outline: none; font-size: 13px; 
+        }
+        .search-bar input::placeholder { color: rgba(255,255,255,0.4); }
+
+        /* BOTÕES DA DIREITA */
+        .header-btns { display: flex; align-items: center; gap: 6px; }
+        .btn-pro-top { background: var(--amarelo); color: var(--azul); border: none; padding: 7px 10px; border-radius: 6px; font-weight: 900; font-size: 10px; cursor: pointer; }
+        .btn-login-top { background: transparent; border: 1px solid var(--amarelo); color: var(--amarelo); padding: 6px 10px; border-radius: 6px; font-weight: 900; font-size: 10px; cursor: pointer; }
+
+        /* CONTEÚDO */
+        .main-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 90px; }
+        .section-title { font-size: 13px; font-weight: 900; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--azul); display: flex; align-items: center; gap: 5px; }
+        
+        .tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .tool-card { background: var(--branco); border-radius: 14px; padding: 20px 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.06); cursor: pointer; border: 2px solid transparent; position: relative; transition: 0.2s; }
+        .tool-card:active { transform: scale(0.96); border-color: var(--amarelo); }
+        .tool-card i { font-size: 34px; display: block; margin-bottom: 10px; font-style: normal; }
+        .tool-card h3 { font-size: 12px; font-weight: 900; color: var(--azul); }
+        .tool-card h3 span { color: var(--amarelo); background: var(--azul); padding: 0 4px; border-radius: 4px; }
+        .tool-card p { font-size: 10px; color: #777; margin-top: 5px; }
+        .badge-pro { position: absolute; top: 8px; right: 8px; background: var(--amarelo); font-size: 8px; padding: 2px 5px; border-radius: 4px; font-weight: 900; color: var(--azul); }
+
+        /* NAV INFERIOR */
+        .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--azul); display: flex; justify-content: space-around; align-items: center; border-top: 3px solid var(--amarelo); }
+        .mobile-item { color: rgba(255,255,255,0.4); text-align: center; font-size: 9px; text-decoration: none; font-weight: 900; }
+        .mobile-item i { font-size: 22px; display: block; margin-bottom: 4px; font-style: normal; }
+        .mobile-item.active { color: var(--amarelo); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-box">
+            <a href="index.html" class="header-logo">Doks<span>PDF</span></a>
+        </div>
+        
+        <div class="search-bar">
+            <i>🔍</i>
+            <input type="text" id="searchInput" placeholder="Buscar..." onkeyup="searchTool()">
+        </div>
+
+        <div class="header-btns">
+            <button class="btn-pro-top" onclick="alert('Área Pro em breve!')">PRO</button>
+            <button class="btn-login-top">LOGIN</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <h2 class="section-title"><span>✨</span> MAIS USADAS</h2>
+        <div class="tools-grid" id="grid">
+            <div class="tool-card" onclick="window.location.href='assinar.html'">
+                <i>🖋️</i><h3>ASSINAR <span>PDF</span></h3><p>Assine com validade</p>
+            </div>
+            <div class="tool-card" onclick="window.location.href='ocr.html'">
+                <span class="badge-pro">PRO</span><i>🔍</i><h3>OCR SCANNER</h3><p>Foto para texto</p>
+            </div>
+            <div class="tool-card" onclick="window.location.href='juntar.html'">
+                <i>📂</i><h3>JUNTAR <span>PDF</span></h3><p>Unir arquivos</p>
+            </div>
+            <div class="tool-card" onclick="window.location.href='imagem-pdf.html'">
+                <i>🖼️</i><h3>IMAGEM P/ <span>PDF</span></h3><p>Converta fotos</p>
+            </div>
+        </div>
+    </main>
+
+    <nav class="mobile-nav">
+        <a href="#" class="mobile-item active"><i>🏠</i>INÍCIO</a>
+        <a href="#" class="mobile-item"><i>📄</i>DOCS</a>
+        <a href="#" class="mobile-item"><i>⭐</i>PRO</a>
+        <a href="#" class="mobile-item"><i>👤</i>PERFIL</a>
+    </nav>
+
+    <script>
+        function searchTool() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            let cards = document.getElementsByClassName('tool-card');
+            for (let i = 0; i < cards.length; i++) {
+                let name = cards[i].innerText.toLowerCase();
+                cards[i].style.display = name.includes(input) ? "" : "none";
+            }
+        }
+    </script>
+</body>
+</html>

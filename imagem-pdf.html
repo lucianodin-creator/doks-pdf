@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Imagem para PDF - DoksPDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { 
+            --azul: #0a2540; 
+            --amarelo: #ffcc29; 
+            --fundo: #dee2e6; 
+        }
+
+        body { 
+            font-family: sans-serif; 
+            background: var(--fundo); 
+            color: var(--azul); 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        /* --- CABEÇALHO PADRÃO DOKSPDF --- */
+        header {
+            background-color: var(--azul);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--amarelo);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .brand-text {
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .pdf-txt {
+            color: var(--amarelo);
+            margin-left: 5px;
+        }
+
+        /* --- CARD DE CONTEÚDO --- */
+        .card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 20px; 
+            border-bottom: 5px solid var(--amarelo); 
+            max-width: 450px; 
+            margin: 40px auto; 
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        
+        .destaque-pdf {
+            color: white;
+            background: var(--azul);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .btn { 
+            background: var(--amarelo); 
+            color: var(--azul); 
+            border: none; 
+            padding: 15px; 
+            width: 100%; 
+            border-radius: 10px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            text-transform: uppercase;
+            margin-top: 20px;
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        input[type="file"] {
+            margin: 25px 0;
+            font-size: 14px;
+        }
+
+        .link-voltar {
+            text-decoration: none; 
+            color: #666; 
+            font-size: 12px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            display: block; 
+            text-align: center;
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand" onclick="irParaHome()">
+            <span style="font-size: 22px; line-height: 1;">🏠</span>
+            <div class="brand-text">Doks <span class="pdf-txt">PDF</span></div>
+        </div>
+    </header>
+
+    <div class="card">
+        <img src="https://cdn-icons-png.flaticon.com/512/3342/3342137.png" alt="Ícone" style="width: 80px; margin-bottom: 15px; opacity: 0.8;">
+        <h1>IMAGEM P/ <span class="destaque-pdf">PDF</span></h1>
+        <p style="font-size: 14px; color: #555;">Converta suas fotos em um documento PDF profissional.</p>
+        
+        <input type="file" id="img-input" multiple accept="image/*">
+        
+        <button class="btn" onclick="convertImage()">GERAR PDF</button>
+    </div>
+
+    <a href="javascript:void(0)" onclick="irParaHome()" class="link-voltar">← VOLTAR AO INÍCIO</a>
+
+    <script>
+        function irParaHome() {
+            window.location.href = "index.html";
+        }
+
+        async function convertImage() {
+            const { jsPDF } = window.jspdf;
+            const files = document.getElementById('img-input').files;
+
+            if (files.length === 0) return alert("Por favor, selecione ao menos uma imagem.");
+
+            const doc = new jsPDF();
+            
+            for (let i = 0; i < files.length; i++) {
+                const imgData = await new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(files[i]);
+                });
+
+                if (i > 0) doc.addPage();
+                
+                // Ajuste simples para preencher a página mantendo proporção (opcional)
+                doc.addImage(imgData, 'JPEG', 10, 10, 190, 0);
+            }
+            
+            doc.save("DoksPDF_Imagens.pdf");
+        }
+    </script>
+</body>
+</html>

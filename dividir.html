@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dividir PDF - DoksPDF</title>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <style>
+        :root { --azul: #0a2540; --amarelo: #ffcc29; --fundo: #dee2e6; }
+        body { font-family: sans-serif; background: var(--fundo); color: var(--azul); text-align: center; padding: 20px; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 20px; border-bottom: 5px solid var(--amarelo); max-width: 450px; margin: 20px auto; }
+        h1 span { color: var(--amarelo); background: var(--azul); padding: 0 5px; border-radius: 4px; }
+        input[type="number"] { padding: 10px; width: 60px; border-radius: 5px; border: 1px solid #ccc; text-align: center; }
+        .btn { background: var(--amarelo); color: var(--azul); border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: 900; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>DIVIDIR <span>PDF</span></h1>
+        <input type="file" id="pdf-file" accept="application/pdf" style="margin: 20px 0;">
+        <div style="display: flex; justify-content: center; gap: 10px; align-items: center; font-weight: bold;">
+            DE: <input type="number" id="start-page" value="1"> 
+            ATÉ: <input type="number" id="end-page" value="1">
+        </div>
+        <button class="btn" onclick="splitPdf()">EXTRAIR PÁGINAS</button>
+        <br><br><a href="index.html" style="text-decoration:none; color:#666; font-size:12px; font-weight:bold;">← VOLTAR</a>
+    </div>
+    <script>
+        async function splitPdf() {
+            const file = document.getElementById('pdf-file').files[0];
+            const start = parseInt(document.getElementById('start-page').value) - 1;
+            const end = parseInt(document.getElementById('end-page').value) - 1;
+            if (!file) return alert("Selecione um arquivo.");
+            try {
+                const existingPdfBytes = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+                const newPdfDoc = await PDFLib.PDFDocument.create();
+                const pages = [];
+                for(let i = start; i <= end; i++) { pages.push(i); }
+                const copiedPages = await newPdfDoc.copyPages(pdfDoc, pages);
+                copiedPages.forEach((page) => newPdfDoc.addPage(page));
+                const pdfBytes = await newPdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "DoksPDF_Dividido.pdf";
+                link.click();
+            } catch (e) { alert("Erro: Verifique se o intervalo de páginas existe."); }
+        }
+    </script>
+</body>
+</html>

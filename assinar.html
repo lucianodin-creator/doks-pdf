@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DoksPDF - v3.1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+    :root { --azul: #0a2540; --amarelo: #ffcc29; --azul-claro: #1a73e8; --vermelho: #ff4757; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: #e9ecef; display: flex; flex-direction: column; height: 100vh; overflow: hidden; } 
+    
+    header { height: 65px; background: var(--azul); display: flex; align-items: center; padding: 0 10px; gap: 8px; border-bottom: 3px solid var(--amarelo); z-index: 1000; }
+    .brand { color: white; font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    .brand span { color: var(--amarelo); }
+    
+    .search-box { flex: 1; display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 5px 10px; align-items: center; margin: 0 5px; }
+    .search-box input { background: none; border: none; color: white; width: 100%; outline: none; font-size: 14px; }
+    
+    .btn-header { background: none; border: none; color: white; font-size: 22px; cursor: pointer; }
+    .btn-top-action { background: none; border: 1px solid var(--amarelo); color: var(--amarelo); padding: 5px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+    .btn-pro { background: var(--amarelo); color: var(--azul); border: none; }
+
+    main {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        width: 100%;
+        position: relative;
+        overflow-y: auto;
+    }
+
+#pdf-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+    padding-bottom: 60px; /* Compensa a altura do footer para o card centralizar no espaço visível */
+}
+
+.card-inicial {
+    background: white;
+    padding: 60px 30px; /* Aumentei o respiro interno igual ao de Juntar */
+    border-radius: 30px; /* Cantos mais arredondados */
+    width: 92%; /* Ajuste para margens laterais no mobile */
+    max-width: 420px;
+    text-align: center;
+    /* O segredo do design do Juntar: uma sombra que simula a borda amarela */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 4px 0 var(--amarelo); 
+    position: relative;
+    border: none; /* Removemos a borda seca para usar a sombra acima */
+}
+
+/* Ajuste do ícone para ficar igual ao outro */
+.icon-box { 
+    font-size: 65px; 
+    margin-bottom: 20px; 
+    display: block; 
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+}
+
+    }
+
+    .icon-box { font-size: 50px; margin-bottom: 15px; display: block; }
+    .h1-card { font-size: 20px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; color: var(--azul); }
+    .h1-card span { color: var(--amarelo); background: var(--azul); padding: 0 6px; border-radius: 4px; }
+    .p-card { font-size: 13px; color: #666; margin-bottom: 25px; font-weight: 500; }
+
+    #btn-abrir-estilizado {
+        background: var(--amarelo); color: var(--azul); border: none; padding: 18px;
+        width: 100%; border-radius: 12px; font-weight: 900; font-size: 16px;
+        cursor: pointer; transition: 0.2s; text-transform: uppercase;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+
+    .page-container { position: relative; background: white; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+.zoom-controls {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%); /* Centraliza verticalmente na lateral */
+    display: none; 
+    flex-direction: column;
+    gap: 12px;
+    z-index: 2000;
+}
+
+    .btn-zoom { width: 45px; height: 45px; background: var(--amarelo); border: none; border-radius: 4px; color: var(--azul); font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+    #sig-modal { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; }
+    #sig-pad { width: 100%; height: calc(100% - 80px); background: #f1f3f5; touch-action: none; }
+    .modal-footer { height: 80px; background: var(--azul); display: flex; justify-content: space-around; align-items: center; padding: 0 10px; gap: 10px; }
+    .btn-modal { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; font-size: 13px; }
+    .btn-confirm { background: var(--amarelo); color: var(--azul); }
+    .btn-cancel { background: var(--vermelho); }
+    .btn-clear { background: var(--azul-claro); }
+
+    .sig-box { position: absolute; border: 2px dashed var(--azul-claro); width: 150px; height: 70px; z-index: 800; touch-action: none; display: flex; align-items: center; justify-content: center; }
+    .sig-controls { position: absolute; top: -45px; left: 0; display: flex; gap: 5px; background: var(--azul); padding: 5px; border-radius: 8px; z-index: 802; }
+    .sig-ctrl-btn { background: var(--amarelo); border: none; padding: 6px; border-radius: 4px; font-size: 16px; min-width: 30px; height: 30px; cursor: pointer; }
+    .resizer { position: absolute; right: -10px; bottom: -10px; width: 25px; height: 25px; background: var(--azul-claro); border: 2px solid white; border-radius: 50%; z-index: 801; }
+
+    footer { height: 85px; background: var(--azul); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; z-index: 1000; }
+    #rotate-lock { display: none; position: fixed; inset: 0; background: rgba(10,37,64,0.98); z-index: 5000; color: white; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <button class="btn-header" onclick="irParaHome()">🏠</button>
+    <div class="brand" onclick="irParaHome()">Doks<span>PDF</span></div>
+    <div class="search-box">
+        <input type="number" id="search-input" placeholder="Pág..." onkeyup="if(event.key==='Enter') goToPage()">
+        <span style="color:white; cursor:pointer;" onclick="goToPage()">🔍</span>
+    </div>
+    <button class="btn-top-action" onclick="alert('Recentes em breve!')">RECENTES</button>
+    <button class="btn-top-action btn-pro">PRO</button>
+</header>
+
+<div class="zoom-controls">
+    <button class="btn-zoom" onclick="changeZoom(0.1)">➕</button>
+    <button class="btn-zoom" onclick="changeZoom(-0.1)">➖</button>
+</div>
+
+<div id="rotate-lock">
+    <div style="background:white; color:var(--azul); padding:30px; border-radius:20px; width: 85%;">
+        <h2>🔄 Gire o Celular</h2>
+        <p style="margin:15px 0;">Modo paisagem recomendado para assinar.</p>
+        <button onclick="openCanvas()" style="width:100%; padding:15px; background:var(--azul-claro); color:white; border:none; border-radius:10px; font-weight:bold;">ESTOU PRONTO</button>
+    </div>
+</div>
+
+<main id="viewport">
+    <div id="pdf-container">
+        <div class="card-inicial" id="card-abrir">
+            <span class="icon-box">📂</span>
+            <div class="h1-card">ASSINAR <span>PDF</span></div>
+            <p class="p-card">Abra seu documento para aplicar assinaturas e rubricas digitalmente.</p>
+<button id="btn-abrir-estilizado" onclick="triggerFileSelect()" style="background: var(--amarelo); color: var(--azul); border-radius: 15px; margin-top: 10px;">
+    📂 SELECIONAR PDF
+</button>
+
+        </div>
+<a href="javascript:void(0)" onclick="irParaHome()" style="margin-top: 25px; text-decoration:none; color:#666; font-size:12px; font-weight:900; text-transform: uppercase; display: block; text-align: center;">← VOLTAR AO INÍCIO</a>
+    </div>
+    <input type="file" id="file-selector" style="display:none" onchange="handleFile(this)" accept="application/pdf">
+</main>
+
+<div id="sig-modal">
+    <canvas id="sig-pad"></canvas>
+    <div class="modal-footer">
+        <button class="btn-modal btn-cancel" onclick="document.getElementById('sig-modal').style.display='none'">CANCELAR</button>
+        <button class="btn-modal btn-clear" onclick="clearCanvas()">LIMPAR</button>
+        <button class="btn-modal btn-confirm" onclick="confirmSig()">CONFIRMAR ✅</button>
+    </div>
+</div>
+
+<footer>
+    <div style="color:white; font-weight:bold;"><span id="p-cur">0</span> / <span id="p-tot">0</span></div>
+    <button class="btn-header" style="font-size:12px;" onclick="forceReset()">🔄<br>ATUALIZAR</button>
+    <button class="btn-header" style="font-size:12px;" onclick="document.getElementById('rotate-lock').style.display='flex'">🖋️<br>ASSINAR</button>
+    <button class="btn-header" style="color:var(--amarelo); font-size:12px;" onclick="exportPDF()">💾<br>SALVAR</button>
+</footer>
+
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
+    let mainDoc = null, pdfRaw = null, pageObserver = null, currentZoom = 1.0;
+    let signaturesData = [];
+
+function irParaHome() {
+    const urlHome = window.location.origin + "/";
+    window.location.replace(urlHome);
+}
+
+    function triggerFileSelect() {
+        const input = document.getElementById('file-selector');
+        input.value = "";
+        input.click();
+    }
+
+    async function handleFile(el) {
+        const file = el.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = async function() {
+            pdfRaw = new Uint8Array(this.result);
+            const loadingTask = pdfjsLib.getDocument({data: pdfRaw});
+            mainDoc = await loadingTask.promise;
+            document.getElementById('p-tot').innerText = mainDoc.numPages;
+            renderPDF();
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+async function renderPDF() {
+    backupSignatures();
+    const wrap = document.getElementById('pdf-container');
+    const viewport = document.getElementById('viewport');
+    const zoomCtrl = document.querySelector('.zoom-controls');
+
+    const card = document.getElementById('card-abrir');
+    if(card) card.style.display = 'none';
+    if(zoomCtrl) zoomCtrl.style.display = 'flex'; // Mostra zoom ao abrir
+
+    // Alinha ao topo para as páginas do PDF
+    wrap.style.justifyContent = 'flex-start';
+    viewport.style.alignItems = 'flex-start';
+
+    // Limpa páginas anteriores
+    wrap.querySelectorAll('.page-container').forEach(p => p.remove());
+    if(pageObserver) pageObserver.disconnect();
+
+    pageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if(entry.isIntersecting) document.getElementById('p-cur').innerText = entry.target.id.split('-')[1];
+        });
+    }, { threshold: 0.5 });
+
+    // Renderização das páginas
+    for(let i=1; i<=mainDoc.numPages; i++) {
+        const pg = await mainDoc.getPage(i);
+        const vpOrig = pg.getViewport({scale: 1});
+        const scale = ((window.innerWidth - 20) / vpOrig.width) * currentZoom;
+        const vp = pg.getViewport({scale: scale});
+
+        const box = document.createElement('div');
+        box.className = 'page-container';
+        box.id = 'page-' + i;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = vp.width;
+        cvs.height = vp.height;
+
+        box.appendChild(cvs);
+        wrap.appendChild(box);
+
+        await pg.render({canvasContext: cvs.getContext('2d'), viewport: vp}).promise;
+        signaturesData.filter(s => s.pageNum == i).forEach(s => restoreSig(s, box, cvs.width, cvs.height));
+        pageObserver.observe(box);
+    }
+}
+
+    function backupSignatures() {
+        signaturesData = [];
+        document.querySelectorAll('.sig-box').forEach(sig => {
+            const parent = sig.closest('.page-container');
+            const pageNum = parent.id.split('-')[1];
+            const canvas = parent.querySelector('canvas');
+            signaturesData.push({
+                pageNum: pageNum,
+                img: sig.querySelector('img').src,
+                rot: sig.querySelector('img').dataset.rot,
+                relX: sig.offsetLeft / canvas.width,
+                relY: sig.offsetTop / canvas.height,
+                relW: sig.offsetWidth / canvas.width,
+                relH: sig.offsetHeight / canvas.height
+            });
+        });
+    }
+
+    function restoreSig(data, parent, w, h) {
+        const el = document.createElement('div');
+        el.className = 'sig-box';
+        el.style.left = (data.relX * w) + 'px'; el.style.top = (data.relY * h) + 'px';
+        el.style.width = (data.relW * w) + 'px'; el.style.height = (data.relH * h) + 'px';
+        el.innerHTML = `
+            <div class="sig-controls">
+                <button class="sig-ctrl-btn" onclick="cloneSig(this)">👯</button>
+                <button class="sig-ctrl-btn" onclick="rotateImg(this)">🔄</button>
+                <button class="sig-ctrl-btn" onclick="this.closest('.sig-box').remove()" style="background:var(--vermelho); color:white;">🗑️</button>
+            </div>
+            <img src="${data.img}" data-rot="${data.rot}" style="transform: rotate(${data.rot}deg); width:100%; height:100%;">
+            <div class="resizer"></div>`;
+        parent.appendChild(el);
+        makeInteractable(el);
+    }
+
+    function openCanvas() {
+        document.getElementById('rotate-lock').style.display = 'none';
+        document.getElementById('sig-modal').style.display = 'flex';
+        const c = document.getElementById('sig-pad');
+        c.width = window.innerWidth; c.height = window.innerHeight - 80;
+        const ctx = c.getContext('2d');
+        ctx.lineWidth = 3; ctx.strokeStyle = "#000"; ctx.lineCap = 'round';
+        let drw = false;
+        c.ontouchstart = e => { drw=true; ctx.beginPath(); ctx.moveTo(e.touches[0].clientX, e.touches[0].clientY); };
+        c.ontouchmove = e => { if(drw) { ctx.lineTo(e.touches[0].clientX, e.touches[0].clientY); ctx.stroke(); } e.preventDefault(); };
+        c.ontouchend = () => drw=false;
+    }
+
+    function clearCanvas() { const c = document.getElementById('sig-pad'); c.getContext('2d').clearRect(0, 0, c.width, c.height); }
+
+    function confirmSig() {
+        const img = document.getElementById('sig-pad').toDataURL('image/png');
+        createSigBox(img, document.getElementById('p-cur').innerText);
+        document.getElementById('sig-modal').style.display = 'none';
+        clearCanvas();
+    }
+
+    function createSigBox(imgData, pageNum) {
+        const el = document.createElement('div');
+        el.className = 'sig-box'; el.style.top = '150px'; el.style.left = '50px';
+        el.innerHTML = `
+            <div class="sig-controls">
+                <button class="sig-ctrl-btn" onclick="cloneSig(this)">👯</button>
+                <button class="sig-ctrl-btn" onclick="rotateImg(this)">🔄</button>
+                <button class="sig-ctrl-btn" onclick="this.closest('.sig-box').remove()" style="background:var(--vermelho); color:white;">🗑️</button>
+            </div>
+            <img src="${imgData}" data-rot="0" style="width:100%; height:100%;">
+            <div class="resizer"></div>`;
+        document.getElementById('page-' + pageNum).appendChild(el);
+        makeInteractable(el);
+    }
+
+    function cloneSig(btn) {
+        const original = btn.closest('.sig-box');
+        const imgData = original.querySelector('img').src;
+        const rot = original.querySelector('img').dataset.rot;
+        const curPage = parseInt(document.getElementById('p-cur').innerText);
+        for (let i = curPage + 1; i <= mainDoc.numPages; i++) {
+            const box = document.createElement('div');
+            box.className = 'sig-box'; box.style.cssText = original.style.cssText;
+            box.innerHTML = original.innerHTML;
+            box.querySelector('img').dataset.rot = rot;
+            box.querySelector('img').style.transform = `rotate(${rot}deg)`;
+            document.getElementById('page-' + i).appendChild(box);
+            makeInteractable(box);
+        }
+        alert("Assinatura clonada em todas as folhas seguintes!");
+    }
+
+    function rotateImg(btn) {
+        const img = btn.closest('.sig-box').querySelector('img');
+        let r = (parseInt(img.dataset.rot) || 0) + 90;
+        img.style.transform = `rotate(${r}deg)`;
+        img.dataset.rot = r;
+    }
+
+    function makeInteractable(el) {
+        let m = false, r = false, sx, sy, sw, sh, ox, oy;
+        el.addEventListener('touchstart', e => {
+            if(e.target.classList.contains('resizer')) {
+                r = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+                sw = el.offsetWidth; sh = el.offsetHeight;
+            } else {
+                m = true; ox = e.touches[0].clientX - el.offsetLeft; oy = e.touches[0].clientY - el.offsetTop;
+            }
+            e.stopPropagation();
+        }, {passive:false});
+        document.addEventListener('touchmove', e => {
+            if(r) {
+                el.style.width = (sw + (e.touches[0].clientX - sx)) + 'px';
+                el.style.height = (sh + (e.touches[0].clientY - sy)) + 'px';
+            } else if(m) {
+                el.style.left = (e.touches[0].clientX - ox) + 'px';
+                el.style.top = (e.touches[0].clientY - oy) + 'px';
+            }
+        }, {passive:false});
+        document.addEventListener('touchend', () => { m=false; r=false; });
+    }
+
+    async function changeZoom(d) { if (!mainDoc) return; currentZoom = Math.min(Math.max(currentZoom + d, 0.5), 3.0); renderPDF(); }
+
+    async function exportPDF() {
+        if (!mainDoc) return alert("Abra um PDF primeiro.");
+        try {
+            const { jsPDF } = window.jspdf;
+            const firstPg = await mainDoc.getPage(1);
+            const vOrig = firstPg.getViewport({scale: 1});
+            const pdf = new jsPDF({ orientation: vOrig.width > vOrig.height ? 'l' : 'p', unit: 'pt', format: [vOrig.width, vOrig.height] });
+            const containers = document.querySelectorAll('.page-container');
+            for (let i = 0; i < containers.length; i++) {
+                if (i > 0) {
+                    const pg = await mainDoc.getPage(i + 1);
+                    const v = pg.getViewport({scale: 1});
+                    pdf.addPage([v.width, v.height], v.width > v.height ? 'l' : 'p');
+                }
+                const canvas = containers[i].querySelector('canvas');
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+                containers[i].querySelectorAll('.sig-box').forEach(sig => {
+                    const img = sig.querySelector('img');
+                    const rot = parseInt(img.dataset.rot) || 0;
+                    const rect = sig.getBoundingClientRect();
+                    const cvsRect = canvas.getBoundingClientRect();
+                    const fX = ((rect.left - cvsRect.left) / cvsRect.width) * pdf.internal.pageSize.getWidth();
+                    const fY = ((rect.top - cvsRect.top) / cvsRect.height) * pdf.internal.pageSize.getHeight();
+                    const fW = (rect.width / cvsRect.width) * pdf.internal.pageSize.getWidth();
+                    const fH = (rect.height / cvsRect.height) * pdf.internal.pageSize.getHeight();
+                    if(rot !== 0) {
+                        const tC = document.createElement('canvas'); tC.width = img.naturalWidth; tC.height = img.naturalHeight;
+                        const tCtx = tC.getContext('2d'); tCtx.translate(tC.width/2, tC.height/2); tCtx.rotate((rot * Math.PI) / 180); tCtx.drawImage(img, -tC.width/2, -tC.height/2);
+                        pdf.addImage(tC.toDataURL('image/png'), 'PNG', fX, fY, fW, fH);
+                    } else { pdf.addImage(img.src, 'PNG', fX, fY, fW, fH); }
+                });
+            }
+            const pdfBlob = pdf.output('blob');
+            const url = URL.createObjectURL(pdfBlob);
+            const link = document.createElement('a'); link.href = url; link.download = `Doks_Assinado_${Date.now()}.pdf`;
+            document.body.appendChild(link); link.click();
+            setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 200);
+        } catch (e) { alert("Erro ao exportar."); }
+    }
+
+    function forceReset() { window.location.href = window.location.pathname + '?update=' + Date.now(); }
+    function goToPage() {
+        const val = document.getElementById('search-input').value;
+        const target = document.getElementById('page-' + val);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+        else alert("Página não encontrada.");
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>DoksPDF - Laboratório de Debug</title>
+    <style>
+        :root { --azul: #0a2540; --amarelo: #ffcc29; }
+        body { font-family: sans-serif; background: #dee2e6; margin: 0; display: flex; flex-direction: column; hieght: 100vh; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--amarelo); }
+        
+        .container { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; padding: 10px; flex: 1; height: 80vh; }
+        .box { display: flex; flex-direction: column; background: #fff; border-radius: 8px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .box h3 { margin: 0 0 5px 0; font-size: 14px; color: var(--azul); display: flex; justify-content: space-between; }
+        textarea { flex: 1; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px; resize: none; background: #f8f9fa; }
+        
+        .status-bar { background: #fff; padding: 10px; display: flex; gap: 20px; border-top: 2px solid #ccc; font-weight: bold; font-size: 13px; }
+        .btn-testar { background: var(--verde, #28a745); color: white; border: none; padding: 10px 25px; border-radius: 5px; cursor: pointer; font-weight: 900; }
+        
+        #log-erro { color: #dc3545; }
+        .ok { color: #28a745; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>LABORATÓRIO DE DESENVOLVIMENTO DOKSPDF</h2>
+</header>
+
+<div class="container">
+    <div class="box">
+        <h3>1. HTML (Estrutura)</h3>
+        <textarea id="code-html" placeholder="Cole o <body> aqui..."></textarea>
+    </div>
+
+    <div class="box">
+        <h3>2. CSS (Design)</h3>
+        <textarea id="code-css" placeholder="Cole o CSS aqui..."></textarea>
+    </div>
+
+    <div class="box">
+        <h3>3. JAVASCRIPT (Lógica)</h3>
+        <textarea id="code-js" placeholder="Cole o <script> aqui..."></textarea>
+    </div>
+
+    <div class="box">
+        <h3>4. BIBLIOTECAS (Importações)</h3>
+        <textarea id="code-libs">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+        </textarea>
+    </div>
+</div>
+
+<div class="status-bar">
+    <button class="btn-testar" onclick="executarTeste()">🚀 TESTAR EXPERIÊNCIA</button>
+    <div id="status-libs">Bibliotecas: Aguardando...</div>
+    <div id="log-erro">Erros: Nenhum detectado.</div>
+</div>
+
+<div id="preview-container" style="display:none; position:fixed; inset:0; background:white; z-index:9999;">
+    <button onclick="document.getElementById('preview-container').style.display='none'" style="position:fixed; top:10px; right:10px; z-index:10000; padding:10px; background:red; color:white; border:none; border-radius:5px; font-weight:bold;">FECHAR TESTE x</button>
+    <iframe id="sandbox" style="width:100%; height:100%; border:none;"></iframe>
+</div>
+
+<script>
+function executarTeste() {
+    const html = document.getElementById('code-html').value;
+    const css = `<style>${document.getElementById('code-css').value}</style>`;
+    const js = `<script>${document.getElementById('code-js').value}<\/script>`;
+    const libs = document.getElementById('code-libs').value;
+    
+    const previewContainer = document.getElementById('preview-container');
+    const iframe = document.getElementById('sandbox');
+    
+    // Mostra o container antes de carregar o conteúdo
+    previewContainer.style.display = 'block';
+
+    const finalCode = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            ${libs}
+            ${css}
+        </head>
+        <body>
+            ${html}
+            ${js}
+        </body>
+        </html>
+    `;
+
+// Dentro da sua função executarTeste no debug.html
+const doc = iframe.contentDocument || iframe.contentWindow.document;
+doc.open();
+doc.write(finalCode);
+doc.close();
+
+// Adicione isso para garantir que o celular processe o conteúdo
+iframe.onload = function() {
+    console.log("Teste carregado com sucesso no Motorola");
+};
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Juntar PDF - DoksPDF</title>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<style>
+
+:root {
+    --azul: #0a2540;
+    --amarelo: #ffcc29;
+    --fundo: #dee2e6;
+    --branco: #ffffff;
+    --verde: #28a745;
+    --azul-claro: #1a73e8;
+}
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    font-family: sans-serif; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+body { 
+    background-color: var(--fundo); 
+    color: var(--azul); 
+    display: flex; 
+    flex-direction: column; 
+    height: 100dvh; 
+    overflow: hidden; 
+}
+
+/* --- BARRA SUPERIOR PADRONIZADA --- */
+header {
+    height: 65px;
+    background: var(--azul);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 8px;
+    border-bottom: 3px solid var(--amarelo);
+    z-index: 1000;
+}
+
+/* Container principal da logo */
+.brand {
+    display: flex !important;
+    flex-direction: row !important; /* Força ficar um ao lado do outro */
+    align-items: center !important;
+    gap: 8px; /* Espaço entre a casinha e o texto */
+    cursor: pointer;
+    min-width: fit-content;
+}
+
+/* Estilo do emoji da casinha */
+.home-icon {
+    font-size: 24px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+
+
+.brand img {
+    height: 32px !important; 
+    width: auto;
+    display: block;
+    background: transparent !important; /* Força o fundo transparente */
+    border: none;
+    outline: none;
+}
+
+/* Texto Doks */
+.brand-text {
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 20px;
+    font-family: sans-serif;
+    display: flex;
+    align-items: center;
+    white-space: nowrap; /* Impede que o texto quebre para a linha de baixo */
+}
+
+/* Estilo do PDF */
+.pdf-tag {
+    color: var(--amarelo) !important;
+    background: none !important;
+    padding: 0 !important;
+    margin-left: 5px;
+    font-weight: 700;
+}
+
+/* Caixa de Busca */
+.search-box { 
+    flex: 1; 
+    display: flex; 
+    background: rgba(255,255,255,0.1); 
+    border-radius: 8px; 
+    padding: 5px 10px; 
+    align-items: center; 
+    margin: 0 5px; 
+}
+
+.search-box input { 
+    background: none; 
+    border: none; 
+    color: white; 
+    width: 100%; 
+    outline: none; 
+    font-size: 14px; 
+}
+
+/* Botões da Direita */
+.btn-top-action { 
+    background: none; 
+    border: 1px solid var(--amarelo); 
+    color: var(--amarelo); 
+    padding: 5px 8px; 
+    border-radius: 4px; 
+    font-size: 11px; 
+    font-weight: bold; 
+    text-transform: uppercase; 
+    cursor: pointer;
+}
+
+.btn-pro { 
+    background: var(--amarelo); 
+    color: var(--azul); 
+    border: none; 
+}
+
+/* --- CONTEÚDO CENTRAL (CARD) --- */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.card {
+    background: var(--branco);
+    padding: 60px 30px; /* Padding igual ao Assinar */
+    border-radius: 30px; /* Arredondamento padronizado */
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    /* Efeito de profundidade amarela idêntico ao Assinar */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 4px 0 var(--amarelo);
+    position: relative;
+}
+
+.icon-box {
+    font-size: 65px;
+    margin-bottom: 20px;
+    display: block;
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+}
+
+h1 { font-size: 20px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; }
+h1 span { color: var(--amarelo); background: var(--azul); padding: 0 6px; border-radius: 4px; }
+p { font-size: 13px; color: #666; margin-bottom: 25px; font-weight: 500; }
+
+/* --- INPUT E BOTÃO --- */
+.file-label { 
+    background: #f8f9fa; 
+    border: 2px dashed #ccc; 
+    padding: 25px; 
+    display: block; 
+    border-radius: 15px; 
+    cursor: pointer; 
+    margin-bottom: 20px; 
+    transition: 0.2s;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+input[type="file"] { display: none !important; }
+
+.btn-merge { 
+    background: var(--amarelo); /* Agora é AMARELO igual ao Assinar */
+    color: var(--azul); 
+    border: none; 
+    padding: 18px; 
+    width: 100%; 
+    border-radius: 15px; 
+    font-weight: 900; 
+    font-size: 16px; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    text-transform: uppercase; 
+}
+
+.btn-merge:active { transform: scale(0.96); }
+
+/* --- RODAPÉ --- */
+.btn-voltar {
+    margin-top: 25px;
+    text-decoration: none;
+    color: #666;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    display: block;
+}
+
+/* LOADER */
+#loader { display: none; position: fixed; inset: 0; background: rgba(10, 37, 64, 0.95); z-index: 2000; color: #fff; flex-direction: column; align-items: center; justify-content: center; }
+.spinner { width: 40px; height: 40px; border: 4px solid var(--amarelo); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+</style>
+
+</head>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <p style="font-weight: 900; letter-spacing: 1px;">UNINDO ARQUIVOS...</p>
+    </div>
+
+<header>
+<div class="brand" onclick="irParaHome()">
+    <span class="home-icon">🏠</span>
+    <div class="brand-text">Doks <span class="pdf-tag">PDF</span></div>
+</div>
+
+    <div class="search-box">
+        <input type="text" placeholder="Buscar ferramenta...">
+    </div>
+
+    <button class="btn-top-action">Recentes</button>
+    <button class="btn-top-action btn-pro">PRO</button>
+</header>
+
+    <main class="main-content">
+        <div class="card">
+            <span class="icon-box">📂</span>
+            <h1>JUNTAR <span>PDF</span></h1>
+            <p>Selecione 2 ou mais arquivos para unir em um único PDF.</p>
+            <label for="pdf-inputs" class="file-label" id="label-text">
+                <span style="font-size: 12px; font-weight: bold; color: var(--azul);">Clique para selecionar</span>
+            </label>
+            <input type="file" id="pdf-inputs" multiple accept="application/pdf" onchange="updateLabel()">
+            <button class="btn-merge" onclick="mergeFiles()">UNIR E BAIXAR</button>
+        </div>
+        <a href="javascript:void(0)" onclick="irParaHome()" style="margin-top: 25px; text-decoration:none; color:#666; font-size:12px; font-weight:900;">← VOLTAR AO INÍCIO</a>
+    </main>
+
+    <script>
+        // Função para voltar à home com limpeza de cache (Resolve o problema do seu Chrome)
+        function irParaHome() {
+            const urlHome = window.location.origin + "/";
+            window.location.replace(urlHome);
+        }
+
+        function updateLabel() {
+            const input = document.getElementById('pdf-inputs');
+            const label = document.getElementById('label-text');
+            if(input.files.length > 0) {
+                label.innerHTML = `<span style="color:var(--verde)">● ${input.files.length} arquivos selecionados</span>`;
+                label.style.borderColor = "var(--verde)";
+            }
+        }
+
+        async function mergeFiles() {
+            const files = document.getElementById('pdf-inputs').files;
+            if (files.length < 2) return alert("Por favor, selecione pelo menos 2 arquivos PDF.");
+
+            const loader = document.getElementById('loader');
+            loader.style.display = 'flex';
+
+            try {
+                const mergedPdf = await PDFLib.PDFDocument.create();
+
+                for (const file of files) {
+                    const bytes = await file.arrayBuffer();
+                    const pdf = await PDFLib.PDFDocument.load(bytes);
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    copiedPages.forEach((page) => mergedPdf.addPage(page));
+                }
+
+                const pdfBytes = await mergedPdf.save();
+                const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                
+                // Download seguro para Chrome Mobile
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `DoksPDF_Unido_${Date.now()}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                
+                setTimeout(() => {
+                    link.remove();
+                    URL.revokeObjectURL(url);
+                }, 500);
+
+            } catch (e) {
+                alert("Erro ao processar arquivos: " + e.message);
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

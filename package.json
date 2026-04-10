@@ -1,0 +1,9 @@
+{
+  "name": "assinador-backend",
+  "version": "1.0.0",
+  "main": "api/assinar.js",
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "formidable": "^3.5.1"
+  }
+}
