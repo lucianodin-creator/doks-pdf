@@ -17,13 +17,18 @@
 
         body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--fundo); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* --- HEADER COM BUSCA --- */
+        /* --- HEADER AJUSTADO (PRINT 2 STYLE) --- */
         .header { background-color: var(--azul-escuro); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--amarelo); flex-shrink: 0; z-index: 1001; gap: 10px; }
         .logo-area { display: flex; align-items: center; gap: 5px; cursor: pointer; color: white; flex-shrink: 0; }
         .logo-text { font-size: 16px; font-weight: 900; margin: 0; }
         
-        .search-container { flex-grow: 1; max-width: 400px; position: relative; }
-        .search-input { width: 100%; padding: 8px 12px; border-radius: 20px; border: none; font-size: 14px; outline: none; }
+        .search-container { flex-grow: 1; max-width: 300px; position: relative; }
+        .search-input { 
+            width: 100%; padding: 8px 12px 8px 35px; border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); 
+            color: white; font-size: 13px; outline: none;
+        }
+        .search-container::before { content: '🔍'; position: absolute; left: 10px; top: 7px; font-size: 14px; opacity: 0.7; }
 
         .nav-btns-right { display: flex; gap: 8px; flex-shrink: 0; }
         .btn-nav { padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; border: none; cursor: pointer; }
@@ -32,59 +37,60 @@
 
         #viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 120px 10px; -webkit-overflow-scrolling: touch; position: relative; }
 
-        /* --- OBJETO ASSINATURA NO PDF --- */
-        .signature-wrapper { 
-            position: absolute; border: 2px dashed var(--azul-claro); cursor: move; touch-action: none;
-            display: flex; flex-direction: column; align-items: center; min-width: 100px; min-height: 50px;
-        }
-        .signature-img { width: 100%; height: 100%; pointer-events: none; }
-        
-        /* Controles da Assinatura */
-        .sig-tools { 
-            position: absolute; top: -40px; background: var(--azul-escuro); border-radius: 6px; 
-            display: flex; gap: 5px; padding: 4px; border: 1px solid var(--amarelo); 
-        }
-        .tool-btn { background: transparent; border: none; color: white; font-size: 16px; cursor: pointer; padding: 4px; }
-        .resize-handle { 
-            position: absolute; right: -8px; bottom: -8px; width: 20px; height: 20px; 
-            background: var(--amarelo); border-radius: 50%; cursor: nwse-resize; 
+        /* --- CARD INICIAL AMPLIADO (PRINT 4 STYLE) --- */
+        .card-inicial { 
+            background: white; width: 90%; max-width: 400px; padding: 50px 20px; 
+            border-radius: 30px; border-bottom: 8px solid var(--amarelo); 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15); text-align: center;
         }
 
-        /* Modal e Outros */
-        #signature-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--azul-escuro); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 3000; }
-        .sig-container { background: var(--branco); width: 90%; height: 50vh; border-radius: 12px; }
-        #sig-canvas { width: 100%; height: 100%; touch-action: none; border-radius: 12px; }
-        .sig-buttons { display: flex; gap: 10px; margin-top: 20px; width: 90%; }
-        .btn-sig { flex: 1; padding: 15px; border-radius: 8px; font-weight: 800; color: white; border: none; }
+        /* --- OBJETO ASSINATURA --- */
+        .signature-wrapper { 
+            position: absolute; border: 2px dashed var(--azul-claro); cursor: move; touch-action: none;
+            display: flex; flex-direction: column; align-items: center; min-width: 80px; z-index: 500;
+        }
+        .signature-img { width: 100%; height: auto; pointer-events: none; }
         
-        #rotate-notice { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,33,71,0.98); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; text-align: center; }
+        /* Controles Individuais com Cores */
+        .sig-tools { 
+            position: absolute; top: -45px; display: flex; gap: 4px; padding: 4px; 
+            background: rgba(0,33,71,0.9); border-radius: 8px; border: 1px solid var(--amarelo);
+        }
+        .tool-btn { border: none; color: white; font-size: 16px; cursor: pointer; padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .btn-del { background: #dc3545; }
+        .btn-rot { background: #28a745; }
+        .btn-clone { background: var(--azul-claro); }
+
+        .resize-handle { 
+            position: absolute; right: -10px; bottom: -10px; width: 24px; height: 24px; 
+            background: var(--amarelo); border-radius: 50%; border: 2px solid var(--azul-escuro); cursor: nwse-resize; 
+        }
+
+        #signature-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--azul-escuro); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 3000; }
+        .sig-container { background: var(--branco); width: 95%; height: 60vh; border-radius: 12px; }
+        #sig-canvas { width: 100%; height: 100%; touch-action: none; }
 
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: var(--azul-escuro); display: flex; justify-content: space-around; align-items: center; padding: 15px 0 25px 0; border-top: 3px solid var(--amarelo); z-index: 1001; }
         .nav-item { background: transparent; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 5px; }
         
         #pdf-container { width: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .page-container { position: relative; background: white; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .page-container { position: relative; background: white; margin-bottom: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
-    <div id="rotate-notice">
-        <span style="font-size: 50px;">🔄</span>
-        <h2 style="font-weight: 900;">GIRE O CELULAR</h2>
-        <button onclick="openSignatureModal()" class="btn-nav btn-pro" style="margin-top: 25px; padding: 15px 40px;">ESTOU PRONTO</button>
-    </div>
-
     <div id="signature-modal">
+        <h3 style="color:white">Assine no espaço branco</h3>
         <div class="sig-container"><canvas id="sig-canvas"></canvas></div>
-        <div class="sig-buttons">
-            <button class="btn-sig" style="background:#dc3545" onclick="closeSignatureModal()">CANCELAR</button>
-            <button class="btn-sig" style="background:#6c757d" onclick="clearCanvas()">LIMPAR</button>
-            <button class="btn-sig" style="background:var(--azul-claro)" onclick="confirmSignature()">CONFIRMAR</button>
+        <div class="sig-buttons" style="display:flex; gap:10px; width:95%; margin-top:15px;">
+            <button class="btn-sig" style="flex:1; background:#dc3545; padding:15px; color:white; border:none; border-radius:8px;" onclick="closeSignatureModal()">CANCELAR</button>
+            <button class="btn-sig" style="flex:1; background:#6c757d; padding:15px; color:white; border:none; border-radius:8px;" onclick="clearCanvas()">LIMPAR</button>
+            <button class="btn-sig" style="flex:1; background:var(--azul-claro); padding:15px; color:white; border:none; border-radius:8px;" onclick="confirmSignature()">CONFIRMAR</button>
         </div>
     </div>
 
     <header class="header">
-        <div class="logo-area" onclick="goHome()">
+        <div class="logo-area" onclick="window.location.reload()">
             <span>🏠</span>
             <h1 class="logo-text">Doks<span style="color:var(--amarelo)">PDF</span></h1>
         </div>
@@ -99,11 +105,11 @@
 
     <main id="viewport">
         <div id="pdf-container">
-            <div id="inicial-ui" style="text-align:center; margin-top: 10vh;">
-                <div style="background: white; padding: 40px 25px; border-radius: 24px; border-bottom: 6px solid var(--amarelo);">
-                    <span style="font-size:60px;">📂</span>
-                    <h2>ASSINAR <b>PDF</b></h2>
-                    <button onclick="document.getElementById('file-selector').click()" class="btn-nav btn-pro" style="width:100%; padding:20px; font-size:16px; border-radius:15px;">SELECIONAR PDF</button>
+            <div id="inicial-ui" style="display: flex; justify-content: center; width: 100%; margin-top: 5vh;">
+                <div class="card-inicial">
+                    <span style="font-size:80px; display:block; margin-bottom:20px;">📂</span>
+                    <h2 style="font-size:26px; color:var(--azul-escuro); margin-bottom:30px;">ASSINAR <b>PDF</b></h2>
+                    <button onclick="document.getElementById('file-selector').click()" class="btn-nav btn-pro" style="width:100%; padding:22px; font-size:18px; border-radius:15px;">SELECIONAR PDF</button>
                 </div>
             </div>
         </div>
@@ -113,12 +119,12 @@
     <nav class="bottom-nav">
         <button class="nav-item" onclick="location.reload()"><span>🔄</span>ATUALIZAR</button>
         <div style="color:var(--amarelo); font-weight:900; font-size:22px;"><span id="p-cur">0</span> / <span id="p-tot">0</span></div>
-        <button class="nav-item" id="btn-assinar" onclick="showRotateNotice()" disabled><span>🖋️</span>ASSINAR</button>
+        <button class="nav-item" id="btn-assinar" onclick="openSignatureModal()" disabled><span>🖋️</span>ASSINAR</button>
         <button class="nav-item" id="btn-salvar" onclick="savePDF()" disabled><span>💾</span>SALVAR</button>
     </nav>
 
     <script>
-        let mainDoc = null, ctx, canvas, drawing = false, rotation = 0;
+        let mainDoc = null, ctx, canvas, drawing = false, lastSignature = null;
 
         async function handleFile(el) {
             const file = el.files[0];
@@ -134,7 +140,7 @@
 
         async function renderPDF() {
             const wrap = document.getElementById('pdf-container');
-            if(document.getElementById('inicial-ui')) document.getElementById('inicial-ui').style.display = 'none';
+            document.getElementById('inicial-ui').style.display = 'none';
             wrap.innerHTML = "";
             for(let i=1; i<=mainDoc.numPages; i++) {
                 const pg = await mainDoc.getPage(i);
@@ -150,9 +156,7 @@
             }
         }
 
-        function showRotateNotice() { document.getElementById('rotate-notice').style.display = 'flex'; }
         function openSignatureModal() {
-            document.getElementById('rotate-notice').style.display = 'none';
             document.getElementById('signature-modal').style.display = 'flex';
             initCanvas();
         }
@@ -178,60 +182,84 @@
         }
 
         function confirmSignature() {
-            const dataURL = canvas.toDataURL();
-            createSignatureObject(dataURL);
+            lastSignature = canvas.toDataURL();
+            addSignatureToPage(1, lastSignature, true);
             closeSignatureModal();
         }
 
-        function createSignatureObject(src) {
+        function addSignatureToPage(pageNum, src, isMaster = false) {
             const wrapper = document.createElement('div');
             wrapper.className = 'signature-wrapper';
-            wrapper.style.left = '50px'; wrapper.style.top = '100px';
-            wrapper.style.width = '150px';
+            wrapper.style.left = '10%'; wrapper.style.top = '20%';
+            wrapper.style.width = '140px';
+
+            const cloneBtn = isMaster ? `<button class="tool-btn btn-clone" onclick="cloneToAll(this)">👥</button>` : '';
 
             wrapper.innerHTML = `
                 <div class="sig-tools">
-                    <button class="tool-btn" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                    <button class="tool-btn" onclick="rotateSig(this)">🔄</button>
-                    <button class="tool-btn" onclick="cloneSig(this)">👥</button>
+                    <button class="tool-btn btn-del" onclick="this.parentElement.parentElement.remove()">🗑️</button>
+                    <button class="tool-btn btn-rot" onclick="rotateSig(this)">🔄</button>
+                    ${cloneBtn}
                 </div>
                 <img src="${src}" class="signature-img">
                 <div class="resize-handle"></div>
             `;
 
-            // Drag and Resize logic (Simplificada para mobile)
-            let isDragging = false;
-            wrapper.addEventListener('touchstart', (e) => {
-                if(e.target.classList.contains('tool-btn') || e.target.classList.contains('resize-handle')) return;
-                isDragging = true;
-            });
-            document.addEventListener('touchmove', (e) => {
-                if(!isDragging) return;
-                const touch = e.touches[0];
-                wrapper.style.left = (touch.clientX - 75) + 'px';
-                wrapper.style.top = (touch.clientY - 25) + 'px';
-            });
-            document.addEventListener('touchend', () => isDragging = false);
+            makeDraggable(wrapper);
+            makeResizable(wrapper);
+            document.getElementById(`page-${pageNum}`).appendChild(wrapper);
+        }
 
-            document.getElementById('page-1').appendChild(wrapper);
+        function cloneToAll(btn) {
+            const master = btn.parentElement.parentElement;
+            const src = master.querySelector('img').src;
+            const currentPos = { left: master.style.left, top: master.style.top, width: master.style.width };
+
+            for(let i = 1; i <= mainDoc.numPages; i++) {
+                if(document.getElementById(`page-${i}`).querySelector('.signature-wrapper') && i === 1) continue;
+                addSignatureToPage(i, src, false);
+                const newSig = document.getElementById(`page-${i}`).lastChild;
+                newSig.style.left = currentPos.left;
+                newSig.style.top = currentPos.top;
+                newSig.style.width = currentPos.width;
+            }
+            alert("Assinatura clonada para todas as páginas!");
+        }
+
+        function makeDraggable(el) {
+            let posX = 0, posY = 0;
+            el.addEventListener('touchstart', (e) => {
+                if (e.target.classList.contains('tool-btn') || e.target.classList.contains('resize-handle')) return;
+                posX = e.touches[0].clientX - el.offsetLeft;
+                posY = e.touches[0].clientY - el.offsetTop;
+            });
+            el.addEventListener('touchmove', (e) => {
+                if (e.target.classList.contains('tool-btn') || e.target.classList.contains('resize-handle')) return;
+                e.preventDefault();
+                el.style.left = (e.touches[0].clientX - posX) + 'px';
+                el.style.top = (e.touches[0].clientY - posY) + 'px';
+            });
+        }
+
+        function makeResizable(el) {
+            const handle = el.querySelector('.resize-handle');
+            handle.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const newWidth = touch.clientX - el.getBoundingClientRect().left;
+                if(newWidth > 50) el.style.width = newWidth + 'px';
+            });
         }
 
         function rotateSig(btn) {
             const wrap = btn.parentElement.parentElement;
-            let currentRotation = wrap.getAttribute('data-rot') || 0;
-            currentRotation = (parseInt(currentRotation) + 90) % 360;
-            wrap.style.transform = `rotate(${currentRotation}deg)`;
-            wrap.setAttribute('data-rot', currentRotation);
+            let rot = parseInt(wrap.getAttribute('data-rot') || 0);
+            rot = (rot + 90) % 360;
+            wrap.style.transform = `rotate(${rot}deg)`;
+            wrap.setAttribute('data-rot', rot);
         }
 
-        function cloneSig(btn) {
-            const wrap = btn.parentElement.parentElement;
-            const clone = wrap.cloneNode(true);
-            clone.style.top = (parseInt(wrap.style.top) + 20) + 'px';
-            document.getElementById('page-1').appendChild(clone);
-        }
-
-        function goHome() { window.location.href = "https://dokspdf.vercel.app"; }
+        async function savePDF() { alert("Gerando PDF assinado..."); }
     </script>
 </body>
 </html>
