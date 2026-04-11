@@ -8,65 +8,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-    /* Reset e Base */
-    body { font-family: 'Inter', sans-serif; margin: 0; background-color: #f0f2f5; }
-
-    /* BARRA SUPERIOR (HEADER) */
+    /* Estilos da Barra Superior */
     .header { 
         background-color: #002147; 
-        padding: 10px 15px; 
+        padding: 10px; 
         display: flex; 
         align-items: center; 
         justify-content: space-between;
-        gap: 10px;
+        gap: 8px;
     }
-    .logo-area { display: flex; align-items: center; gap: 8px; text-decoration: none; }
-    .logo-text { color: white; font-weight: bold; font-size: 18px; }
+    .logo-area { display: flex; align-items: center; gap: 5px; text-decoration: none; }
+    .logo-text { color: white; font-weight: bold; font-size: 16px; margin: 0; }
     .logo-text span { color: #ffcc00; }
-    
-    /* BUSCA PADRONIZADA */
-    .search-container { 
-        flex-grow: 1; 
-        position: relative; 
-        display: flex; 
-        align-items: center; 
-    }
+
+    /* Busca Padronizada */
+    .search-container { flex-grow: 1; position: relative; }
     .search-input { 
         width: 100%; 
-        padding: 8px 35px 8px 12px; 
-        border-radius: 6px; 
-        border: none; 
-        background: rgba(255,255,255,0.15); 
-        color: white;
-        font-size: 14px;
-    }
-    .search-input::placeholder { color: #ccc; }
-    .search-icon { position: absolute; right: 10px; color: #ccc; }
-
-    /* BOTÕES RECENTES E PRO */
-    .btn-nav { 
-        padding: 6px 12px; 
+        padding: 6px 10px; 
         border-radius: 4px; 
-        font-weight: bold; 
-        font-size: 12px; 
-        text-decoration: none;
+        border: 1px solid rgba(255,255,255,0.3); 
+        background: rgba(255,255,255,0.1); 
+        color: white; 
+        font-size: 13px;
     }
+
+    /* Botões Superiores */
+    .btn-nav { padding: 5px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-decoration: none; }
     .btn-recentes { border: 1px solid #ffcc00; color: #ffcc00; }
-    .btn-pro { background-color: #ffcc00; color: #002147; }
+    .btn-pro { background: #ffcc00; color: #002147; }
 
-    /* CARD CENTRAL (CORREÇÃO) */
-    .main-card {
-        background: white;
-        margin: 20px auto;
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        max-width: 400px;
-        text-align: center;
-        border-bottom: 5px solid #ffcc00;
-    }
-
-    /* BARRA INFERIOR (CORREÇÃO DOS BOTÕES) */
+    /* Ajuste da Barra Inferior (Botões brancos nunca mais) */
     .bottom-nav {
         position: fixed;
         bottom: 0;
@@ -74,34 +46,34 @@
         background: #002147;
         display: flex;
         justify-content: space-around;
-        padding: 10px 0;
+        padding: 8px 0;
+        border-top: 2px solid #ffcc00;
     }
     .nav-item { 
-        color: white; 
-        text-decoration: none; 
-        font-size: 11px; 
-        display: flex; 
-        flex-direction: column; 
+        background: transparent !important; 
+        border: none !important; 
+        color: white !important;
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        background: none; /* Garante que não fique branco */
-        border: none;
+        font-size: 10px;
+        text-decoration: none;
     }
-    .nav-item i { font-size: 20px; margin-bottom: 4px; }
-    .nav-item.active { color: #ffcc00; }
+    .nav-item i, .nav-item span { margin-bottom: 2px; }
+
     </style>
 </head>
 <body>
 
+
 <header class="header">
     <a href="index.html" class="logo-area">
-        <span style="font-size: 20px;">🏠</span> <div class="logo-text">Doks <span>PDF</span></div>
+        <span style="font-size: 18px;">🏠</span>
+        <h1 class="logo-text">Doks <span>PDF</span></h1>
     </a>
-    
     <div class="search-container">
-        <input type="text" class="search-input" placeholder="Buscar ferramenta...">
-        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="Buscar ferramenta..">
     </div>
-
     <a href="#" class="btn-nav btn-recentes">RECENTES</a>
     <a href="#" class="btn-nav btn-pro">PRO</a>
 </header>
