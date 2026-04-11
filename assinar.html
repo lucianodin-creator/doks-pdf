@@ -11,17 +11,111 @@
     :root { --azul: #0a2540; --amarelo: #ffcc29; --azul-claro: #1a73e8; --vermelho: #ff4757; }
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: #e9ecef; display: flex; flex-direction: column; height: 100vh; overflow: hidden; } 
-    
-    header { height: 65px; background: var(--azul); display: flex; align-items: center; padding: 0 10px; gap: 8px; border-bottom: 3px solid var(--amarelo); z-index: 1000; }
-    .brand { color: white; font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
-    .brand span { color: var(--amarelo); }
-    
-    .search-box { flex: 1; display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 5px 10px; align-items: center; margin: 0 5px; }
-    .search-box input { background: none; border: none; color: white; width: 100%; outline: none; font-size: 14px; }
-    
-    .btn-header { background: none; border: none; color: white; font-size: 22px; cursor: pointer; }
-    .btn-top-action { background: none; border: 1px solid var(--amarelo); color: var(--amarelo); padding: 5px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
-    .btn-pro { background: var(--amarelo); color: var(--azul); border: none; }
+
+    /* --- PADRONIZAÇÃO DO HEADER DOKSPDF --- */
+    header {
+        background-color: #0a2540; /* Azul escuro oficial */
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 3px solid #ffcc29; /* Amarelo oficial */
+        height: 60px;
+        box-sizing: border-box;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        min-width: fit-content;
+    }
+
+    .brand-text {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 18px;
+        text-transform: none;
+    }
+
+    .pdf-txt { 
+        color: #ffcc29; 
+        margin-left: 2px; 
+    }
+
+    /* --- CAMPO DE BUSCA PADRONIZADO --- */
+    .search-container {
+        flex-grow: 1;
+        max-width: 400px; /* Limite de largura para não esticar demais no desktop */
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.15); /* Fundo sutilmente claro */
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        padding: 8px 12px 8px 35px; /* Espaço para a lupa */
+        color: white;
+        font-size: 14px;
+        outline: none;
+        transition: 0.3s;
+    }
+
+    .search-input:focus {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: #ffcc29;
+    }
+
+    .search-input::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        pointer-events: none;
+    }
+
+    /* --- BOTÕES --- */
+    .header-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-header {
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-weight: 700;
+        font-size: 11px;
+        cursor: pointer;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .btn-recentes {
+        background: #0a2540;
+        color: #ffcc29;
+        border: 1px solid #ffcc29;
+    }
+
+    .btn-pro {
+        background: #ffcc29;
+        color: #0a2540;
+    }
+
+    /* Ajuste para telas muito pequenas (celulares antigos) */
+    @media (max-width: 360px) {
+        .brand-text { font-size: 14px; }
+        .btn-header { padding: 5px 8px; font-size: 10px; }
+    }
 
     main {
         flex: 1;
