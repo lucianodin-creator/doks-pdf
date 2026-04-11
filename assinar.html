@@ -19,12 +19,24 @@
         body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--fundo); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         /* --- HEADER CORRIGIDO (PRINT 2) --- */
-        .header { background-color: var(--azul-escuro); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--amarelo); flex-shrink: 0; z-index: 1001; gap: 10px; }
+header {
+    background-color: var(--azul-escuro);
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Garante distribuição entre logo, busca e botões */
+    padding: 10px;
+    gap: 15px; /* Cria um espaço de segurança entre os elementos */
+}
+
         .logo-area { display: flex; align-items: center; gap: 5px; cursor: pointer; color: white; flex-shrink: 0; }
         .logo-text { font-size: 16px; font-weight: 900; margin: 0; }
         
         /* Ajuste na busca para não sobrepor botões */
-        .search-container { flex-grow: 1; max-width: 180px; position: relative; } 
+search-container {
+    flex-grow: 1; 
+    max-width: 300px; /* Defina um limite máximo para não esticar demais em telas largas */
+    margin: 0 10px; /* Adiciona margem lateral para não encostar nos vizinhos */
+}
         .search-input { 
             width: 100%; padding: 8px 12px 8px 30px; border-radius: 8px; 
             border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); 
@@ -40,6 +52,21 @@
         #viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 120px 10px; position: relative; }
 
         .card-inicial { background: white; width: 90%; max-width: 400px; padding: 50px 20px; border-radius: 30px; border-bottom: 8px solid var(--amarelo); box-shadow: 0 15px 35px rgba(0,0,0,0.15); text-align: center; }
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 20px; /* Garante que o botão não cole no rodapé */
+}
+
+.btn-voltar {
+    margin-top: 20px; /* Cria o distanciamento do card */
+    display: block;  /* Garante que ele se comporte como bloco e fique embaixo */
+    color: var(--cinza-texto);
+    text-decoration: none;
+}
+
 
         /* --- ESTILO ASSINATURA --- */
         .signature-wrapper { position: absolute; border: 2px dashed var(--azul-claro); cursor: move; touch-action: none; display: flex; flex-direction: column; align-items: center; min-width: 80px; z-index: 500; }
@@ -99,6 +126,13 @@
                 </div>
             </div>
         </div>
+<div class="main-content">
+    <div class="card-central">
+        </div>
+    
+    <a href="/" class="btn-voltar">← Voltar página inicial</a>
+</div>
+
         <input type="file" id="file-selector" style="display:none" onchange="handleFile(this)" accept="application/pdf">
     </main>
 
