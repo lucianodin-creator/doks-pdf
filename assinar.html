@@ -8,208 +8,86 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-    :root { --azul: #0a2540; --amarelo: #ffcc29; --azul-claro: #1a73e8; --vermelho: #ff4757; }
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background: #e9ecef; display: flex; flex-direction: column; height: 100vh; overflow: hidden; } 
+    /* Reset e Base */
+    body { font-family: 'Inter', sans-serif; margin: 0; background-color: #f0f2f5; }
 
-    /* --- PADRONIZAÇÃO DO HEADER DOKSPDF --- */
-    header {
-        background-color: #0a2540; /* Azul escuro oficial */
-        padding: 10px 15px;
-        display: flex;
-        align-items: center;
+    /* BARRA SUPERIOR (HEADER) */
+    .header { 
+        background-color: #002147; 
+        padding: 10px 15px; 
+        display: flex; 
+        align-items: center; 
         justify-content: space-between;
-        gap: 12px;
-        border-bottom: 3px solid #ffcc29; /* Amarelo oficial */
-        height: 60px;
-        box-sizing: border-box;
+        gap: 10px;
     }
-
-    .brand {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        min-width: fit-content;
+    .logo-area { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .logo-text { color: white; font-weight: bold; font-size: 18px; }
+    .logo-text span { color: #ffcc00; }
+    
+    /* BUSCA PADRONIZADA */
+    .search-container { 
+        flex-grow: 1; 
+        position: relative; 
+        display: flex; 
+        align-items: center; 
     }
-
-    .brand-text {
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 18px;
-        text-transform: none;
-    }
-
-    .pdf-txt { 
-        color: #ffcc29; 
-        margin-left: 2px; 
-    }
-
-    /* --- CAMPO DE BUSCA PADRONIZADO --- */
-    .search-container {
-        flex-grow: 1;
-        max-width: 400px; /* Limite de largura para não esticar demais no desktop */
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-
-    .search-input {
-        width: 100%;
-        background: rgba(255, 255, 255, 0.15); /* Fundo sutilmente claro */
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 8px;
-        padding: 8px 12px 8px 35px; /* Espaço para a lupa */
+    .search-input { 
+        width: 100%; 
+        padding: 8px 35px 8px 12px; 
+        border-radius: 6px; 
+        border: none; 
+        background: rgba(255,255,255,0.15); 
         color: white;
         font-size: 14px;
-        outline: none;
-        transition: 0.3s;
+    }
+    .search-input::placeholder { color: #ccc; }
+    .search-icon { position: absolute; right: 10px; color: #ccc; }
+
+    /* BOTÕES RECENTES E PRO */
+    .btn-nav { 
+        padding: 6px 12px; 
+        border-radius: 4px; 
+        font-weight: bold; 
+        font-size: 12px; 
+        text-decoration: none;
+    }
+    .btn-recentes { border: 1px solid #ffcc00; color: #ffcc00; }
+    .btn-pro { background-color: #ffcc00; color: #002147; }
+
+    /* CARD CENTRAL (CORREÇÃO) */
+    .main-card {
+        background: white;
+        margin: 20px auto;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        max-width: 400px;
+        text-align: center;
+        border-bottom: 5px solid #ffcc00;
     }
 
-    .search-input:focus {
-        background: rgba(255, 255, 255, 0.25);
-        border-color: #ffcc29;
-    }
-
-    .search-input::placeholder {
-        color: rgba(255, 255, 255, 0.6);
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 12px;
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.6);
-        pointer-events: none;
-    }
-
-    /* --- BOTÕES --- */
-    .header-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .btn-header {
-        border: none;
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-weight: 700;
-        font-size: 11px;
-        cursor: pointer;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-
-    .btn-recentes {
-        background: #0a2540;
-        color: #ffcc29;
-        border: 1px solid #ffcc29;
-    }
-
-    .btn-pro {
-        background: #ffcc29;
-        color: #0a2540;
-    }
-
-    /* Ajuste para telas muito pequenas (celulares antigos) */
-    @media (max-width: 360px) {
-        .brand-text { font-size: 14px; }
-        .btn-header { padding: 5px 8px; font-size: 10px; }
-    }
-
-    /* Ajuste para telas muito pequenas (celulares antigos) */
-    @media (max-width: 360px) {
-        .brand-text { font-size: 14px; }
-        .btn-header { padding: 5px 8px; font-size: 10px; }
-    }
-
-    main {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
+    /* BARRA INFERIOR (CORREÇÃO DOS BOTÕES) */
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
         width: 100%;
-        position: relative;
-        overflow-y: auto;
+        background: #002147;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
     }
-
-#pdf-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100%;
-    padding-bottom: 60px; /* Compensa a altura do footer para o card centralizar no espaço visível */
-}
-
-.card-inicial {
-    background: white;
-    padding: 60px 30px; /* Aumentei o respiro interno igual ao de Juntar */
-    border-radius: 30px; /* Cantos mais arredondados */
-    width: 92%; /* Ajuste para margens laterais no mobile */
-    max-width: 420px;
-    text-align: center;
-    /* O segredo do design do Juntar: uma sombra que simula a borda amarela */
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 4px 0 var(--amarelo); 
-    position: relative;
-    border: none; /* Removemos a borda seca para usar a sombra acima */
-}
-
-/* Ajuste do ícone para ficar igual ao outro */
-.icon-box { 
-    font-size: 65px; 
-    margin-bottom: 20px; 
-    display: block; 
-    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
-}
-
+    .nav-item { 
+        color: white; 
+        text-decoration: none; 
+        font-size: 11px; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center;
+        background: none; /* Garante que não fique branco */
+        border: none;
     }
-
-    .icon-box { font-size: 50px; margin-bottom: 15px; display: block; }
-    .h1-card { font-size: 20px; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; color: var(--azul); }
-    .h1-card span { color: var(--amarelo); background: var(--azul); padding: 0 6px; border-radius: 4px; }
-    .p-card { font-size: 13px; color: #666; margin-bottom: 25px; font-weight: 500; }
-
-    #btn-abrir-estilizado {
-        background: var(--amarelo); color: var(--azul); border: none; padding: 18px;
-        width: 100%; border-radius: 12px; font-weight: 900; font-size: 16px;
-        cursor: pointer; transition: 0.2s; text-transform: uppercase;
-        display: flex; align-items: center; justify-content: center; gap: 10px;
-    }
-
-    .page-container { position: relative; background: white; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-
-.zoom-controls {
-    position: fixed;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%); /* Centraliza verticalmente na lateral */
-    display: none; 
-    flex-direction: column;
-    gap: 12px;
-    z-index: 2000;
-}
-
-    .btn-zoom { width: 45px; height: 45px; background: var(--amarelo); border: none; border-radius: 4px; color: var(--azul); font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-
-    #sig-modal { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; }
-    #sig-pad { width: 100%; height: calc(100% - 80px); background: #f1f3f5; touch-action: none; }
-    .modal-footer { height: 80px; background: var(--azul); display: flex; justify-content: space-around; align-items: center; padding: 0 10px; gap: 10px; }
-    .btn-modal { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; font-size: 13px; }
-    .btn-confirm { background: var(--amarelo); color: var(--azul); }
-    .btn-cancel { background: var(--vermelho); }
-    .btn-clear { background: var(--azul-claro); }
-
-    .sig-box { position: absolute; border: 2px dashed var(--azul-claro); width: 150px; height: 70px; z-index: 800; touch-action: none; display: flex; align-items: center; justify-content: center; }
-    .sig-controls { position: absolute; top: -45px; left: 0; display: flex; gap: 5px; background: var(--azul); padding: 5px; border-radius: 8px; z-index: 802; }
-    .sig-ctrl-btn { background: var(--amarelo); border: none; padding: 6px; border-radius: 4px; font-size: 16px; min-width: 30px; height: 30px; cursor: pointer; }
-    .resizer { position: absolute; right: -10px; bottom: -10px; width: 25px; height: 25px; background: var(--azul-claro); border: 2px solid white; border-radius: 50%; z-index: 801; }
-
-    footer { height: 85px; background: var(--azul); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; z-index: 1000; }
-    #rotate-lock { display: none; position: fixed; inset: 0; background: rgba(10,37,64,0.98); z-index: 5000; color: white; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-
+    .nav-item i { font-size: 20px; margin-bottom: 4px; }
+    .nav-item.active { color: #ffcc00; }
     </style>
 </head>
 <body>
