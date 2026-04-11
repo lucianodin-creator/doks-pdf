@@ -16,7 +16,6 @@
 
         body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--fundo); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* --- HEADER (Print 1) --- */
         .header { background-color: var(--azul-escuro); padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--amarelo); flex-shrink: 0; z-index: 1001; }
         .logo-area { display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; }
         .logo-text { font-size: 18px; font-weight: 900; margin: 0; }
@@ -25,28 +24,31 @@
         .btn-recentes { color: var(--amarelo); border: 1.5px solid var(--amarelo); background: transparent; }
         .btn-pro { background: var(--amarelo); color: var(--azul-escuro); }
 
-        /* --- VIEWPORT --- */
         #viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 100px 10px; -webkit-overflow-scrolling: touch; }
 
-        /* --- CARD INICIAL (Print 2) --- */
-        .container-inicial { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 340px; margin: 10vh auto; }
-        .card-branco { background: white; padding: 40px 25px; border-radius: 24px; text-align: center; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-bottom: 6px solid var(--amarelo); box-sizing: border-box; }
-        .btn-voltar-home { margin-top: 25px; color: var(--azul-escuro); font-weight: 800; cursor: pointer; background: none; border: none; font-size: 14px; }
-
-        /* --- CONTROLES LATERAIS (Print 1) --- */
-        .zoom-controls { position: fixed; right: 15px; top: 100px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        /* --- ZOOM AJUSTADO (Print 3) --- */
+        .zoom-controls { position: fixed; right: 15px; top: 140px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
         .btn-zoom { width: 50px; height: 50px; background: var(--amarelo); color: var(--azul-escuro); border: none; border-radius: 12px; font-size: 28px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; }
 
-        /* --- FOOTER --- */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: var(--azul-escuro); display: flex; justify-content: space-around; align-items: center; padding: 15px 0 25px 0; border-top: 3px solid var(--amarelo); z-index: 1001; }
         .nav-item { background: transparent; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 5px; cursor: pointer; }
         .nav-item:disabled { opacity: 0.4; cursor: not-allowed; }
 
         #pdf-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
         .page-container { position: relative; background: white; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        /* Estilo para aviso de rotação */
+        #rotate-notice { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,33,71,0.95); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; text-align: center; padding: 20px; }
     </style>
 </head>
 <body>
+
+    <div id="rotate-notice">
+        <span style="font-size: 50px; margin-bottom: 20px;">🔄</span>
+        <h2 style="font-weight: 900;">GIRE O CELULAR</h2>
+        <p>Para assinar com melhor precisão, use o celular na horizontal.</p>
+        <button onclick="closeRotateNotice()" class="btn-nav btn-pro" style="margin-top: 20px; padding: 15px 30px;">ESTOU PRONTO</button>
+    </div>
 
     <header class="header">
         <div class="logo-area" onclick="goHome()">
@@ -66,14 +68,14 @@
 
     <main id="viewport">
         <div id="pdf-container">
-            <div class="container-inicial" id="inicial-ui">
-                <div class="card-branco">
+            <div class="container-inicial" id="inicial-ui" style="text-align:center; margin-top: 10vh;">
+                <div style="background: white; padding: 40px 25px; border-radius: 24px; max-width: 320px; border-bottom: 6px solid var(--amarelo); box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                     <span style="font-size:60px; display:block; margin-bottom:15px;">📂</span>
                     <h2 style="color:var(--azul-escuro); font-weight:900; margin:0 0 10px 0; font-size:22px;">ASSINAR <b>PDF</b></h2>
                     <p style="color:#666; font-size:15px; margin-bottom:30px;">Selecione seu documento para começar.</p>
                     <button onclick="document.getElementById('file-selector').click()" class="btn-nav btn-pro" style="width:100%; padding:20px; font-size:16px; border-radius:15px;">SELECIONAR PDF</button>
                 </div>
-                <button class="btn-voltar-home" onclick="goHome()">← Voltar página inicial</button>
+                <button onclick="goHome()" style="background:none; border:none; color:var(--azul-escuro); font-weight:800; margin-top:20px; cursor:pointer;">← Voltar página inicial</button>
             </div>
         </div>
         <input type="file" id="file-selector" style="display:none" onchange="handleFile(this)" accept="application/pdf">
@@ -82,7 +84,7 @@
     <nav class="bottom-nav">
         <button class="nav-item" onclick="location.reload()"><span>🔄</span>ATUALIZAR</button>
         <div style="color:var(--amarelo); font-weight:900; font-size:22px;"><span id="p-cur">0</span> / <span id="p-tot">0</span></div>
-        <button class="nav-item" id="btn-assinar" onclick="addSignature()" disabled><span>🖋️</span>ASSINAR</button>
+        <button class="nav-item" id="btn-assinar" onclick="showRotateNotice()" disabled><span>🖋️</span>ASSINAR</button>
         <button class="nav-item" id="btn-salvar" onclick="savePDF()" disabled><span>💾</span>SALVAR</button>
     </nav>
 
@@ -91,12 +93,14 @@
         
         let mainDoc = null;
         let pdfScale = 1.0;
+        let originalFileName = "documento_assinado.pdf";
 
         function goHome() { window.location.href = "https://dokspdf.vercel.app"; }
 
         async function handleFile(el) {
             const file = el.files[0];
             if(!file) return;
+            originalFileName = file.name.replace(".pdf", "_assinado.pdf");
             const arrayBuffer = await file.arrayBuffer();
             const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
             mainDoc = await loadingTask.promise;
@@ -112,10 +116,9 @@
         async function renderPDF() {
             const wrap = document.getElementById('pdf-container');
             const inicialUI = document.getElementById('inicial-ui');
-            if(inicialUI) inicialUI.remove(); // Remove o card inicial ao carregar o PDF
+            if(inicialUI) inicialUI.style.display = 'none';
             
             wrap.innerHTML = "";
-            
             for(let i=1; i<=mainDoc.numPages; i++) {
                 const pg = await mainDoc.getPage(i);
                 const vpBase = pg.getViewport({scale: 1});
@@ -125,7 +128,6 @@
                 
                 const box = document.createElement('div');
                 box.className = 'page-container';
-                box.id = 'page-' + i;
                 box.style.width = vp.width + 'px';
                 box.style.height = vp.height + 'px';
 
@@ -144,14 +146,35 @@
             renderPDF();
         }
 
-        function addSignature() {
-            alert("Função de assinatura ativada! Clique no local do PDF para posicionar.");
-            // Aqui entra sua lógica de criar a div da assinatura
+        // --- LÓGICA DE ASSINATURA (Print 1) ---
+        function showRotateNotice() {
+            document.getElementById('rotate-notice').style.display = 'flex';
         }
 
-        function savePDF() {
-            alert("Gerando PDF assinado...");
-            // Aqui entra sua lógica de exportação com jsPDF
+        function closeRotateNotice() {
+            document.getElementById('rotate-notice').style.display = 'none';
+            // Aqui você chama a sua função que abre o modal/canvas de assinatura real
+            alert("Agora clique no documento para posicionar a assinatura.");
+        }
+
+        // --- SALVAR ANDROID (Print 2) ---
+        async function savePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Simulação de geração para exemplo. Na sua lógica real, 
+            // você deve compor o PDF com as assinaturas adicionadas.
+            const pdfOutput = doc.output('blob');
+            const url = URL.createObjectURL(pdfOutput);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = originalFileName;
+            document.body.appendChild(link);
+            link.click(); // Força o download no Android
+            document.body.removeChild(link);
+            
+            setTimeout(() => URL.revokeObjectURL(url), 100);
         }
     </script>
 </body>
