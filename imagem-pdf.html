@@ -6,58 +6,111 @@
     <title>Imagem para PDF - DoksPDF</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root {
-            --azul: #0a2540;
-            --amarelo: #ffcc29;
-            --fundo: #dee2e6;
-        }
 
-        body {
-            font-family: sans-serif;
-            background: var(--fundo);
-            color: var(--azul);
-            margin: 0;
-            padding: 0;
-        }
+    /* --- PADRONIZAÇÃO DO HEADER DOKSPDF --- */
+    header {
+        background-color: #0a2540; /* Azul escuro oficial */
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 3px solid #ffcc29; /* Amarelo oficial */
+        height: 60px;
+        box-sizing: border-box;
+    }
 
-        /* --- CABEÇALHO --- */
-        header {
-            background-color: var(--azul);
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            border-bottom: 3px solid var(--amarelo);
-        }
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        min-width: fit-content;
+    }
 
-        .brand { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .brand-text { color: #ffffff; font-weight: 700; font-size: 18px; }
-        .pdf-txt { color: var(--amarelo); margin-left: 4px; }
+    .brand-text {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 18px;
+        text-transform: none;
+    }
 
-        .search-container { flex-grow: 1; max-width: 300px; position: relative; }
-        .search-input {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            padding: 8px 10px 8px 30px;
-            color: white;
-            font-size: 14px;
-        }
+    .pdf-txt { 
+        color: #ffcc29; 
+        margin-left: 2px; 
+    }
 
-        .header-actions { display: flex; gap: 8px; }
-        .btn-header {
-            border: none;
-            border-radius: 4px;
-            padding: 6px 10px;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-        .btn-recentes { background: var(--azul); color: var(--amarelo); border: 1px solid var(--amarelo); }
-        .btn-pro { background: var(--amarelo); color: var(--azul); }
+    /* --- CAMPO DE BUSCA PADRONIZADO --- */
+    .search-container {
+        flex-grow: 1;
+        max-width: 400px; /* Limite de largura para não esticar demais no desktop */
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.15); /* Fundo sutilmente claro */
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        padding: 8px 12px 8px 35px; /* Espaço para a lupa */
+        color: white;
+        font-size: 14px;
+        outline: none;
+        transition: 0.3s;
+    }
+
+    .search-input:focus {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: #ffcc29;
+    }
+
+    .search-input::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        pointer-events: none;
+    }
+
+    /* --- BOTÕES --- */
+    .header-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-header {
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-weight: 700;
+        font-size: 11px;
+        cursor: pointer;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .btn-recentes {
+        background: #0a2540;
+        color: #ffcc29;
+        border: 1px solid #ffcc29;
+    }
+
+    .btn-pro {
+        background: #ffcc29;
+        color: #0a2540;
+    }
+
+    /* Ajuste para telas muito pequenas (celulares antigos) */
+    @media (max-width: 360px) {
+        .brand-text { font-size: 14px; }
+        .btn-header { padding: 5px 8px; font-size: 10px; }
+    }
 
         /* --- CARD PADRONIZADO (SIMETRIA TOTAL) --- */
         .card {
@@ -130,19 +183,21 @@
 </head>
 <body>
 
-    <header>
-        <div class="brand" onclick="irParaHome()">
-            <div class="brand-text">Doks<span class="pdf-txt">PDF</span></div>
-        </div>
-        <div class="search-container">
-            <span style="position: absolute; left: 10px; top: 8px; color: #aaa;">🔍</span>
-            <input type="text" class="search-input" placeholder="Buscar ferramenta...">
-        </div>
-        <div class="header-actions">
-            <button class="btn-header btn-recentes">RECENTES</button>
-            <button class="btn-header btn-pro">PRO</button>
-        </div>
-    </header>
+<header>
+    <div class="brand" onclick="location.href='index.html'">
+        <div class="brand-text">Doks<span class="pdf-txt">PDF</span></div>
+    </div>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="Buscar ferramenta...">
+    </div>
+
+    <div class="header-actions">
+        <button class="btn-header btn-recentes">RECENTES</button>
+        <button class="btn-header btn-pro">PRO</button>
+    </div>
+</header>
 
     <div class="card">
         <div class="card-top">
