@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Assinar PDF - DoksPDF</title>
+    <!-- Dependências para manipulação de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <style>
+        /* ================================================== */
+        /* ESTILOS GLOBAIS E VARIÁVEIS                        */
+        /* ================================================== */
         :root {
             --azul-escuro: #002147;
             --amarelo: #ffcc00;
@@ -14,70 +19,184 @@
             --azul-claro: #007bff;
             --verde: #28a745;
             --branco: #ffffff;
+            --vermelho: #dc3545;
+            --cinza: #6c757d;
         }
 
-        body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--fundo); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background-color: var(--fundo);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-        /* --- HEADER CORRIGIDO (PRINT 2) --- */
-        .header { background-color: var(--azul-escuro); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--amarelo); flex-shrink: 0; z-index: 1001; gap: 10px; }
-        .logo-area { display: flex; align-items: center; gap: 5px; cursor: pointer; color: white; flex-shrink: 0; }
-        .logo-text { font-size: 16px; font-weight: 900; margin: 0; }
+        /* ================================================== */
+        /* HEADER E NAVEGAÇÃO                                 */
+        /* ================================================== */
+        .header {
+            background-color: var(--azul-escuro);
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--amarelo);
+            flex-shrink: 0;
+            z-index: 1001;
+            gap: 10px;
+        }
+        .logo-area { display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; flex-shrink: 0; }
+        .logo-text { font-size: 18px; font-weight: 700; margin: 0; }
         
-        /* Ajuste na busca para não sobrepor botões */
-        .search-container { flex-grow: 1; max-width: 180px; position: relative; } 
-        .search-input { 
-            width: 100%; padding: 8px 12px 8px 30px; border-radius: 8px; 
-            border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); 
-            color: white; font-size: 12px; outline: none;
-        }
-        .search-container::before { content: '🔍'; position: absolute; left: 8px; top: 7px; font-size: 12px; opacity: 0.7; }
+        .search-container { flex-grow: 1; max-width: 200px; position: relative; } 
+        .search-input { width: 100%; padding: 8px 12px 8px 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-size: 14px; outline: none; }
+        .search-container::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.7; }
 
-        .nav-btns-right { display: flex; gap: 5px; flex-shrink: 0; }
-        .btn-nav { padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; border: none; cursor: pointer; }
+        .nav-btns-right { display: flex; gap: 8px; flex-shrink: 0; }
+        .btn-nav { padding: 7px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; text-transform: uppercase; }
         .btn-recentes { color: var(--amarelo); border: 1.5px solid var(--amarelo); background: transparent; }
         .btn-pro { background: var(--amarelo); color: var(--azul-escuro); }
 
-        #viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 120px 10px; position: relative; }
+        /* ================================================== */
+        /* CONTEÚDO PRINCIPAL                                 */
+        /* ================================================== */
+        #viewport {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px 120px 10px;
+        }
+        #pdf-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .page-container { position: relative; background: white; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .card-inicial { background: white; width: 90%; max-width: 400px; padding: 40px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; margin-top: 5vh; }
 
-        .card-inicial { background: white; width: 90%; max-width: 400px; padding: 50px 20px; border-radius: 30px; border-bottom: 8px solid var(--amarelo); box-shadow: 0 15px 35px rgba(0,0,0,0.15); text-align: center; }
-
-        /* --- ESTILO ASSINATURA --- */
-        .signature-wrapper { position: absolute; border: 2px dashed var(--azul-claro); cursor: move; touch-action: none; display: flex; flex-direction: column; align-items: center; min-width: 80px; z-index: 500; }
+        /* ================================================== */
+        /* ASSINATURA (Wrapper, Controles, Handle)            */
+        /* ================================================== */
+        .signature-wrapper {
+            position: absolute;
+            border: 2px dashed transparent;
+            cursor: move;
+            touch-action: none;
+            z-index: 500;
+            transition: border-color 0.2s;
+        }
+        .signature-wrapper.active {
+            border-color: var(--amarelo);
+            z-index: 501;
+        }
         .signature-img { width: 100%; height: auto; pointer-events: none; }
-        .sig-tools { position: absolute; top: -45px; display: flex; gap: 4px; padding: 4px; background: rgba(0,33,71,0.9); border-radius: 8px; border: 1px solid var(--amarelo); }
-        .tool-btn { border: none; color: white; font-size: 16px; cursor: pointer; padding: 6px; border-radius: 4px; }
-        .btn-del { background: #dc3545; }
-        .btn-rot { background: #28a745; }
-        .btn-clone { background: var(--azul-claro); }
-        .resize-handle { position: absolute; right: -10px; bottom: -10px; width: 24px; height: 24px; background: var(--amarelo); border-radius: 50%; border: 2px solid var(--azul-escuro); }
-
-        /* MODAL ASSINATURA */
-        #signature-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--azul-escuro); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 3000; }
-        .sig-container { background: var(--branco); width: 95%; height: 60vh; border-radius: 12px; }
-        #sig-canvas { width: 100%; height: 100%; touch-action: none; }
-
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: var(--azul-escuro); display: flex; justify-content: space-around; align-items: center; padding: 15px 0 25px 0; border-top: 3px solid var(--amarelo); z-index: 1001; }
-        .nav-item { background: transparent; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 5px; }
         
-        #pdf-container { width: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .page-container { position: relative; background: white; margin-bottom: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .sig-tools {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 5px;
+            padding: 5px;
+            background: rgba(0, 33, 71, 0.95);
+            border-radius: 8px;
+        }
+        .signature-wrapper.active .sig-tools { display: flex; }
+        
+        .tool-btn { border: none; color: white; font-size: 18px; cursor: pointer; padding: 6px; border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+        .btn-del { background: var(--vermelho); }
+        .btn-rot { background: var(--verde); }
+        .btn-clone { background: var(--azul-claro); }
+
+        .resize-handle {
+            position: absolute;
+            right: -8px;
+            bottom: -8px;
+            width: 20px;
+            height: 20px;
+            background: var(--amarelo);
+            border-radius: 50%;
+            border: 2px solid var(--azul-escuro);
+            cursor: se-resize;
+            display: none;
+        }
+        .signature-wrapper.active .resize-handle { display: block; }
+
+        /* ================================================== */
+        /* MODAIS E OVERLAYS                                  */
+        /* ================================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 33, 71, 0.9);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+        }
+        .modal-overlay.visible { display: flex; }
+        
+        #signature-modal .sig-container { background: var(--branco); width: 95%; max-width: 700px; height: 60vh; border-radius: 12px; }
+        #sig-canvas { width: 100%; height: 100%; border-radius: 12px; }
+        
+        #rotate-overlay .rotate-content { padding: 20px; }
+        #rotate-overlay h2 { font-size: 22px; margin-bottom: 10px; }
+        #rotate-overlay p { font-size: 16px; opacity: 0.8; margin-bottom: 30px; }
+        #rotate-overlay button { background: var(--amarelo); color: var(--azul-escuro); padding: 15px 30px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; }
+
+        /* ================================================== */
+        /* NAVEGAÇÃO INFERIOR                                 */
+        /* ================================================== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: var(--azul-escuro);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* Para iPhone X e similares */
+            border-top: 3px solid var(--amarelo);
+            z-index: 1001;
+        }
+        .nav-item { background: transparent; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 5px; }
+        .nav-item:disabled { opacity: 0.5; }
     </style>
 </head>
 <body>
 
-    <div id="signature-modal">
-        <h3 style="color:white; text-align:center; padding: 10px;">Assine no espaço branco</h3>
-        <div class="sig-container"><canvas id="sig-canvas"></canvas></div>
-        <div class="sig-buttons" style="display:flex; gap:10px; width:95%; margin-top:15px;">
-            <button style="flex:1; background:#dc3545; padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="closeSignatureModal()">CANCELAR</button>
-            <button style="flex:1; background:#6c757d; padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="clearCanvas()">LIMPAR</button>
-            <button style="flex:1; background:var(--verde); padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="confirmSignature()">CONFIRMAR</button>
+    <!-- MODAL DE ASSINATURA -->
+    <div id="signature-modal" class="modal-overlay">
+        <div style="width: 95%; max-width: 700px;">
+            <h3 style="color:white; text-align:center; padding: 10px;">Assine no espaço branco</h3>
+            <div class="sig-container"><canvas id="sig-canvas"></canvas></div>
+            <div class="sig-buttons" style="display:flex; gap:10px; width:100%; margin-top:15px;">
+                <button style="flex:1; background:var(--vermelho); padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="closeSignatureModal()">CANCELAR</button>
+                <button style="flex:1; background:var(--cinza); padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="clearCanvas()">LIMPAR</button>
+                <button style="flex:1; background:var(--verde); padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="confirmSignature()">CONFIRMAR</button>
+            </div>
         </div>
     </div>
 
+    <!-- OVERLAY "VIRE O CELULAR" -->
+    <div id="rotate-overlay" class="modal-overlay">
+        <div class="rotate-content">
+            <span style="font-size: 48px; display: block; margin-bottom: 20px;">🔄</span>
+            <h2>Vire o celular</h2>
+            <p>Para uma melhor experiência, assine com o celular deitado.</p>
+            <button onclick="document.getElementById('rotate-overlay').classList.remove('visible'); openSignatureModal();">ESTOU PRONTO</button>
+        </div>
+    </div>
+
+    <!-- HEADER -->
     <header class="header">
         <div class="logo-area" onclick="window.location.reload()">
-            <span>🏠</span>
+            <span style="font-size: 20px;">🏠</span>
             <h1 class="logo-text">Doks<span style="color:var(--amarelo)">PDF</span></h1>
         </div>
         <div class="search-container">
@@ -89,19 +208,21 @@
         </div>
     </header>
 
+    <!-- CONTEÚDO PRINCIPAL -->
     <main id="viewport">
         <div id="pdf-container">
             <div id="inicial-ui" style="display: flex; justify-content: center; width: 100%; margin-top: 5vh;">
                 <div class="card-inicial">
-                    <span style="font-size:80px; display:block; margin-bottom:20px;">📂</span>
-                    <h2 style="font-size:26px; color:var(--azul-escuro); margin-bottom:30px;">ASSINAR <b>PDF</b></h2>
-                    <button onclick="document.getElementById('file-selector').click()" class="btn-nav btn-pro" style="width:100%; padding:22px; font-size:18px; border-radius:15px;">SELECIONAR PDF</button>
+                    <span style="font-size:60px; display:block; margin-bottom:20px;">📂</span>
+                    <h2 style="font-size:22px; color:var(--azul-escuro); margin-bottom:30px;">ASSINAR <b>PDF</b></h2>
+                    <button onclick="document.getElementById('file-selector').click()" class="btn-nav btn-pro" style="width:100%; padding:20px; font-size:16px; border-radius:15px;">SELECIONAR PDF</button>
                 </div>
             </div>
         </div>
         <input type="file" id="file-selector" style="display:none" onchange="handleFile(this)" accept="application/pdf">
     </main>
 
+    <!-- NAVEGAÇÃO INFERIOR -->
     <nav class="bottom-nav">
         <button class="nav-item" onclick="location.reload()"><span>🔄</span>ATUALIZAR</button>
         <div style="color:var(--amarelo); font-weight:900; font-size:22px;"><span id="p-cur">0</span> / <span id="p-tot">0</span></div>
@@ -110,148 +231,242 @@
     </nav>
 
     <script>
-        let mainDoc = null, ctx, canvas, drawing = false, lastSignature = null;
+        // Variáveis globais
+        let mainDoc = null, ctx, canvas, isDrawing = false, lastSignatureData = null;
         const { jsPDF } = window.jspdf;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
-        async function handleFile(el) {
-            const file = el.files[0];
-            if(!file) return;
+        // --- 1. CARREGAMENTO E RENDERIZAÇÃO DO PDF ---
+        async function handleFile(element) {
+            const file = element.files[0];
+            if (!file) return;
+            document.getElementById('inicial-ui').innerHTML = `<h2>Carregando PDF...</h2>`;
             const arrayBuffer = await file.arrayBuffer();
-            mainDoc = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+            mainDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             document.getElementById('p-tot').innerText = mainDoc.numPages;
-            document.getElementById('p-cur').innerText = "1";
             document.getElementById('btn-assinar').disabled = false;
             document.getElementById('btn-salvar').disabled = false;
-            renderPDF();
+            await renderAllPages();
         }
 
-        async function renderPDF() {
-            const wrap = document.getElementById('pdf-container');
-            document.getElementById('inicial-ui').style.display = 'none';
-            wrap.innerHTML = "";
-            for(let i=1; i<=mainDoc.numPages; i++) {
-                const pg = await mainDoc.getPage(i);
-                const vp = pg.getViewport({scale: (window.innerWidth * 0.95 / pg.getViewport({scale:1}).width)});
-                const box = document.createElement('div');
-                box.className = 'page-container';
-                box.id = `page-${i}`;
-                const cvs = document.createElement('canvas');
-                cvs.width = vp.width; cvs.height = vp.height;
-                box.appendChild(cvs);
-                wrap.appendChild(box);
-                await pg.render({canvasContext: cvs.getContext('2d'), viewport: vp}).promise;
+        async function renderAllPages() {
+            const container = document.getElementById('pdf-container');
+            container.innerHTML = ""; // Limpa a UI inicial
+            for (let i = 1; i <= mainDoc.numPages; i++) {
+                const page = await mainDoc.getPage(i);
+                const viewport = page.getViewport({ scale: (window.innerWidth / page.getViewport({ scale: 1 }).width) * 0.95 });
+                
+                const pageContainer = document.createElement('div');
+                pageContainer.className = 'page-container';
+                pageContainer.id = `page-${i}`;
+                
+                const canvasEl = document.createElement('canvas');
+                canvasEl.width = viewport.width;
+                canvasEl.height = viewport.height;
+                pageContainer.appendChild(canvasEl);
+                container.appendChild(pageContainer);
+
+                await page.render({ canvasContext: canvasEl.getContext('2d'), viewport }).promise;
+                document.getElementById('p-cur').innerText = i;
             }
         }
 
-        // FUNÇÃO COM ALERTA DE ORIENTAÇÃO (PRINT 1)
+        // --- 2. LÓGICA DO MODAL DE ASSINATURA ---
         function prepareSignature() {
-            if(confirm("Para uma assinatura melhor, vire o celular deitado (Paisagem). Clique em OK quando estiver pronto.")) {
+            const isMobilePortrait = window.matchMedia("(max-width: 768px) and (orientation: portrait)").matches;
+            if (isMobilePortrait) {
+                document.getElementById('rotate-overlay').classList.add('visible');
+            } else {
                 openSignatureModal();
             }
         }
 
         function openSignatureModal() {
-            document.getElementById('signature-modal').style.display = 'flex';
-            setTimeout(initCanvas, 100);
+            document.getElementById('signature-modal').classList.add('visible');
+            setTimeout(initSignatureCanvas, 100); // Garante que o modal esteja visível
         }
-        function closeSignatureModal() { document.getElementById('signature-modal').style.display = 'none'; }
-        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-        function initCanvas() {
+        function closeSignatureModal() {
+            document.getElementById('signature-modal').classList.remove('visible');
+        }
+
+        function initSignatureCanvas() {
             canvas = document.getElementById('sig-canvas');
             ctx = canvas.getContext('2d');
-            canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
-            ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.lineCap = "round";
             
+            // Ajusta o tamanho do canvas para a densidade de pixels do dispositivo
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext('2d').scale(ratio, ratio);
+
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            
+            clearCanvas();
+
+            // Adiciona listeners unificados para mouse e toque
+            const start = (e) => { e.preventDefault(); isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+            const draw = (e) => { if (!isDrawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+            const stop = () => { isDrawing = false; };
             const getPos = (e) => {
-                const r = canvas.getBoundingClientRect();
-                const t = e.touches ? e.touches[0] : e;
-                return { x: t.clientX - r.left, y: t.clientY - r.top };
+                const rect = canvas.getBoundingClientRect();
+                const evt = e.touches ? e.touches[0] : e;
+                return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
             };
 
-            canvas.addEventListener("touchstart", (e) => {
-                e.preventDefault(); drawing = true; ctx.beginPath();
-                const p = getPos(e); ctx.moveTo(p.x, p.y);
-            });
-            canvas.addEventListener("touchmove", (e) => {
-                if(!drawing) return; e.preventDefault();
-                const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
-            });
-            canvas.addEventListener("touchend", () => drawing = false);
+            ['mousedown', 'touchstart'].forEach(evt => canvas.addEventListener(evt, start));
+            ['mousemove', 'touchmove'].forEach(evt => canvas.addEventListener(evt, draw));
+            ['mouseup', 'mouseout', 'touchend'].forEach(evt => canvas.addEventListener(evt, stop));
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         function confirmSignature() {
-            lastSignature = canvas.toDataURL();
-            addSignatureToPage(1, lastSignature, true);
+            lastSignatureData = canvas.toDataURL();
+            addSignatureToPage(1, lastSignatureData, true); // Adiciona na primeira página por padrão
             closeSignatureModal();
         }
 
-        function addSignatureToPage(pageNum, src, isMaster = false) {
+        // --- 3. MANIPULAÇÃO DA ASSINATURA NA PÁGINA ---
+        function addSignatureToPage(pageNum, imgSrc, isMaster) {
+            const pageContainer = document.getElementById(`page-${pageNum}`);
+            if (!pageContainer) return;
+
             const wrapper = document.createElement('div');
             wrapper.className = 'signature-wrapper';
-            wrapper.style.left = '50px'; wrapper.style.top = '100px';
-            wrapper.style.width = '140px';
-            const cloneBtn = isMaster ? `<button class="tool-btn btn-clone" onclick="cloneToAll(this)">👥</button>` : '';
+            wrapper.style.left = '50px';
+            wrapper.style.top = '100px';
+            wrapper.style.width = '150px';
+
+            const cloneBtnHTML = isMaster ? `<button class="tool-btn btn-clone" onclick="cloneSignature(this)">👥</button>` : '';
             wrapper.innerHTML = `
                 <div class="sig-tools">
-                    <button class="tool-btn btn-del" onclick="this.parentElement.parentElement.remove()">🗑️</button>
-                    <button class="tool-btn btn-rot" onclick="rotateSig(this)">🔄</button>
-                    ${cloneBtn}
+                    <button class="tool-btn btn-del" onclick="this.closest('.signature-wrapper').remove()">🗑️</button>
+                    <button class="tool-btn btn-rot" onclick="rotateSignature(this)">🔄</button>
+                    ${cloneBtnHTML}
                 </div>
-                <img src="${src}" class="signature-img">
+                <img src="${imgSrc}" class="signature-img">
                 <div class="resize-handle"></div>
             `;
-            makeDraggable(wrapper);
-            makeResizable(wrapper);
-            document.getElementById(`page-${pageNum}`).appendChild(wrapper);
-        }
-
-        function makeDraggable(el) {
-            let posX = 0, posY = 0;
-            el.addEventListener('touchstart', (e) => {
-                if (e.target.classList.contains('tool-btn') || e.target.classList.contains('resize-handle')) return;
-                posX = e.touches[0].clientX - el.offsetLeft;
-                posY = e.touches[0].clientY - el.offsetTop;
-            });
-            el.addEventListener('touchmove', (e) => {
-                if (e.target.classList.contains('tool-btn') || e.target.classList.contains('resize-handle')) return;
-                e.preventDefault();
-                el.style.left = (e.touches[0].clientX - posX) + 'px';
-                el.style.top = (e.touches[0].clientY - posY) + 'px';
-            });
-        }
-
-        function makeResizable(el) {
-            const handle = el.querySelector('.resize-handle');
-            handle.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const newWidth = e.touches[0].clientX - el.getBoundingClientRect().left;
-                if(newWidth > 50) el.style.width = newWidth + 'px';
-            });
-        }
-
-        function rotateSig(btn) {
-            const wrap = btn.parentElement.parentElement;
-            let rot = parseInt(wrap.getAttribute('data-rot') || 0);
-            rot = (rot + 90) % 360;
-            wrap.style.transform = `rotate(${rot}deg)`;
-            wrap.setAttribute('data-rot', rot);
-        }
-
-        // SALVAR PDF - REMOVIDO MENSAGEM E USANDO DOWNLOAD PADRÃO (PRINT 3)
-        async function savePDF() {
-            const pdf = new jsPDF();
-            const pages = document.querySelectorAll('.page-container');
             
-            for (let i = 0; i < pages.length; i++) {
-                const canvas = pages[i].querySelector('canvas');
-                const imgData = canvas.toDataURL('image/jpeg', 0.8);
-                if (i > 0) pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-                
-                // Aqui adicionaria as assinaturas por cima no PDF final se necessário
+            pageContainer.appendChild(wrapper);
+            makeSignatureInteractive(wrapper);
+        }
+
+        function makeSignatureInteractive(element) {
+            // Ativar/Desativar ao clicar
+            element.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.signature-wrapper.active').forEach(activeEl => {
+                    if (activeEl !== element) activeEl.classList.remove('active');
+                });
+                element.classList.toggle('active');
+            });
+
+            // Lógica unificada para arrastar
+            const startDrag = (e) => {
+                if (e.target.closest('.sig-tools, .resize-handle')) return;
+                e.preventDefault();
+                element.style.cursor = 'grabbing';
+                const evt = e.touches ? e.touches[0] : e;
+                const offsetX = evt.clientX - element.offsetLeft;
+                const offsetY = evt.clientY - element.offsetTop;
+
+                const drag = (e) => {
+                    e.preventDefault();
+                    const moveEvt = e.touches ? e.touches[0] : e;
+                    element.style.left = `${moveEvt.clientX - offsetX}px`;
+                    element.style.top = `${moveEvt.clientY - offsetY}px`;
+                };
+                const stopDrag = () => {
+                    element.style.cursor = 'move';
+                    ['mousemove', 'touchmove'].forEach(evt => document.removeEventListener(evt, drag));
+                    ['mouseup', 'touchend'].forEach(evt => document.removeEventListener(evt, stopDrag));
+                };
+                ['mousemove', 'touchmove'].forEach(evt => document.addEventListener(evt, drag));
+                ['mouseup', 'touchend'].forEach(evt => document.addEventListener(evt, stopDrag));
+            };
+            ['mousedown', 'touchstart'].forEach(evt => element.addEventListener(evt, startDrag));
+
+            // Lógica unificada para redimensionar
+            const handle = element.querySelector('.resize-handle');
+            const startResize = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const resize = (e) => {
+                    const moveEvt = e.touches ? e.touches[0] : e;
+                    const newWidth = moveEvt.clientX - element.getBoundingClientRect().left;
+                    if (newWidth > 50) element.style.width = `${newWidth}px`;
+                };
+                const stopResize = () => {
+                    ['mousemove', 'touchmove'].forEach(evt => document.removeEventListener(evt, resize));
+                    ['mouseup', 'touchend'].forEach(evt => document.removeEventListener(evt, stopResize));
+                };
+                ['mousemove', 'touchmove'].forEach(evt => document.addEventListener(evt, resize));
+                ['mouseup', 'touchend'].forEach(evt => document.addEventListener(evt, stopResize));
+            };
+            ['mousedown', 'touchstart'].forEach(evt => handle.addEventListener(evt, startResize));
+        }
+
+        function rotateSignature(button) {
+            const wrapper = button.closest('.signature-wrapper');
+            let currentRotation = parseInt(wrapper.dataset.rotation || 0);
+            currentRotation = (currentRotation + 90) % 360;
+            wrapper.style.transform = `rotate(${currentRotation}deg)`;
+            wrapper.dataset.rotation = currentRotation;
+        }
+
+        function cloneSignature(button) {
+            const originalWrapper = button.closest('.signature-wrapper');
+            const imgSrc = originalWrapper.querySelector('.signature-img').src;
+            const pageNum = originalWrapper.closest('.page-container').id.split('-')[1];
+            addSignatureToPage(pageNum, imgSrc, false); // O clone não é "master"
+        }
+
+        // Desativa assinaturas ativas ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.signature-wrapper')) {
+                document.querySelectorAll('.signature-wrapper.active').forEach(el => el.classList.remove('active'));
             }
-            pdf.save("documento-assinado.pdf");
+        });
+
+        // --- 4. SALVAR O PDF ---
+        async function savePDF() {
+            alert("Salvando PDF... Este processo pode demorar um pouco.");
+            const finalPdf = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pages = document.querySelectorAll('.page-container');
+
+            for (let i = 0; i < pages.length; i++) {
+                const pageContainer = pages[i];
+                const originalCanvas = pageContainer.querySelector('canvas');
+                const { width, height } = finalPdf.internal.pageSize;
+
+                if (i > 0) finalPdf.addPage();
+                
+                // Adiciona a página original do PDF
+                finalPdf.addImage(originalCanvas.toDataURL('image/png'), 'PNG', 0, 0, width, height);
+
+                // Adiciona as assinaturas sobre a página
+                const signatures = pageContainer.querySelectorAll('.signature-wrapper');
+                signatures.forEach(sig => {
+                    const sigImg = sig.querySelector('.signature-img');
+                    const sigRect = sig.getBoundingClientRect();
+                    const pageRect = pageContainer.getBoundingClientRect();
+                    
+                    // Converte a posição da assinatura (em pixels na tela) para pontos no PDF
+                    const x = (sigRect.left - pageRect.left) * (width / pageRect.width);
+                    const y = (sigRect.top - pageRect.top) * (height / pageRect.height);
+                    const sigWidth = sigRect.width * (width / pageRect.width);
+                    const sigHeight = sigRect.height * (height / pageRect.height);
+                    const rotation = parseInt(sig.dataset.rotation || 0);
+
+                    finalPdf.addImage(sigImg.src, 'PNG', x, y, sigWidth, sigHeight, null, 'NONE', rotation);
+                });
+            }
+            finalPdf.save("DoksPDF-assinado.pdf");
         }
     </script>
 </body>
