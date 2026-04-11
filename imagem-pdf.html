@@ -6,27 +6,27 @@
     <title>Imagem para PDF - DoksPDF</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { 
-            --azul: #0a2540; 
-            --amarelo: #ffcc29; 
-            --fundo: #dee2e6; 
+        :root {
+            --azul: #0a2540;
+            --amarelo: #ffcc29;
+            --fundo: #dee2e6;
         }
 
-        body { 
-            font-family: sans-serif; 
-            background: var(--fundo); 
-            color: var(--azul); 
-            margin: 0; 
-            padding: 0; 
+        body {
+            font-family: sans-serif;
+            background: var(--fundo);
+            color: var(--azul);
+            margin: 0;
+            padding: 0;
         }
 
-        /* --- BARRA SUPERIOR COMPLETA (PADRÃO JUNTAR PDF) --- */
+        /* --- BARRA SUPERIOR --- */
         header {
             background-color: var(--azul);
             padding: 10px 15px;
             display: flex;
             align-items: center;
-            justify-content:间-between;
+            justify-content: space-between;
             gap: 10px;
             border-bottom: 3px solid var(--amarelo);
         }
@@ -39,11 +39,7 @@
             min-width: fit-content;
         }
 
-        .home-icon {
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-        }
+        .home-icon { font-size: 20px; display: flex; align-items: center; }
 
         .brand-text {
             color: #ffffff;
@@ -53,10 +49,7 @@
             align-items: center;
         }
 
-        .pdf-txt {
-            color: var(--amarelo);
-            margin-left: 4px;
-        }
+        .pdf-txt { color: var(--amarelo); margin-left: 4px; }
 
         /* --- CAMPO DE BUSCA --- */
         .search-container {
@@ -77,20 +70,8 @@
             font-size: 14px;
         }
 
-        .search-input::placeholder { color: #aaa; }
-
-        .search-icon {
-            position: absolute;
-            left: 10px;
-            color: #aaa;
-            font-size: 14px;
-        }
-
         /* --- BOTÕES DE AÇÃO --- */
-        .header-actions {
-            display: flex;
-            gap: 8px;
-        }
+        .header-actions { display: flex; gap: 8px; }
 
         .btn-header {
             border: none;
@@ -102,9 +83,11 @@
             text-transform: uppercase;
         }
 
+        /* Botão RECENTES: Fundo Azul, Escrita Amarela */
         .btn-recentes {
-            background: var(--amarelo);
-            color: var(--azul);
+            background: var(--azul);
+            color: var(--amarelo);
+            border: 1px solid var(--amarelo);
         }
 
         .btn-pro {
@@ -112,25 +95,29 @@
             color: var(--azul);
         }
 
-        /* --- CARD DE CONTEÚDO --- */
-        .card { 
-            background: white; 
-            padding: 40px 25px; 
-            border-radius: 24px; 
-            border-bottom: 6px solid var(--amarelo); 
-            max-width: 380px; 
-            margin: 40px auto; 
+        /* --- CARD DE CONTEÚDO (PADRONIZADO) --- */
+        .card {
+            background: white;
+            padding: 40px 25px;
+            border-radius: 24px;
+            border-bottom: 6px solid var(--amarelo);
+            max-width: 380px;
+            min-height: 450px; /* Mantém o tamanho parecido com os outros cards */
+            margin: 40px auto;
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .card img {
-            width: 75px;
-            margin-bottom: 15px;
+            width: 85px; /* Ícone um pouco maior como no print */
+            margin: 0 auto 15px;
         }
 
         h1 { font-size: 22px; margin-bottom: 10px; text-transform: uppercase; }
-        
+
         .destaque-pdf {
             color: white;
             background: var(--azul);
@@ -138,27 +125,57 @@
             border-radius: 6px;
         }
 
-        .btn-gerar { 
-            background: var(--amarelo); 
-            color: var(--azul); 
-            border: none; 
-            padding: 18px; 
-            width: 100%; 
-            border-radius: 12px; 
-            font-weight: 900; 
-            cursor: pointer; 
+        /* --- ÁREA DE SELEÇÃO DE ARQUIVO (ESTILO JUNTAR PDF) --- */
+        .file-drop-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 25px 0;
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .file-drop-area:hover { border-color: var(--amarelo); background: #f9f9f9; }
+
+        .file-msg {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--azul);
+        }
+
+        #img-input {
+            position: absolute;
+            left: 0; top: 0; width: 100%; height: 100%;
+            opacity: 0; /* Esconde o botão feio do navegador */
+            cursor: pointer;
+        }
+
+        .btn-gerar {
+            background: var(--amarelo);
+            color: var(--azul);
+            border: none;
+            padding: 18px;
+            width: 100%;
+            border-radius: 12px;
+            font-weight: 900;
+            cursor: pointer;
             text-transform: uppercase;
             margin-top: 25px;
             font-size: 16px;
         }
 
         .link-voltar {
-            text-decoration: none; 
-            color: #777; 
-            font-size: 12px; 
-            font-weight: 900; 
-            text-transform: uppercase; 
-            display: block; 
+            text-decoration: none;
+            color: #777;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            display: block;
             text-align: center;
             margin-top: 30px;
         }
@@ -173,7 +190,7 @@
         </div>
 
         <div class="search-container">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon" style="position: absolute; left: 10px; color: #aaa;">🔍</span>
             <input type="text" class="search-input" placeholder="Buscar ferramenta...">
         </div>
 
@@ -184,12 +201,16 @@
     </header>
 
     <div class="card">
-        <img src="https://cdn-icons-png.flaticon.com/512/3342/3342137.png" alt="Conversor">
+        <img src="https://cdn-icons-png.flaticon.com/512/3342/3342137.png" alt="Conversor de Imagem">
+        
         <h1>IMAGEM P/ <span class="destaque-pdf">PDF</span></h1>
         <p style="font-size: 14px; color: #666;">Converta suas fotos em um documento PDF profissional rapidamente.</p>
-        
-        <input type="file" id="img-input" multiple accept="image/*" style="margin: 20px 0; width: 100%;">
-        
+
+        <div class="file-drop-area">
+            <span class="file-msg" id="file-label">Clique para selecionar fotos</span>
+            <input type="file" id="img-input" multiple accept="image/*" onchange="updateLabel()">
+        </div>
+
         <button class="btn-gerar" onclick="convertImage()">GERAR PDF</button>
     </div>
 
@@ -198,18 +219,33 @@
     <script>
         function irParaHome() { window.location.href = "index.html"; }
 
+        // Atualiza o texto quando fotos são selecionadas
+        function updateLabel() {
+            const input = document.getElementById('img-input');
+            const label = document.getElementById('file-label');
+            if (input.files.length > 0) {
+                label.innerText = input.files.length + (input.files.length > 1 ? " imagens selecionadas" : " imagem selecionada");
+            }
+        }
+
         async function convertImage() {
             const { jsPDF } = window.jspdf;
             const files = document.getElementById('img-input').files;
+
             if (files.length === 0) return alert("Selecione ao menos uma imagem.");
+
             const doc = new jsPDF();
+
             for (let i = 0; i < files.length; i++) {
                 const imgData = await new Promise(resolve => {
                     const reader = new FileReader();
                     reader.onload = (e) => resolve(e.target.result);
                     reader.readAsDataURL(files[i]);
                 });
+
                 if (i > 0) doc.addPage();
+                
+                // Ajuste simples para caber na página A4 (largura 190)
                 doc.addImage(imgData, 'JPEG', 10, 10, 190, 0);
             }
             doc.save("DoksPDF_Imagens.pdf");
@@ -217,4 +253,3 @@
     </script>
 </body>
 </html>
-
