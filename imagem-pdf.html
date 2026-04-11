@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Imagem para PDF - DokksPDF</title>
+    <title>Imagem para PDF - DoksPDF</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root { 
@@ -20,48 +20,99 @@
             padding: 0; 
         }
 
-        /* --- BARRA SUPERIOR PADRONIZADA --- */
+        /* --- BARRA SUPERIOR COMPLETA (PADRÃO JUNTAR PDF) --- */
         header {
             background-color: var(--azul);
-            padding: 0 15px;
+            padding: 10px 15px;
             display: flex;
             align-items: center;
-            height: 60px; /* Altura fixa para alinhar com o padrão */
+            justify-content:间-between;
+            gap: 10px;
             border-bottom: 3px solid var(--amarelo);
         }
 
         .brand {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             cursor: pointer;
-            height: 100%;
+            min-width: fit-content;
         }
 
-        /* Removido qualquer fundo branco ou borda da casinha */
         .home-icon {
-            font-size: 24px;
+            font-size: 20px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: white;
         }
 
         .brand-text {
             color: #ffffff;
             font-weight: 700;
-            font-size: 22px;
+            font-size: 18px;
             display: flex;
             align-items: center;
-            letter-spacing: -0.5px;
         }
 
         .pdf-txt {
             color: var(--amarelo);
-            margin-left: 5px;
+            margin-left: 4px;
         }
 
-        /* --- CARD COM PROPORÇÕES DA HOME --- */
+        /* --- CAMPO DE BUSCA --- */
+        .search-container {
+            flex-grow: 1;
+            max-width: 300px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 8px 10px 8px 30px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .search-input::placeholder { color: #aaa; }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        /* --- BOTÕES DE AÇÃO --- */
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-header {
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .btn-recentes {
+            background: var(--amarelo);
+            color: var(--azul);
+        }
+
+        .btn-pro {
+            background: var(--amarelo);
+            color: var(--azul);
+        }
+
+        /* --- CARD DE CONTEÚDO --- */
         .card { 
             background: white; 
             padding: 40px 25px; 
@@ -78,11 +129,7 @@
             margin-bottom: 15px;
         }
 
-        h1 { 
-            font-size: 22px; 
-            margin-bottom: 10px; 
-            text-transform: uppercase;
-        }
+        h1 { font-size: 22px; margin-bottom: 10px; text-transform: uppercase; }
         
         .destaque-pdf {
             color: white;
@@ -91,7 +138,7 @@
             border-radius: 6px;
         }
 
-        .btn { 
+        .btn-gerar { 
             background: var(--amarelo); 
             color: var(--azul); 
             border: none; 
@@ -103,12 +150,6 @@
             text-transform: uppercase;
             margin-top: 25px;
             font-size: 16px;
-        }
-
-        input[type="file"] {
-            margin: 20px 0;
-            font-size: 14px;
-            width: 100%;
         }
 
         .link-voltar {
@@ -130,6 +171,16 @@
             <div class="home-icon">🏠</div>
             <div class="brand-text">Doks<span class="pdf-txt">PDF</span></div>
         </div>
+
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" placeholder="Buscar ferramenta...">
+        </div>
+
+        <div class="header-actions">
+            <button class="btn-header btn-recentes">RECENTES</button>
+            <button class="btn-header btn-pro">PRO</button>
+        </div>
     </header>
 
     <div class="card">
@@ -137,17 +188,15 @@
         <h1>IMAGEM P/ <span class="destaque-pdf">PDF</span></h1>
         <p style="font-size: 14px; color: #666;">Converta suas fotos em um documento PDF profissional rapidamente.</p>
         
-        <input type="file" id="img-input" multiple accept="image/*">
+        <input type="file" id="img-input" multiple accept="image/*" style="margin: 20px 0; width: 100%;">
         
-        <button class="btn" onclick="convertImage()">GERAR PDF</button>
+        <button class="btn-gerar" onclick="convertImage()">GERAR PDF</button>
     </div>
 
     <a href="javascript:void(0)" onclick="irParaHome()" class="link-voltar">← VOLTAR AO INÍCIO</a>
 
     <script>
-        function irParaHome() {
-            window.location.href = "index.html";
-        }
+        function irParaHome() { window.location.href = "index.html"; }
 
         async function convertImage() {
             const { jsPDF } = window.jspdf;
