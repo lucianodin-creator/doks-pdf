@@ -12,7 +12,6 @@
             --amarelo: #ffcc00;
             --fundo: #f0f2f5;
             --vermelho: #ff4d4d;
-            --cinza-extra: #e0e0e0;
         }
 
         body { 
@@ -37,8 +36,8 @@
             flex-shrink: 0;
         }
 
-        .logo-area { display: flex; align-items: center; gap: 5px; text-decoration: none; cursor: pointer; }
-        .logo-text { color: white; font-weight: bold; font-size: 16px; margin: 0; }
+        .logo-area { display: flex; align-items: center; gap: 5px; text-decoration: none; cursor: pointer; color: white; }
+        .logo-text { font-weight: bold; font-size: 16px; margin: 0; }
         .logo-text span { color: var(--amarelo); }
 
         .search-container { 
@@ -67,7 +66,7 @@
             color: rgba(255,255,255,0.6);
         }
 
-        .nav-btns-right { display: flex; gap: 5px; } /* Reduzido o espaço entre os botões */
+        .nav-btns-right { display: flex; gap: 5px; }
 
         .btn-nav { padding: 6px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; text-decoration: none; text-transform: uppercase; }
         .btn-recentes { border: 1px solid var(--amarelo); color: var(--amarelo); }
@@ -84,7 +83,6 @@
             flex-direction: column;
         }
 
-        /* --- CARD INICIAL E VOLTAR --- */
         .container-inicial {
             display: flex;
             flex-direction: column;
@@ -113,6 +111,8 @@
             align-items: center;
             gap: 5px;
             cursor: pointer;
+            background: none;
+            border: none;
         }
 
         .icon-box { font-size: 50px; display: block; margin-bottom: 15px; }
@@ -143,29 +143,21 @@
             font-size: 10px;
             font-weight: bold;
             cursor: pointer;
-            transition: opacity 0.3s;
         }
 
-        /* Botões bloqueados */
-        .nav-item:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
+        .nav-item:disabled { opacity: 0.3; cursor: not-allowed; }
         .nav-item span { font-size: 18px; margin-bottom: 2px; }
         .page-counter { display: flex; align-items: center; gap: 5px; color: var(--amarelo); font-weight: bold; font-size: 16px; }
 
-        /* --- PDF DISPLAY --- */
+        /* --- PDF E ASSINATURAS --- */
         #pdf-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
         .page-container { position: relative; background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); margin-bottom: 20px; }
         canvas { display: block; max-width: 100%; }
-        
-        /* Assinaturas */
         .sig-box { position: absolute; border: 1px dashed #007bff; cursor: move; }
         .sig-controls { position: absolute; top: -35px; left: 0; display: flex; gap: 5px; background: white; padding: 3px; border-radius: 5px; }
         .sig-ctrl-btn { border: none; background: #eee; padding: 5px; border-radius: 3px; cursor: pointer; }
 
-        /* Modal */
+        /* Modais */
         #sig-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: none; flex-direction: column; z-index: 2000; }
         #sig-pad { flex-grow: 1; border: 2px solid #ccc; margin: 10px; background: #fafafa; touch-action: none; }
         .modal-footer { display: flex; justify-content: space-around; padding: 15px; background: #eee; }
@@ -176,7 +168,7 @@
 <body>
 
     <header class="header">
-        <div class="logo-area" onclick="forceReset()">
+        <div class="logo-area" onclick="goHome()">
             <span style="font-size: 20px;">🏠</span>
             <h1 class="logo-text">Doks<span>PDF</span></h1>
         </div>
@@ -201,21 +193,19 @@
                         📂 SELECIONAR PDF
                     </button>
                 </div>
-                <div class="btn-voltar-home" onclick="forceReset()">
+                <button class="btn-voltar-home" onclick="goHome()">
                     ← Voltar página inicial
-                </div>
+                </button>
             </div>
         </div>
         <input type="file" id="file-selector" style="display:none" onchange="handleFile(this)" accept="application/pdf">
     </main>
 
     <nav class="bottom-nav">
-        <button class="nav-item" onclick="forceReset()"><span>🔄</span>ATUALIZAR</button>
-        
+        <button class="nav-item" onclick="window.location.reload()"><span>🔄</span>ATUALIZAR</button>
         <div class="page-counter">
             <span id="p-cur">0</span>/ <span id="p-tot">0</span>
         </div>
-
         <button class="nav-item" id="btn-assinar" onclick="document.getElementById('rotate-lock').style.display='flex'" disabled>
             <span>🖋️</span>ASSINAR
         </button>
@@ -245,6 +235,11 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         let mainDoc = null;
 
+        // FUNÇÃO PARA VOLTAR PARA A HOME
+        function goHome() {
+            window.location.href = "https://dokspdf.vercel.app";
+        }
+
         function triggerFileSelect() { document.getElementById('file-selector').click(); }
 
         async function handleFile(el) {
@@ -255,11 +250,8 @@
                 const loadingTask = pdfjsLib.getDocument({data: new Uint8Array(this.result)});
                 mainDoc = await loadingTask.promise;
                 document.getElementById('p-tot').innerText = mainDoc.numPages;
-                
-                // Habilitar botões
                 document.getElementById('btn-assinar').disabled = false;
                 document.getElementById('btn-salvar').disabled = false;
-                
                 renderPDF();
             };
             reader.readAsArrayBuffer(file);
@@ -268,26 +260,21 @@
         async function renderPDF() {
             const wrap = document.getElementById('pdf-container');
             const viewportElem = document.getElementById('viewport');
-            
             viewportElem.style.justifyContent = "flex-start"; 
             document.getElementById('card-abrir').style.display = 'none';
             wrap.innerHTML = "";
-
             for(let i=1; i<=mainDoc.numPages; i++) {
                 const pg = await mainDoc.getPage(i);
                 const vpOrig = pg.getViewport({scale: 1});
                 const scale = (window.innerWidth / vpOrig.width) * 0.95;
                 const vp = pg.getViewport({scale: scale});
-
                 const box = document.createElement('div');
                 box.className = 'page-container';
                 box.id = 'page-' + i;
-
                 const cvs = document.createElement('canvas');
                 cvs.width = vp.width; cvs.height = vp.height;
                 box.appendChild(cvs);
                 wrap.appendChild(box);
-
                 await pg.render({canvasContext: cvs.getContext('2d'), viewport: vp}).promise;
             }
             document.getElementById('p-cur').innerText = "1";
@@ -335,7 +322,6 @@
             document.addEventListener('touchend', () => m=false);
         }
 
-        function forceReset() { window.location.reload(); }
         async function exportPDF() { alert("Processando download..."); }
     </script>
 </body>
