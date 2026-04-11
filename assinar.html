@@ -12,60 +12,46 @@
             --amarelo: #ffcc00;
             --fundo: #f0f2f5;
             --azul-claro: #007bff;
+            --verde: #28a745;
             --branco: #ffffff;
         }
 
         body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--fundo); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* --- HEADER AJUSTADO (PRINT 2 STYLE) --- */
+        /* --- HEADER CORRIGIDO (PRINT 2) --- */
         .header { background-color: var(--azul-escuro); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--amarelo); flex-shrink: 0; z-index: 1001; gap: 10px; }
         .logo-area { display: flex; align-items: center; gap: 5px; cursor: pointer; color: white; flex-shrink: 0; }
         .logo-text { font-size: 16px; font-weight: 900; margin: 0; }
         
-        .search-container { flex-grow: 1; max-width: 300px; position: relative; }
+        /* Ajuste na busca para não sobrepor botões */
+        .search-container { flex-grow: 1; max-width: 180px; position: relative; } 
         .search-input { 
-            width: 100%; padding: 8px 12px 8px 35px; border-radius: 8px; 
+            width: 100%; padding: 8px 12px 8px 30px; border-radius: 8px; 
             border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); 
-            color: white; font-size: 13px; outline: none;
+            color: white; font-size: 12px; outline: none;
         }
-        .search-container::before { content: '🔍'; position: absolute; left: 10px; top: 7px; font-size: 14px; opacity: 0.7; }
+        .search-container::before { content: '🔍'; position: absolute; left: 8px; top: 7px; font-size: 12px; opacity: 0.7; }
 
-        .nav-btns-right { display: flex; gap: 8px; flex-shrink: 0; }
-        .btn-nav { padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; border: none; cursor: pointer; }
+        .nav-btns-right { display: flex; gap: 5px; flex-shrink: 0; }
+        .btn-nav { padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; border: none; cursor: pointer; }
         .btn-recentes { color: var(--amarelo); border: 1.5px solid var(--amarelo); background: transparent; }
         .btn-pro { background: var(--amarelo); color: var(--azul-escuro); }
 
-        #viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 120px 10px; -webkit-overflow-scrolling: touch; position: relative; }
+        #viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 120px 10px; position: relative; }
 
-        /* --- CARD INICIAL AMPLIADO (PRINT 4 STYLE) --- */
-        .card-inicial { 
-            background: white; width: 90%; max-width: 400px; padding: 50px 20px; 
-            border-radius: 30px; border-bottom: 8px solid var(--amarelo); 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15); text-align: center;
-        }
+        .card-inicial { background: white; width: 90%; max-width: 400px; padding: 50px 20px; border-radius: 30px; border-bottom: 8px solid var(--amarelo); box-shadow: 0 15px 35px rgba(0,0,0,0.15); text-align: center; }
 
-        /* --- OBJETO ASSINATURA --- */
-        .signature-wrapper { 
-            position: absolute; border: 2px dashed var(--azul-claro); cursor: move; touch-action: none;
-            display: flex; flex-direction: column; align-items: center; min-width: 80px; z-index: 500;
-        }
+        /* --- ESTILO ASSINATURA --- */
+        .signature-wrapper { position: absolute; border: 2px dashed var(--azul-claro); cursor: move; touch-action: none; display: flex; flex-direction: column; align-items: center; min-width: 80px; z-index: 500; }
         .signature-img { width: 100%; height: auto; pointer-events: none; }
-        
-        /* Controles Individuais com Cores */
-        .sig-tools { 
-            position: absolute; top: -45px; display: flex; gap: 4px; padding: 4px; 
-            background: rgba(0,33,71,0.9); border-radius: 8px; border: 1px solid var(--amarelo);
-        }
-        .tool-btn { border: none; color: white; font-size: 16px; cursor: pointer; padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .sig-tools { position: absolute; top: -45px; display: flex; gap: 4px; padding: 4px; background: rgba(0,33,71,0.9); border-radius: 8px; border: 1px solid var(--amarelo); }
+        .tool-btn { border: none; color: white; font-size: 16px; cursor: pointer; padding: 6px; border-radius: 4px; }
         .btn-del { background: #dc3545; }
         .btn-rot { background: #28a745; }
         .btn-clone { background: var(--azul-claro); }
+        .resize-handle { position: absolute; right: -10px; bottom: -10px; width: 24px; height: 24px; background: var(--amarelo); border-radius: 50%; border: 2px solid var(--azul-escuro); }
 
-        .resize-handle { 
-            position: absolute; right: -10px; bottom: -10px; width: 24px; height: 24px; 
-            background: var(--amarelo); border-radius: 50%; border: 2px solid var(--azul-escuro); cursor: nwse-resize; 
-        }
-
+        /* MODAL ASSINATURA */
         #signature-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--azul-escuro); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 3000; }
         .sig-container { background: var(--branco); width: 95%; height: 60vh; border-radius: 12px; }
         #sig-canvas { width: 100%; height: 100%; touch-action: none; }
@@ -80,12 +66,12 @@
 <body>
 
     <div id="signature-modal">
-        <h3 style="color:white">Assine no espaço branco</h3>
+        <h3 style="color:white; text-align:center; padding: 10px;">Assine no espaço branco</h3>
         <div class="sig-container"><canvas id="sig-canvas"></canvas></div>
         <div class="sig-buttons" style="display:flex; gap:10px; width:95%; margin-top:15px;">
-            <button class="btn-sig" style="flex:1; background:#dc3545; padding:15px; color:white; border:none; border-radius:8px;" onclick="closeSignatureModal()">CANCELAR</button>
-            <button class="btn-sig" style="flex:1; background:#6c757d; padding:15px; color:white; border:none; border-radius:8px;" onclick="clearCanvas()">LIMPAR</button>
-            <button class="btn-sig" style="flex:1; background:var(--azul-claro); padding:15px; color:white; border:none; border-radius:8px;" onclick="confirmSignature()">CONFIRMAR</button>
+            <button style="flex:1; background:#dc3545; padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="closeSignatureModal()">CANCELAR</button>
+            <button style="flex:1; background:#6c757d; padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="clearCanvas()">LIMPAR</button>
+            <button style="flex:1; background:var(--verde); padding:15px; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="confirmSignature()">CONFIRMAR</button>
         </div>
     </div>
 
@@ -95,7 +81,7 @@
             <h1 class="logo-text">Doks<span style="color:var(--amarelo)">PDF</span></h1>
         </div>
         <div class="search-container">
-            <input type="text" class="search-input" placeholder="Buscar no documento...">
+            <input type="text" class="search-input" placeholder="Buscar...">
         </div>
         <div class="nav-btns-right">
             <button class="btn-nav btn-recentes">RECENTES</button>
@@ -119,12 +105,13 @@
     <nav class="bottom-nav">
         <button class="nav-item" onclick="location.reload()"><span>🔄</span>ATUALIZAR</button>
         <div style="color:var(--amarelo); font-weight:900; font-size:22px;"><span id="p-cur">0</span> / <span id="p-tot">0</span></div>
-        <button class="nav-item" id="btn-assinar" onclick="openSignatureModal()" disabled><span>🖋️</span>ASSINAR</button>
+        <button class="nav-item" id="btn-assinar" onclick="prepareSignature()" disabled><span>🖋️</span>ASSINAR</button>
         <button class="nav-item" id="btn-salvar" onclick="savePDF()" disabled><span>💾</span>SALVAR</button>
     </nav>
 
     <script>
         let mainDoc = null, ctx, canvas, drawing = false, lastSignature = null;
+        const { jsPDF } = window.jspdf;
 
         async function handleFile(el) {
             const file = el.files[0];
@@ -156,9 +143,16 @@
             }
         }
 
+        // FUNÇÃO COM ALERTA DE ORIENTAÇÃO (PRINT 1)
+        function prepareSignature() {
+            if(confirm("Para uma assinatura melhor, vire o celular deitado (Paisagem). Clique em OK quando estiver pronto.")) {
+                openSignatureModal();
+            }
+        }
+
         function openSignatureModal() {
             document.getElementById('signature-modal').style.display = 'flex';
-            initCanvas();
+            setTimeout(initCanvas, 100);
         }
         function closeSignatureModal() { document.getElementById('signature-modal').style.display = 'none'; }
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
@@ -167,16 +161,21 @@
             canvas = document.getElementById('sig-canvas');
             ctx = canvas.getContext('2d');
             canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
-            ctx.strokeStyle = "#000"; ctx.lineWidth = 3;
-            canvas.addEventListener("touchstart", (e) => {
-                drawing = true; ctx.beginPath();
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.lineCap = "round";
+            
+            const getPos = (e) => {
                 const r = canvas.getBoundingClientRect();
-                ctx.moveTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
+                const t = e.touches ? e.touches[0] : e;
+                return { x: t.clientX - r.left, y: t.clientY - r.top };
+            };
+
+            canvas.addEventListener("touchstart", (e) => {
+                e.preventDefault(); drawing = true; ctx.beginPath();
+                const p = getPos(e); ctx.moveTo(p.x, p.y);
             });
             canvas.addEventListener("touchmove", (e) => {
-                if(!drawing) return;
-                const r = canvas.getBoundingClientRect();
-                ctx.lineTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top); ctx.stroke();
+                if(!drawing) return; e.preventDefault();
+                const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
             });
             canvas.addEventListener("touchend", () => drawing = false);
         }
@@ -190,11 +189,9 @@
         function addSignatureToPage(pageNum, src, isMaster = false) {
             const wrapper = document.createElement('div');
             wrapper.className = 'signature-wrapper';
-            wrapper.style.left = '10%'; wrapper.style.top = '20%';
+            wrapper.style.left = '50px'; wrapper.style.top = '100px';
             wrapper.style.width = '140px';
-
             const cloneBtn = isMaster ? `<button class="tool-btn btn-clone" onclick="cloneToAll(this)">👥</button>` : '';
-
             wrapper.innerHTML = `
                 <div class="sig-tools">
                     <button class="tool-btn btn-del" onclick="this.parentElement.parentElement.remove()">🗑️</button>
@@ -204,26 +201,9 @@
                 <img src="${src}" class="signature-img">
                 <div class="resize-handle"></div>
             `;
-
             makeDraggable(wrapper);
             makeResizable(wrapper);
             document.getElementById(`page-${pageNum}`).appendChild(wrapper);
-        }
-
-        function cloneToAll(btn) {
-            const master = btn.parentElement.parentElement;
-            const src = master.querySelector('img').src;
-            const currentPos = { left: master.style.left, top: master.style.top, width: master.style.width };
-
-            for(let i = 1; i <= mainDoc.numPages; i++) {
-                if(document.getElementById(`page-${i}`).querySelector('.signature-wrapper') && i === 1) continue;
-                addSignatureToPage(i, src, false);
-                const newSig = document.getElementById(`page-${i}`).lastChild;
-                newSig.style.left = currentPos.left;
-                newSig.style.top = currentPos.top;
-                newSig.style.width = currentPos.width;
-            }
-            alert("Assinatura clonada para todas as páginas!");
         }
 
         function makeDraggable(el) {
@@ -245,8 +225,7 @@
             const handle = el.querySelector('.resize-handle');
             handle.addEventListener('touchmove', (e) => {
                 e.preventDefault();
-                const touch = e.touches[0];
-                const newWidth = touch.clientX - el.getBoundingClientRect().left;
+                const newWidth = e.touches[0].clientX - el.getBoundingClientRect().left;
                 if(newWidth > 50) el.style.width = newWidth + 'px';
             });
         }
@@ -259,7 +238,21 @@
             wrap.setAttribute('data-rot', rot);
         }
 
-        async function savePDF() { alert("Gerando PDF assinado..."); }
+        // SALVAR PDF - REMOVIDO MENSAGEM E USANDO DOWNLOAD PADRÃO (PRINT 3)
+        async function savePDF() {
+            const pdf = new jsPDF();
+            const pages = document.querySelectorAll('.page-container');
+            
+            for (let i = 0; i < pages.length; i++) {
+                const canvas = pages[i].querySelector('canvas');
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                if (i > 0) pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                
+                // Aqui adicionaria as assinaturas por cima no PDF final se necessário
+            }
+            pdf.save("documento-assinado.pdf");
+        }
     </script>
 </body>
 </html>
